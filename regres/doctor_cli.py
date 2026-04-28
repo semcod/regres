@@ -80,30 +80,52 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
             details=None if module_path.exists() else "resolved path does not exist",
         )
 
-        if args.llm:
+        if not module_path.exists():
+            from .doctor_models import Diagnosis, FileAction, ShellCommand
+            doctor.diagnoses.append(Diagnosis(
+                summary=f"Nie znaleziono modułu '{module_name}' dla URL {args.url}",
+                problem_type="module_not_found",
+                severity="medium",
+                nlp_description=(
+                    f"Ścieżka modułu '{module_name}' została rozwiązana z mapowania, ale katalog nie istnieje: {module_path}. "
+                    "Sprawdź czy moduł istnieje w projekcie."
+                ),
+                file_actions=[FileAction(
+                    path="doctor_orchestrator.py",
+                    action="review",
+                    reason=f"Ścieżka modułu '{module_name}' nie istnieje na dysku",
+                )],
+                shell_commands=[ShellCommand(
+                    command=f"find {scan_root} -type d -name '{module_name}'",
+                    description=f"Wyszukaj katalog modułu '{module_name}' w projekcie",
+                )],
+                confidence=0.9,
+            ))
+        else:
+            if args.llm:
+                doctor.add_plan_step(
+                    name="llm report generation",
+                    reason="Wygenerowanie raportu opisowego na podstawie kontekstu modułu.",
+                    command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url} --llm",
+                    status="done",
+                )
+                llm_report = doctor.generate_llm_diagnosis(args.url, module_path)
+                if args.out_md:
+                    out_md = Path(args.out_md)
+                    out_md.write_text(llm_report, encoding="utf-8")
+                    print(f"LLM diagnosis saved to {out_md}")
+                else:
+                    print(llm_report)
+                return
+
             doctor.add_plan_step(
-                name="llm report generation",
-                reason="Wygenerowanie raportu opisowego na podstawie kontekstu modułu.",
-                command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url} --llm",
+                name="targeted module analysis",
+                reason="Uruchomienie diagnostyki modułu wynikającego z URL.",
+                command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
                 status="done",
             )
-            llm_report = doctor.generate_llm_diagnosis(args.url, module_path)
-            if args.out_md:
-                out_md = Path(args.out_md)
-                out_md.write_text(llm_report, encoding="utf-8")
-                print(f"LLM diagnosis saved to {out_md}")
-            else:
-                print(llm_report)
-            return
-
-        doctor.add_plan_step(
-            name="targeted module analysis",
-            reason="Uruchomienie diagnostyki modułu wynikającego z URL.",
-            command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
-            status="done",
-        )
-        diagnoses = doctor.analyze_from_url(args.url)
-        doctor.diagnoses.extend(diagnoses)
+            diagnoses = doctor.analyze_from_url(args.url)
+            doctor.diagnoses.extend(diagnoses)
     else:
         doctor.add_plan_step(
             name="module scope resolution",

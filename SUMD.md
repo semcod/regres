@@ -990,7 +990,7 @@ class ReportData:
 
 ## Call Graph
 
-*172 nodes · 234 edges · 9 modules · CC̄=1.1*
+*172 nodes · 234 edges · 8 modules · CC̄=1.0*
 
 ### Hubs (by degree)
 
@@ -1002,13 +1002,13 @@ class ReportData:
 | `main` *(in regres.regres_cli)* | 1 | 0 | 48 | **48** |
 | `render_seed_text` *(in regres.defscan)* | 10 ⚠ | 1 | 42 | **43** |
 | `cmd_hotmap` *(in regres.refactor)* | 16 ⚠ | 0 | 42 | **42** |
-| `_handle_url_mode` *(in regres.doctor_cli)* | 20 ⚠ | 1 | 36 | **37** |
 | `_handle_auto_decision_flow` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 36 | **37** |
+| `_handle_url_mode` *(in regres.doctor_cli)* | 20 ⚠ | 1 | 36 | **37** |
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 172 | edges: 234 | modules: 9
-# CC̄=1.1
+# nodes: 172 | edges: 234 | modules: 8
+# CC̄=1.0
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -1023,18 +1023,18 @@ HUBS[20]:
     CC=10  in:1  out:42  total:43
   regres.refactor.cmd_hotmap
     CC=16  in:0  out:42  total:42
-  regres.doctor_cli._handle_url_mode
-    CC=20  in:1  out:36  total:37
   regres.doctor_cli._handle_auto_decision_flow
     CC=18  in:1  out:36  total:37
+  regres.doctor_cli._handle_url_mode
+    CC=20  in:1  out:36  total:37
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
   regres.defscan.extract_go
     CC=6  in:1  out:32  total:33
-  regres.regres._render_classification_section
-    CC=15  in:1  out:31  total:32
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
+  regres.regres._render_classification_section
+    CC=15  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
   regres.defscan.c
@@ -1045,19 +1045,17 @@ HUBS[20]:
     CC=14  in:0  out:28  total:28
   regres.regres._render_regression_section
     CC=12  in:1  out:26  total:27
-  regres.regres.analyze_file
-    CC=4  in:1  out:25  total:26
   regres.refactor.cmd_similar
     CC=14  in:0  out:26  total:26
+  regres.regres.analyze_file
+    CC=4  in:1  out:25  total:26
   regres.regres.exact_and_near_duplicates
     CC=8  in:1  out:24  total:25
 
 MODULES:
-  SUMR  [1 funcs]
-    _normalize  CC=0  out:0
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
-  regres.defscan  [42 funcs]
+  regres.defscan  [43 funcs]
     __init__  CC=3  out:2
     _advance_past_comment  CC=7  out:6
     _advance_past_string  CC=4  out:1

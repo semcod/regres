@@ -4,26 +4,26 @@
 
 - **Project**: /home/tom/github/semcod/regres
 - **Primary Language**: md
-- **Languages**: md: 13, python: 12, yaml: 9, shell: 2, txt: 1
+- **Languages**: md: 13, python: 12, yaml: 9, shell: 2, toml: 1
 - **Analysis Mode**: static
-- **Total Functions**: 1242
+- **Total Functions**: 1306
 - **Total Classes**: 19
 - **Modules**: 39
-- **Entry Points**: 1072
+- **Entry Points**: 1136
 
 ## Architecture by Module
 
 ### SUMD
-- **Functions**: 593
+- **Functions**: 626
 - **Classes**: 5
 - **File**: `SUMD.md`
 
 ### project.map.toon
-- **Functions**: 380
+- **Functions**: 409
 - **File**: `map.toon.yaml`
 
 ### SUMR
-- **Functions**: 213
+- **Functions**: 217
 - **Classes**: 5
 - **File**: `SUMR.md`
 
@@ -127,11 +127,11 @@ Sprawdzenie: czy symbol pojawia się jako identyfikator w jakimk
 ### regres.refactor.cmd_duplicates
 - **Calls**: regres.refactor.iter_files, defaultdict, docs.DEFSCAN.print, enumerate, getattr, None.append, docs.DEFSCAN.print, docs.DEFSCAN.print
 
-### regres.doctor_orchestrator.DoctorOrchestrator._collect_defscan_context
-- **Calls**: None.join, io.StringIO, output.strip, defscan.main, sys.stdout.getvalue, json.loads, lines.append, lines.append
-
 ### regres.import_error_toon_report.main
 - **Calls**: regres.version_check.check_version, regres.import_error_toon_report.parse_args, regres.import_error_toon_report.parse_ts_errors, ReportData, regres.import_error_toon_report.render_markdown, args.out_md.parent.mkdir, args.out_md.write_text, args.out_raw_log.parent.mkdir
+
+### regres.doctor_orchestrator.DoctorOrchestrator._collect_defscan_context
+- **Calls**: None.join, io.StringIO, output.strip, defscan.main, sys.stdout.getvalue, json.loads, lines.append, lines.append
 
 ### regres.refactor.cmd_find
 - **Calls**: regres.refactor.iter_files, results.sort, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, regres.refactor.read_text, regres.refactor.count_word
@@ -297,6 +297,12 @@ cmd_duplicates [regres.refactor]
 > Diagnoza problemu i plan naprawy.
 - **Methods**: 0
 
+### regres.import_error_toon_report.TsError
+- **Methods**: 0
+
+### regres.import_error_toon_report.ReportData
+- **Methods**: 0
+
 ### SUMR.GitCommit
 - **Methods**: 0
 
@@ -327,18 +333,19 @@ cmd_duplicates [regres.refactor]
 ### SUMD.ReportData
 - **Methods**: 0
 
-### regres.import_error_toon_report.TsError
-- **Methods**: 0
-
-### regres.import_error_toon_report.ReportData
-- **Methods**: 0
-
 ## Data Transformation Functions
 
 Key functions that process and transform data:
 
 ### regres.regres.parse_numstat_block
 - **Output to**: None.split, a.isdigit, d.isdigit, len, int
+
+### regres.version_check._parse_version
+- **Output to**: tuple, int, v.split, x.isdigit
+
+### regres.doctor_cli._build_parser
+> Build the argument parser for doctor CLI.
+- **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
 ### regres.refactor._format_imports
 > Format imports list for toon output.
@@ -350,6 +357,26 @@ Key functions that process and transform data:
 
 ### regres.refactor.build_parser
 - **Output to**: argparse.ArgumentParser, p.add_argument, p.add_argument, p.add_argument, p.add_subparsers
+
+### regres.import_error_toon_report.parse_args
+- **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
+
+### regres.import_error_toon_report.parse_ts_errors
+- **Output to**: log_text.splitlines, TS_ERROR_RE.match, m.group, m.group, MISSING_MODULE_RE.search
+
+### regres.defscan._build_argument_parser
+> Build and return the argument parser for defscan.
+- **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
+
+### regres.doctor_orchestrator.DoctorOrchestrator._parse_ts_errors
+> Parsuje log błędów TS.
+- **Output to**: re.compile, re.compile, re.compile, open, file_re.search
+
+### regres.doctor_orchestrator.DoctorOrchestrator._validate_errors
+- **Output to**: re.search, mod_match.group, self._import_exists_in_source, validated.append, validated.append
+
+### regres.doctor_orchestrator.DoctorOrchestrator._render_validate_step
+- **Output to**: lines.append, lines.append, lines.append, lines.append
 
 ### SUMR.parse_numstat_block
 
@@ -371,27 +398,11 @@ Key functions that process and transform data:
 
 ### SUMR.parse_ts_errors
 
-### SUMD._build_argument_parser
+### project.map.toon._build_argument_parser
 
-### SUMD._build_parser
+### project.map.toon._build_parser
 
-### SUMD.parse_args
-
-### SUMD.parse_ts_errors
-
-### SUMD._format_imports
-
-### SUMD._format_preview
-
-### SUMD.build_parser
-
-### SUMD.parse_numstat_block
-
-### SUMD.test_build_parser
-
-### SUMD.test_parser_scan_root
-
-### SUMD.test_parser_all
+### project.map.toon.parse_args
 
 ## Behavioral Patterns
 
@@ -439,9 +450,9 @@ Functions exposed as public API (no underscore prefix):
 - `regres.refactor.cmd_report` - 18 calls
 - `regres.regres.analyze_evolution` - 17 calls
 - `regres.version_check.check_version` - 17 calls
+- `regres.import_error_toon_report.parse_ts_errors` - 17 calls
 - `regres.defscan.extract_typescript` - 17 calls
 - `regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url` - 17 calls
-- `regres.import_error_toon_report.parse_ts_errors` - 17 calls
 - `regres.regres.content_metrics` - 16 calls
 - `regres.refactor.to_json_toon` - 16 calls
 

@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1315-green)
-> **1315** functions | **19** classes | **42** files | CC̄ = 5.5
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1361-green)
+> **1361** functions | **19** classes | **42** files | CC̄ = 5.5
 
 > Auto-generated project documentation from source code analysis.
 
@@ -329,6 +329,7 @@ regres/
 - `find_last_good_version()` — —
 - `llm_context_packet()` — —
 - `analyze_file()` — —
+- `check_version()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -383,6 +384,15 @@ regres/
 - `test_save_report_to_json()` — —
 - `test_save_report_to_md()` — —
 - `test_save_report_to_both_formats()` — —
+- `test_refresh_import_error_log_success()` — —
+- `test_refresh_import_error_log_no_frontend()` — —
+- `test_refresh_import_error_log_subprocess_failure()` — —
+- `test_refresh_import_error_log_timeout()` — —
+- `test_refresh_import_error_log_file_not_found()` — —
+- `test_handle_import_errors_with_subprocess_mock()` — —
+- `test_handle_import_errors_without_frontend()` — —
+- `test_handle_defscan_refactor_subprocess_mock()` — —
+- `test_full_workflow_with_all_mocks()` — —
 - `test_file_action_all_action_types()` — —
 - `test_file_action_empty_path()` — —
 - `test_file_action_none_path()` — —
@@ -746,6 +756,7 @@ regres/
 - `check_version()` — —
 - `analyze_custom_metric()` — —
 - `print()` — —
+- `generate_readme()` — —
 - `analyze_from_url()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -761,7 +772,6 @@ regres/
 - `collect_structure_snapshot()` — —
 - `collect_preliminary_refactor_proposals()` — —
 - `loc()` — —
-- `generate_readme()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -816,6 +826,15 @@ regres/
 - `test_save_report_to_json()` — —
 - `test_save_report_to_md()` — —
 - `test_save_report_to_both_formats()` — —
+- `test_refresh_import_error_log_success()` — —
+- `test_refresh_import_error_log_no_frontend()` — —
+- `test_refresh_import_error_log_subprocess_failure()` — —
+- `test_refresh_import_error_log_timeout()` — —
+- `test_refresh_import_error_log_file_not_found()` — —
+- `test_handle_import_errors_with_subprocess_mock()` — —
+- `test_handle_import_errors_without_frontend()` — —
+- `test_handle_defscan_refactor_subprocess_mock()` — —
+- `test_full_workflow_with_all_mocks()` — —
 - `test_file_action_all_action_types()` — —
 - `test_file_action_empty_path()` — —
 - `test_file_action_none_path()` — —
@@ -978,8 +997,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (593 functions, 5 classes)
-📄 `SUMR` (213 functions, 5 classes)
+📄 `SUMD` (626 functions, 5 classes)
+📄 `SUMR` (217 functions, 5 classes)
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
 📄 `docs.README` (1 functions)
@@ -995,7 +1014,7 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1379 functions)
+📄 `project.map.toon` (1445 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`

@@ -1,42 +1,42 @@
-# regres | 1242 func | 14f | 18425L | md | 2026-04-28
+# regres | 1306 func | 14f | 19485L | md | 2026-04-28
 
 HEALTH:
-  CC̄=1.1  critical=39 (limit:10)  dup=5  cycles=0
+  CC̄=1.0  critical=39 (limit:10)  dup=5  cycles=0
 
 ALERTS[20]:
-  !!! high_fan_out     cmd_hotmap = 24 (limit:10)
   !!! high_fan_out     _handle_url_mode = 24 (limit:10)
+  !!! high_fan_out     cmd_hotmap = 24 (limit:10)
   !!! high_fan_out     analyze_file = 23 (limit:10)
   !!! high_fan_out     trace_name_and_hash_candidates = 22 (limit:10)
   !!  cc_exceeded      _handle_url_mode = 20 (limit:15)
   !!  high_fan_out     exact_and_near_duplicates = 19 (limit:10)
   !!  high_fan_out     cmd_diff = 19 (limit:10)
   !!  high_fan_out     cmd_dead = 18 (limit:10)
-  !!  high_fan_out     cmd_similar = 17 (limit:10)
   !!  high_fan_out     _handle_auto_decision_flow = 17 (limit:10)
+  !!  high_fan_out     cmd_similar = 17 (limit:10)
 
 MODULES[39] (top by size):
-  M[project/calls.yaml] 2561L C:0 F:0 CC↑0 D:0 (yaml)
+  M[project/calls.yaml] 3169L C:0 F:0 CC↑0 D:0 (yaml)
   M[regres/regres.py] 1495L C:1 F:55 CC↑15 D:0 (python)
   M[regres/defscan.py] 1261L C:1 F:45 CC↑17 D:0 (python)
   M[regres/refactor.py] 1237L C:0 F:52 CC↑16 D:0 (python)
-  M[SUMD.md] 1138L C:5 F:420 CC↑0 D:0 (md)
+  M[SUMD.md] 1193L C:5 F:451 CC↑0 D:0 (md)
   M[regres/doctor_orchestrator.py] 1078L C:1 F:51 CC↑15 D:0 (python)
-  M[SUMR.md] 961L C:5 F:206 CC↑0 D:1 (md)
-  M[docs/README.md] 782L C:0 F:1 CC↑0 D:0 (md)
+  M[docs/README.md] 1044L C:0 F:1 CC↑0 D:0 (md)
+  M[SUMR.md] 1002L C:5 F:210 CC↑0 D:0 (md)
   M[.regres/import-error-toon-report.md] 549L C:0 F:0 CC↑0 D:0 (md)
   M[goal.yaml] 512L C:0 F:0 CC↑0 D:0 (yaml)
-  M[project/context.md] 486L C:0 F:0 CC↑0 D:0 (md)
-  M[project/map.toon.yaml] 456L C:0 F:370 CC↑0 D:0 (yaml)
+  M[project/context.md] 496L C:0 F:0 CC↑0 D:0 (md)
+  M[project/map.toon.yaml] 488L C:0 F:399 CC↑0 D:0 (yaml)
   M[regres/doctor_cli.py] 390L C:0 F:8 CC↑20 D:0 (python)
   M[regres/import_error_toon_report.py] 372L C:2 F:13 CC↑10 D:0 (python)
   M[project/README.md] 339L C:0 F:0 CC↑0 D:0 (md)
   LANGS: md:13/python:12/yaml:9/shell:2/other:1/txt:1/toml:1
 
 HOTSPOTS[10]:
+  ★ _handle_url_mode fan=24  // Handle URL-based discovery and analysis mode.
   ★ cmd_hotmap fan=24  // Mapa katalogów wg koncentracji podobnych plików.
 Wskaźnik 'hotness' = liczba par
-  ★ _handle_url_mode fan=24  // Handle URL-based discovery and analysis mode.
   ★ analyze_file fan=23  // Analysis pipeline, 23 stages
   ★ trace_name_and_hash_candidates fan=22  // Orchestrates 22 calls
   ★ exact_and_near_duplicates fan=19  // Orchestrates 19 calls
@@ -49,4 +49,4 @@ REFACTOR[15]:
   [5] H/H Split god module .regres/import-error-toon-report.md (549L, 0 classes)
 
 EVOLUTION:
-  2026-04-28 CC̄=1.1 crit=39 18425L // Automated analysis
+  2026-04-28 CC̄=1.0 crit=39 19485L // Automated analysis

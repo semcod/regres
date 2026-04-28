@@ -16,12 +16,12 @@ SUMD - Structured Unified Markdown Descriptor for AI-aware project refactorizati
 ## Metadata
 
 - **name**: `regres`
-- **version**: `0.1.11`
+- **version**: `0.1.16`
 - **python_requires**: `>=3.11`
 - **license**: Apache-2.0
 - **ai_model**: `openrouter/qwen/qwen3-coder-next`
 - **ecosystem**: SUMD + DOQL + testql + taskfile
-- **generated_from**: pyproject.toml, Makefile, testql(1), app.doql.less, goal.yaml, src(9 mod), project/(5 analysis files)
+- **generated_from**: pyproject.toml, Makefile, testql(1), app.doql.less, goal.yaml, src(10 mod), project/(5 analysis files)
 
 ## Architecture
 
@@ -36,7 +36,7 @@ SUMD (description) → DOQL/source (code) → taskfile (automation) → testql (
 
 app {
   name: regres;
-  version: 0.1.11;
+  version: 0.1.16;
 }
 
 interface[type="cli"] {
@@ -158,6 +158,7 @@ environment[name="local"] {
 - `regres.refactor`
 - `regres.regres`
 - `regres.regres_cli`
+- `regres.version_check`
 
 ## Workflows
 
@@ -288,7 +289,9 @@ def main()  # CC=2, fan=7
 ```python
 class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def __init__(scan_root)  # CC=1
-    def analyze_from_url(url)  # CC=6
+    def analyze_from_url(url)  # CC=8
+    def _filter_actionable_diagnoses(diagnoses)  # CC=5
+    def _build_url_fallback_diagnosis(route_path, module_path)  # CC=7
     def analyze_import_errors(log_path)  # CC=5
     def analyze_duplicates(report_path)  # CC=5
     def analyze_git_history(file_path)  # CC=7
@@ -301,8 +304,8 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def reset_analysis_plan()  # CC=1
     def add_plan_step(name, reason, command, status, details)  # CC=2
     def set_analysis_context(key, value)  # CC=1
-    def _extract_module_name(path)  # CC=4
-    def _resolve_module_path(module_name)  # CC=4
+    def _extract_module_name(path)  # CC=6
+    def _resolve_module_path(module_name)  # CC=5
     def _import_exists_in_source(file_path, module_name)  # CC=11 ⚠
     def _resolve_alias_target(alias_path)  # CC=6
     def _parse_ts_errors(log_path)  # CC=6
@@ -311,7 +314,7 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def _diagnose_import_issue(file_path, missing_modules)  # CC=15 ⚠
     def _diagnose_duplicate(duplicate_data)  # CC=4
     def _find_main_location(locations)  # CC=4
-    def _analyze_history_patterns(file_path, history_lines)  # CC=7
+    def _analyze_history_patterns(file_path, history_lines)  # CC=9
     def _apply_file_action(action, dry_run, results)  # CC=14 ⚠
     def _apply_shell_command(cmd, dry_run, results)  # CC=4
     def _build_header(url, module_path)  # CC=1
@@ -350,7 +353,9 @@ def _collect_class_method_ids(tree)  # CC=5, fan=5
 def _extract_class_definitions(node, path, lines)  # CC=5, fan=7
 def _extract_function_definition(node, path, lines, class_method_ids)  # CC=2, fan=4
 def extract_python(path)  # CC=5, fan=10
-def _extract_block_ts(text, start_pos)  # CC=18, fan=2 ⚠
+def _advance_past_string(text, i, quote)  # CC=4, fan=1
+def _advance_past_comment(text, i)  # CC=7, fan=2
+def _extract_block_ts(text, start_pos)  # CC=12, fan=3 ⚠
 def _lineno_at(text, pos)  # CC=1, fan=1
 def extract_typescript(path)  # CC=11, fan=13 ⚠
 def extract_go(path)  # CC=6, fan=12
@@ -403,56 +408,58 @@ def to_toon_block_legacy(file_rel, errs, max_errors)  # CC=6, fan=8
 def to_toon_global_payload(report, scan_root, max_files, max_errors_per_file)  # CC=10, fan=15 ⚠
 def to_toon_compact_per_file(grouped, max_files, max_errors)  # CC=7, fan=9
 def render_markdown(report, scan_root, max_files, max_errors_per_file)  # CC=6, fan=14
-def main()  # CC=5, fan=12
+def main()  # CC=5, fan=14
 class TsError:
 class ReportData:
 ```
 
 ## Call Graph
 
-*149 nodes · 206 edges · 7 modules · CC̄=1.5*
+*172 nodes · 234 edges · 8 modules · CC̄=1.0*
 
 ### Hubs (by degree)
 
 | Function | CC | in | out | total |
 |----------|----|----|-----|-------|
-| `print` *(in docs.DEFSCAN)* | 0 | 123 | 0 | **123** |
+| `print` *(in docs.DEFSCAN)* | 0 | 129 | 0 | **129** |
 | `render_text` *(in regres.defscan)* | 14 ⚠ | 2 | 55 | **57** |
 | `build_parser` *(in regres.refactor)* | 1 | 1 | 49 | **50** |
+| `main` *(in regres.regres_cli)* | 1 | 0 | 48 | **48** |
 | `render_seed_text` *(in regres.defscan)* | 10 ⚠ | 1 | 42 | **43** |
 | `cmd_hotmap` *(in regres.refactor)* | 16 ⚠ | 0 | 42 | **42** |
-| `extract_python` *(in regres.defscan)* | 14 ⚠ | 1 | 37 | **38** |
 | `_handle_auto_decision_flow` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 36 | **37** |
-| `extract_go` *(in regres.defscan)* | 6 | 1 | 32 | **33** |
+| `_handle_url_mode` *(in regres.doctor_cli)* | 20 ⚠ | 1 | 36 | **37** |
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 149 | edges: 206 | modules: 7
-# CC̄=1.5
+# nodes: 172 | edges: 234 | modules: 8
+# CC̄=1.0
 
 HUBS[20]:
   docs.DEFSCAN.print
-    CC=0  in:123  out:0  total:123
+    CC=0  in:129  out:0  total:129
   regres.defscan.render_text
     CC=14  in:2  out:55  total:57
   regres.refactor.build_parser
     CC=1  in:1  out:49  total:50
+  regres.regres_cli.main
+    CC=1  in:0  out:48  total:48
   regres.defscan.render_seed_text
     CC=10  in:1  out:42  total:43
   regres.refactor.cmd_hotmap
     CC=16  in:0  out:42  total:42
-  regres.defscan.extract_python
-    CC=14  in:1  out:37  total:38
   regres.doctor_cli._handle_auto_decision_flow
     CC=18  in:1  out:36  total:37
-  regres.defscan.extract_go
-    CC=6  in:1  out:32  total:33
+  regres.doctor_cli._handle_url_mode
+    CC=20  in:1  out:36  total:37
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
-  regres.regres._render_classification_section
-    CC=15  in:1  out:31  total:32
+  regres.defscan.extract_go
+    CC=6  in:1  out:32  total:33
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
+  regres.regres._render_classification_section
+    CC=15  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
   regres.defscan.c
@@ -467,37 +474,33 @@ HUBS[20]:
     CC=14  in:0  out:26  total:26
   regres.regres.analyze_file
     CC=4  in:1  out:25  total:26
-  regres.refactor.cmd_cluster
-    CC=12  in:0  out:25  total:25
   regres.regres.exact_and_near_duplicates
     CC=8  in:1  out:24  total:25
 
 MODULES:
-  SUMR  [1 funcs]
-    _normalize  CC=0  out:0
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
-  regres.defscan  [35 funcs]
+  regres.defscan  [43 funcs]
     __init__  CC=3  out:2
+    _advance_past_comment  CC=7  out:6
+    _advance_past_string  CC=4  out:1
     _analyse_and_sort_groups  CC=3  out:5
     _build_argument_parser  CC=1  out:18
     _build_focus_groups  CC=8  out:6
+    _collect_class_method_ids  CC=5  out:6
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
-    _extract_block_ts  CC=18  out:6
-    _lineno_at  CC=1  out:1
-    _match_anchored_pattern  CC=5  out:6
-    _match_unanchored_pattern  CC=7  out:6
+    _extract_block_ts  CC=12  out:4
   regres.doctor_cli  [6 funcs]
     _build_parser  CC=1  out:15
     _handle_auto_decision_flow  CC=18  out:36
-    _handle_url_mode  CC=12  out:19
+    _handle_url_mode  CC=20  out:36
     _refresh_import_error_log  CC=5  out:11
     _save_report  CC=5  out:11
-    main  CC=2  out:9
+    main  CC=2  out:11
   regres.import_error_toon_report  [10 funcs]
     grouped_errors  CC=2  out:3
-    main  CC=5  out:18
+    main  CC=5  out:20
     metrics  CC=3  out:5
     normalize_file_rel  CC=3  out:8
     parse_args  CC=1  out:11
@@ -528,58 +531,76 @@ MODULES:
     _render_classification_section  CC=15  out:31
     _render_duplicates_section  CC=5  out:12
     _render_evolution_section  CC=6  out:10
+  regres.regres_cli  [6 funcs]
+    _append_if_true  CC=2  out:1
+    _build_defscan_argv  CC=1  out:11
+    _build_doctor_argv  CC=1  out:14
+    _build_ier_argv  CC=1  out:6
+    _extend_if_set  CC=3  out:2
+    main  CC=1  out:48
+  regres.version_check  [10 funcs]
+    _find_env_path  CC=3  out:4
+    _get_pypi_version  CC=2  out:6
+    _is_newer  CC=1  out:2
+    _parse_version  CC=3  out:4
+    _read_env  CC=6  out:9
+    _save_last_check  CC=1  out:5
+    _save_skip_preference  CC=1  out:2
+    _should_check  CC=5  out:5
+    _write_env  CC=2  out:5
+    check_version  CC=7  out:17
 
 EDGES:
-  regres.import_error_toon_report.parse_ts_errors → regres.import_error_toon_report.normalize_file_rel
-  regres.import_error_toon_report.to_toon_global_payload → regres.import_error_toon_report.grouped_errors
-  regres.import_error_toon_report.to_toon_global_payload → regres.import_error_toon_report.metrics
-  regres.import_error_toon_report.to_toon_compact_per_file → regres.import_error_toon_report.toon_quote
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.grouped_errors
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.metrics
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.to_toon_global_payload
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.to_toon_compact_per_file
-  regres.import_error_toon_report.main → regres.import_error_toon_report.parse_args
-  regres.import_error_toon_report.main → regres.import_error_toon_report.parse_ts_errors
-  regres.import_error_toon_report.main → regres.import_error_toon_report.render_markdown
-  regres.import_error_toon_report.main → docs.DEFSCAN.print
-  regres.defscan.Definition.__init__ → SUMR._normalize
-  regres.defscan.extract_typescript → regres.defscan._lineno_at
-  regres.defscan.extract_typescript → regres.defscan._extract_block_ts
-  regres.defscan.extract_go → regres.defscan._extract_block_ts
-  regres.defscan.extract_go → regres.defscan._lineno_at
-  regres.defscan.extract_rust → regres.defscan._extract_block_ts
-  regres.defscan.extract_rust → regres.defscan._lineno_at
-  regres.defscan.extract_file → regres.defscan.extract_python
-  regres.defscan.extract_file → docs.DEFSCAN.print
-  regres.defscan.extract_file → regres.defscan.extract_typescript
-  regres.defscan.extract_file → regres.defscan.extract_go
-  regres.defscan.extract_file → regres.defscan.extract_rust
-  regres.defscan._path_ignored_by_gitignore → regres.defscan._match_anchored_pattern
-  regres.defscan._path_ignored_by_gitignore → regres.defscan._match_unanchored_pattern
-  regres.defscan._should_skip_file → regres.defscan._path_ignored_by_gitignore
-  regres.defscan.scan → regres.defscan.load_gitignore
-  regres.defscan.scan → regres.defscan._should_skip_file
-  regres.defscan.scan → regres.defscan.extract_file
-  regres.defscan.compare_seed_to_all → regres.defscan._def_key
-  regres.defscan.compare_seed_to_all → regres.defscan.sim
-  regres.defscan.analyse_group → regres.defscan.sim
-  regres.defscan.render_text → regres.defscan.c
-  regres.defscan.render_seed_text → regres.defscan.c
-  regres.defscan.render_seed_markdown → regres.defscan._short_path
-  regres.defscan.render_seed_json → regres.defscan._short_path
-  regres.defscan.render_seed_json → regres.defscan.classify_similarity
-  regres.defscan.render_json → regres.defscan.classify_similarity
-  regres.defscan.render_json → regres.defscan._short_path
-  regres.defscan._run_seed_mode → docs.DEFSCAN.print
-  regres.defscan._run_seed_mode → regres.defscan.scan
-  regres.defscan._run_seed_mode → regres.defscan.compare_seed_to_all
-  regres.defscan._build_focus_groups → regres.defscan._def_key
-  regres.defscan._analyse_and_sort_groups → regres.defscan.analyse_group
-  regres.defscan._run_focus_mode → docs.DEFSCAN.print
-  regres.defscan._run_focus_mode → regres.defscan.scan
-  regres.defscan._run_focus_mode → regres.defscan._build_focus_groups
-  regres.defscan._run_focus_mode → regres.defscan._analyse_and_sort_groups
-  regres.defscan._run_default_mode → docs.DEFSCAN.print
+  regres.regres._check_relative_paths → regres.regres._dedupe_paths
+  regres.regres._search_by_name_suffix → regres.regres._dedupe_paths
+  regres.regres.resolve_target_file → regres.regres._check_absolute_path
+  regres.regres.resolve_target_file → regres.regres._check_relative_paths
+  regres.regres.resolve_target_file → regres.regres._search_by_name_suffix
+  regres.regres.content_metrics → regres.regres.sha256_of_file
+  regres.regres.check_imports_at_commit → regres.regres.extract_local_imports
+  regres.regres.check_imports_at_commit → regres.regres.file_content_at_commit
+  regres.regres.check_imports_at_commit → regres.regres.safe_read_text
+  regres.regres.find_last_working_commit → regres.regres.check_imports_at_commit
+  regres.regres.search_missing_in_history → regres.regres.run_git
+  regres.regres.analyze_regression → regres.regres.check_imports_at_commit
+  regres.regres.analyze_regression → regres.regres.find_last_working_commit
+  regres.regres.analyze_regression → regres.regres.search_missing_in_history
+  regres.regres.track_filename_history → regres.regres.run_git
+  regres.regres._classify_import_problem → regres.regres.find_current_locations
+  regres.regres._determine_primary_type → regres.regres._analyze_evolution
+  regres.regres._determine_primary_type → regres.regres._analyze_import_problems
+  regres.regres.classify_problem → regres.regres.extract_symbols
+  regres.regres.classify_problem → regres.regres._determine_primary_type
+  regres.regres.classify_problem → regres.regres._classify_import_problem
+  regres.regres.classify_problem → regres.regres.track_filename_history
+  regres.regres.dependency_tree → regres.regres.to_rel
+  regres.regres.dependency_tree → regres.regres.safe_read_text
+  regres.regres.dependency_tree → regres.regres.resolve_local_import
+  regres.regres.reverse_references → regres.regres.to_rel
+  regres.regres.reverse_references → regres.regres.safe_read_text
+  regres.regres.reverse_references → regres.regres.resolve_local_import
+  regres.regres.exact_and_near_duplicates → regres.regres.sha256_of_file
+  regres.regres.exact_and_near_duplicates → regres.regres.safe_read_text
+  regres.regres.exact_and_near_duplicates → regres.regres.to_rel
+  regres.regres.trace_name_and_hash_candidates → regres.regres.to_rel
+  regres.regres.trace_name_and_hash_candidates → regres.regres.safe_read_text
+  regres.regres.trace_name_and_hash_candidates → regres.regres.sha256_of_file
+  regres.regres.file_lineage → regres.regres.run_git
+  regres.regres.file_lineage → regres.regres.parse_numstat_block
+  regres.regres.changed_files_for_commit → regres.regres.run_git
+  regres.regres.references_in_recent_commits → regres.regres.changed_files_for_commit
+  regres.regres.file_content_at_commit → regres.regres.run_git
+  regres.regres.historical_dependency_tree → regres.regres.file_content_at_commit
+  regres.regres.historical_dependency_tree → regres.regres.resolve_import_historical
+  regres.regres.analyze_evolution → regres.regres.file_content_at_commit
+  regres.regres.analyze_evolution → regres.regres.historical_dependency_tree
+  regres.regres.render_markdown → regres.regres._render_classification_section
+  regres.regres.render_markdown → regres.regres._render_name_hash_section
+  regres.regres.render_markdown → regres.regres._render_metrics_section
+  regres.regres.render_markdown → regres.regres._render_references_section
+  regres.regres.render_markdown → regres.regres._render_duplicates_section
+  regres.regres.render_markdown → regres.regres._render_lineage_section
+  regres.regres.render_markdown → regres.regres._render_evolution_section
 ```
 
 ## Test Contracts
@@ -598,32 +619,34 @@ EDGES:
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 149 | edges: 206 | modules: 7
-# CC̄=1.5
+# nodes: 172 | edges: 234 | modules: 8
+# CC̄=1.0
 
 HUBS[20]:
   docs.DEFSCAN.print
-    CC=0  in:123  out:0  total:123
+    CC=0  in:129  out:0  total:129
   regres.defscan.render_text
     CC=14  in:2  out:55  total:57
   regres.refactor.build_parser
     CC=1  in:1  out:49  total:50
+  regres.regres_cli.main
+    CC=1  in:0  out:48  total:48
   regres.defscan.render_seed_text
     CC=10  in:1  out:42  total:43
   regres.refactor.cmd_hotmap
     CC=16  in:0  out:42  total:42
-  regres.defscan.extract_python
-    CC=14  in:1  out:37  total:38
   regres.doctor_cli._handle_auto_decision_flow
     CC=18  in:1  out:36  total:37
-  regres.defscan.extract_go
-    CC=6  in:1  out:32  total:33
+  regres.doctor_cli._handle_url_mode
+    CC=20  in:1  out:36  total:37
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
-  regres.regres._render_classification_section
-    CC=15  in:1  out:31  total:32
+  regres.defscan.extract_go
+    CC=6  in:1  out:32  total:33
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
+  regres.regres._render_classification_section
+    CC=15  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
   regres.defscan.c
@@ -638,37 +661,33 @@ HUBS[20]:
     CC=14  in:0  out:26  total:26
   regres.regres.analyze_file
     CC=4  in:1  out:25  total:26
-  regres.refactor.cmd_cluster
-    CC=12  in:0  out:25  total:25
   regres.regres.exact_and_near_duplicates
     CC=8  in:1  out:24  total:25
 
 MODULES:
-  SUMR  [1 funcs]
-    _normalize  CC=0  out:0
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
-  regres.defscan  [35 funcs]
+  regres.defscan  [43 funcs]
     __init__  CC=3  out:2
+    _advance_past_comment  CC=7  out:6
+    _advance_past_string  CC=4  out:1
     _analyse_and_sort_groups  CC=3  out:5
     _build_argument_parser  CC=1  out:18
     _build_focus_groups  CC=8  out:6
+    _collect_class_method_ids  CC=5  out:6
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
-    _extract_block_ts  CC=18  out:6
-    _lineno_at  CC=1  out:1
-    _match_anchored_pattern  CC=5  out:6
-    _match_unanchored_pattern  CC=7  out:6
+    _extract_block_ts  CC=12  out:4
   regres.doctor_cli  [6 funcs]
     _build_parser  CC=1  out:15
     _handle_auto_decision_flow  CC=18  out:36
-    _handle_url_mode  CC=12  out:19
+    _handle_url_mode  CC=20  out:36
     _refresh_import_error_log  CC=5  out:11
     _save_report  CC=5  out:11
-    main  CC=2  out:9
+    main  CC=2  out:11
   regres.import_error_toon_report  [10 funcs]
     grouped_errors  CC=2  out:3
-    main  CC=5  out:18
+    main  CC=5  out:20
     metrics  CC=3  out:5
     normalize_file_rel  CC=3  out:8
     parse_args  CC=1  out:11
@@ -699,122 +718,140 @@ MODULES:
     _render_classification_section  CC=15  out:31
     _render_duplicates_section  CC=5  out:12
     _render_evolution_section  CC=6  out:10
+  regres.regres_cli  [6 funcs]
+    _append_if_true  CC=2  out:1
+    _build_defscan_argv  CC=1  out:11
+    _build_doctor_argv  CC=1  out:14
+    _build_ier_argv  CC=1  out:6
+    _extend_if_set  CC=3  out:2
+    main  CC=1  out:48
+  regres.version_check  [10 funcs]
+    _find_env_path  CC=3  out:4
+    _get_pypi_version  CC=2  out:6
+    _is_newer  CC=1  out:2
+    _parse_version  CC=3  out:4
+    _read_env  CC=6  out:9
+    _save_last_check  CC=1  out:5
+    _save_skip_preference  CC=1  out:2
+    _should_check  CC=5  out:5
+    _write_env  CC=2  out:5
+    check_version  CC=7  out:17
 
 EDGES:
-  regres.import_error_toon_report.parse_ts_errors → regres.import_error_toon_report.normalize_file_rel
-  regres.import_error_toon_report.to_toon_global_payload → regres.import_error_toon_report.grouped_errors
-  regres.import_error_toon_report.to_toon_global_payload → regres.import_error_toon_report.metrics
-  regres.import_error_toon_report.to_toon_compact_per_file → regres.import_error_toon_report.toon_quote
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.grouped_errors
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.metrics
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.to_toon_global_payload
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.to_toon_compact_per_file
-  regres.import_error_toon_report.main → regres.import_error_toon_report.parse_args
-  regres.import_error_toon_report.main → regres.import_error_toon_report.parse_ts_errors
-  regres.import_error_toon_report.main → regres.import_error_toon_report.render_markdown
-  regres.import_error_toon_report.main → docs.DEFSCAN.print
-  regres.defscan.Definition.__init__ → SUMR._normalize
-  regres.defscan.extract_typescript → regres.defscan._lineno_at
-  regres.defscan.extract_typescript → regres.defscan._extract_block_ts
-  regres.defscan.extract_go → regres.defscan._extract_block_ts
-  regres.defscan.extract_go → regres.defscan._lineno_at
-  regres.defscan.extract_rust → regres.defscan._extract_block_ts
-  regres.defscan.extract_rust → regres.defscan._lineno_at
-  regres.defscan.extract_file → regres.defscan.extract_python
-  regres.defscan.extract_file → docs.DEFSCAN.print
-  regres.defscan.extract_file → regres.defscan.extract_typescript
-  regres.defscan.extract_file → regres.defscan.extract_go
-  regres.defscan.extract_file → regres.defscan.extract_rust
-  regres.defscan._path_ignored_by_gitignore → regres.defscan._match_anchored_pattern
-  regres.defscan._path_ignored_by_gitignore → regres.defscan._match_unanchored_pattern
-  regres.defscan._should_skip_file → regres.defscan._path_ignored_by_gitignore
-  regres.defscan.scan → regres.defscan.load_gitignore
-  regres.defscan.scan → regres.defscan._should_skip_file
-  regres.defscan.scan → regres.defscan.extract_file
-  regres.defscan.compare_seed_to_all → regres.defscan._def_key
-  regres.defscan.compare_seed_to_all → regres.defscan.sim
-  regres.defscan.analyse_group → regres.defscan.sim
-  regres.defscan.render_text → regres.defscan.c
-  regres.defscan.render_seed_text → regres.defscan.c
-  regres.defscan.render_seed_markdown → regres.defscan._short_path
-  regres.defscan.render_seed_json → regres.defscan._short_path
-  regres.defscan.render_seed_json → regres.defscan.classify_similarity
-  regres.defscan.render_json → regres.defscan.classify_similarity
-  regres.defscan.render_json → regres.defscan._short_path
-  regres.defscan._run_seed_mode → docs.DEFSCAN.print
-  regres.defscan._run_seed_mode → regres.defscan.scan
-  regres.defscan._run_seed_mode → regres.defscan.compare_seed_to_all
-  regres.defscan._build_focus_groups → regres.defscan._def_key
-  regres.defscan._analyse_and_sort_groups → regres.defscan.analyse_group
-  regres.defscan._run_focus_mode → docs.DEFSCAN.print
-  regres.defscan._run_focus_mode → regres.defscan.scan
-  regres.defscan._run_focus_mode → regres.defscan._build_focus_groups
-  regres.defscan._run_focus_mode → regres.defscan._analyse_and_sort_groups
-  regres.defscan._run_default_mode → docs.DEFSCAN.print
+  regres.regres._check_relative_paths → regres.regres._dedupe_paths
+  regres.regres._search_by_name_suffix → regres.regres._dedupe_paths
+  regres.regres.resolve_target_file → regres.regres._check_absolute_path
+  regres.regres.resolve_target_file → regres.regres._check_relative_paths
+  regres.regres.resolve_target_file → regres.regres._search_by_name_suffix
+  regres.regres.content_metrics → regres.regres.sha256_of_file
+  regres.regres.check_imports_at_commit → regres.regres.extract_local_imports
+  regres.regres.check_imports_at_commit → regres.regres.file_content_at_commit
+  regres.regres.check_imports_at_commit → regres.regres.safe_read_text
+  regres.regres.find_last_working_commit → regres.regres.check_imports_at_commit
+  regres.regres.search_missing_in_history → regres.regres.run_git
+  regres.regres.analyze_regression → regres.regres.check_imports_at_commit
+  regres.regres.analyze_regression → regres.regres.find_last_working_commit
+  regres.regres.analyze_regression → regres.regres.search_missing_in_history
+  regres.regres.track_filename_history → regres.regres.run_git
+  regres.regres._classify_import_problem → regres.regres.find_current_locations
+  regres.regres._determine_primary_type → regres.regres._analyze_evolution
+  regres.regres._determine_primary_type → regres.regres._analyze_import_problems
+  regres.regres.classify_problem → regres.regres.extract_symbols
+  regres.regres.classify_problem → regres.regres._determine_primary_type
+  regres.regres.classify_problem → regres.regres._classify_import_problem
+  regres.regres.classify_problem → regres.regres.track_filename_history
+  regres.regres.dependency_tree → regres.regres.to_rel
+  regres.regres.dependency_tree → regres.regres.safe_read_text
+  regres.regres.dependency_tree → regres.regres.resolve_local_import
+  regres.regres.reverse_references → regres.regres.to_rel
+  regres.regres.reverse_references → regres.regres.safe_read_text
+  regres.regres.reverse_references → regres.regres.resolve_local_import
+  regres.regres.exact_and_near_duplicates → regres.regres.sha256_of_file
+  regres.regres.exact_and_near_duplicates → regres.regres.safe_read_text
+  regres.regres.exact_and_near_duplicates → regres.regres.to_rel
+  regres.regres.trace_name_and_hash_candidates → regres.regres.to_rel
+  regres.regres.trace_name_and_hash_candidates → regres.regres.safe_read_text
+  regres.regres.trace_name_and_hash_candidates → regres.regres.sha256_of_file
+  regres.regres.file_lineage → regres.regres.run_git
+  regres.regres.file_lineage → regres.regres.parse_numstat_block
+  regres.regres.changed_files_for_commit → regres.regres.run_git
+  regres.regres.references_in_recent_commits → regres.regres.changed_files_for_commit
+  regres.regres.file_content_at_commit → regres.regres.run_git
+  regres.regres.historical_dependency_tree → regres.regres.file_content_at_commit
+  regres.regres.historical_dependency_tree → regres.regres.resolve_import_historical
+  regres.regres.analyze_evolution → regres.regres.file_content_at_commit
+  regres.regres.analyze_evolution → regres.regres.historical_dependency_tree
+  regres.regres.render_markdown → regres.regres._render_classification_section
+  regres.regres.render_markdown → regres.regres._render_name_hash_section
+  regres.regres.render_markdown → regres.regres._render_metrics_section
+  regres.regres.render_markdown → regres.regres._render_references_section
+  regres.regres.render_markdown → regres.regres._render_duplicates_section
+  regres.regres.render_markdown → regres.regres._render_lineage_section
+  regres.regres.render_markdown → regres.regres._render_evolution_section
 ```
 
 ### Code Analysis (`project/analysis.toon.yaml`)
 
 ```toon markpact:analysis path=project/analysis.toon.yaml
-# code2llm | 38f 14830L | md:13,python:11,yaml:9,shell:2,txt:1,toml:1 | 2026-04-28
-# CC̄=1.5 | critical:9/879 | dups:0 | cycles:0
+# code2llm | 39f 16653L | md:13,python:12,yaml:9,shell:2,toml:1,txt:1 | 2026-04-28
+# CC̄=1.0 | critical:8/1306 | dups:0 | cycles:0
 
-HEALTH[11]:
-  🔴 GOD   SUMR.md = 1055L, 6 classes, 166m, max CC=0.0
-  🔴 GOD   SUMD.md = 965L, 6 classes, 268m, max CC=0.0
-  🟡 CC    main CC=42 (limit:15)
-  🟡 CC    _extract_block_ts CC=18 (limit:15)
-  🟡 CC    _run_seed_mode CC=17 (limit:15)
+HEALTH[10]:
+  🔴 GOD   SUMR.md = 1002L, 5 classes, 210m, max CC=0.0
+  🔴 GOD   SUMD.md = 1193L, 5 classes, 451m, max CC=0.0
+  🟡 CC    _render_classification_section CC=15 (limit:15)
+  🟡 CC    _handle_url_mode CC=20 (limit:15)
+  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
   🟡 CC    iter_files CC=15 (limit:15)
   🟡 CC    wrapper_score CC=15 (limit:15)
   🟡 CC    cmd_hotmap CC=16 (limit:15)
+  🟡 CC    _run_seed_mode CC=17 (limit:15)
   🟡 CC    _diagnose_import_issue CC=15 (limit:15)
-  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
-  🟡 CC    _render_classification_section CC=15 (limit:15)
 
 REFACTOR[3]:
   1. split SUMR.md  (god module)
   2. split SUMD.md  (god module)
-  3. split 9 high-CC methods  (CC>15)
+  3. split 8 high-CC methods  (CC>15)
 
-PIPELINES[67]:
-  [1] Src [main]: main → parse_args
+PIPELINES[68]:
+  [1] Src [_resolve_single_or_error]: _resolve_single_or_error
       PURITY: 100% pure
-  [2] Src [main]: main
+  [2] Src [main]: main → find_repo_root
       PURITY: 100% pure
-  [3] Src [__init__]: __init__ → _normalize
+  [3] Src [_handle_import_errors]: _handle_import_errors
       PURITY: 100% pure
-  [4] Src [_normalize]: _normalize
+  [4] Src [_handle_defscan_refactor]: _handle_defscan_refactor
       PURITY: 100% pure
-  [5] Src [main]: main → _build_argument_parser
+  [5] Src [_refresh_import_error_log]: _refresh_import_error_log → print
       PURITY: 100% pure
 
 LAYERS:
-  regres/                         CC̄=5.9    ←in:0  →out:124  !! split
+  regres/                         CC̄=5.5    ←in:0  →out:129  !! split
   │ !! regres                    1495L  1C   55m  CC=15     ←1
+  │ !! defscan                   1261L  1C   45m  CC=17     ←2
   │ !! refactor                  1237L  0C   52m  CC=16     ←2
-  │ !! defscan                   1235L  1C   38m  CC=18     ←2
-  │ !! doctor_orchestrator        992L  1C   49m  CC=15     ←0
-  │ import_error_toon_report   365L  2C   13m  CC=10     ←0
-  │ !! doctor_cli                 303L  0C    8m  CC=18     ←0
-  │ !! regres_cli                 197L  0C    1m  CC=42     ←0
+  │ !! doctor_orchestrator       1078L  1C   51m  CC=15     ←0
+  │ !! doctor_cli                 390L  0C    8m  CC=20     ←0
+  │ import_error_toon_report   372L  2C   13m  CC=10     ←0
+  │ regres_cli                 195L  0C    9m  CC=7      ←0
+  │ version_check              151L  0C   10m  CC=7      ←3
   │ doctor_models               36L  3C    0m  CC=0.0    ←0
-  │ __init__                    13L  0C    0m  CC=0.0    ←0
+  │ __init__                    20L  0C    0m  CC=0.0    ←0
   │ doctor                       6L  0C    0m  CC=0.0    ←0
   │
-  docs/                           CC̄=0.0    ←in:123  →out:0
-  │ !! README.md                  799L  0C    1m  CC=0.0    ←0
+  docs/                           CC̄=0.0    ←in:129  →out:0
+  │ !! README.md                 1044L  0C    1m  CC=0.0    ←0
   │ REGRES.md                  220L  0C    0m  CC=0.0    ←0
   │ DOCTOR.md                  198L  1C    1m  CC=0.0    ←0
-  │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←5
+  │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←6
   │ REFACTOR.md                 87L  0C    0m  CC=0.0    ←0
   │ import-error-toon-report.md    76L  0C    0m  CC=0.0    ←0
   │
   ./                              CC̄=0.0    ←in:0  →out:0
-  │ !! SUMR.md                   1055L  6C  166m  CC=0.0    ←1
-  │ !! SUMD.md                    965L  6C  268m  CC=0.0    ←0
+  │ !! SUMD.md                   1193L  5C  451m  CC=0.0    ←0
+  │ !! SUMR.md                   1002L  5C  210m  CC=0.0    ←0
   │ !! goal.yaml                  512L  0C    0m  CC=0.0    ←0
-  │ CHANGELOG.md               162L  0C    0m  CC=0.0    ←0
+  │ CHANGELOG.md               225L  0C    0m  CC=0.0    ←0
   │ README.md                   66L  0C    0m  CC=0.0    ←0
   │ pyproject.toml              52L  0C    0m  CC=0.0    ←0
   │ project.sh                  41L  0C    0m  CC=0.0    ←0
@@ -822,16 +859,16 @@ LAYERS:
   │ Makefile                     0L  0C    0m  CC=0.0    ←0
   │
   project/                        CC̄=0.0    ←in:0  →out:0
-  │ !! calls.yaml                2274L  0C    0m  CC=0.0    ←0
-  │ !! context.md                 501L  0C    0m  CC=0.0    ←0
+  │ !! calls.yaml                3169L  0C    0m  CC=0.0    ←0
+  │ context.md                 496L  0C    0m  CC=0.0    ←0
+  │ map.toon.yaml              488L  0C  399m  CC=0.0    ←0
   │ README.md                  339L  0C    0m  CC=0.0    ←0
-  │ map.toon.yaml              303L  0C  226m  CC=0.0    ←0
-  │ calls.toon.yaml            149L  0C    0m  CC=0.0    ←0
-  │ duplication.toon.yaml      116L  0C    0m  CC=0.0    ←0
-  │ analysis.toon.yaml         109L  0C    0m  CC=0.0    ←0
-  │ evolution.toon.yaml         82L  0C    0m  CC=0.0    ←0
-  │ project.toon.yaml           53L  0C    0m  CC=0.0    ←0
+  │ calls.toon.yaml            172L  0C    0m  CC=0.0    ←0
+  │ analysis.toon.yaml         101L  0C    0m  CC=0.0    ←0
+  │ evolution.toon.yaml         78L  0C    0m  CC=0.0    ←0
+  │ project.toon.yaml           52L  0C    0m  CC=0.0    ←0
   │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
+  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
   │
   .regres/                        CC̄=0.0    ←in:0  →out:0
   │ !! import-error-toon-report.md   549L  0C    0m  CC=0.0    ←0
@@ -846,13 +883,12 @@ LAYERS:
      Makefile                                  0L
 
 COUPLING:
-          regres    docs    SUMR
-  regres      ──     123       1  !! fan-out
-    docs    ←123      ──          hub
-    SUMR      ←1              ──
+            docs  regres
+    docs      ──    ←129  hub
+  regres     129      ──  !! fan-out
   CYCLES: none
-  HUB: docs/ (fan-in=123)
-  SMELL: regres/ fan-out=124 → split needed
+  HUB: docs/ (fan-in=129)
+  SMELL: regres/ fan-out=129 → split needed
 
 EXTERNAL:
   validation: run `vallm batch .` → validation.toon
@@ -862,38 +898,38 @@ EXTERNAL:
 ### Duplication (`project/duplication.toon.yaml`)
 
 ```toon markpact:analysis path=project/duplication.toon.yaml
-# redup/duplication | 0 groups | 11f 5907L | 2026-04-28
+# redup/duplication | 0 groups | 12f 6252L | 2026-04-28
 
 SUMMARY:
-  files_scanned: 11
-  total_lines:   5907
+  files_scanned: 12
+  total_lines:   6252
   dup_groups:    0
   dup_fragments: 0
   saved_lines:   0
-  scan_ms:       6043
+  scan_ms:       4402
 ```
 
 ### Evolution / Churn (`project/evolution.toon.yaml`)
 
 ```toon markpact:analysis path=project/evolution.toon.yaml
-# code2llm/evolution | 879 func | 13f | 2026-04-28
+# code2llm/evolution | 1306 func | 14f | 2026-04-28
 
 NEXT[9] (ranked by impact):
-  [1] !! SPLIT           regres/defscan.py
-      WHY: 1252L, 1 classes, max CC=18
-      EFFORT: ~4h  IMPACT: 22536
-
-  [2] !! SPLIT           regres/regres.py
+  [1] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
       EFFORT: ~4h  IMPACT: 22425
+
+  [2] !! SPLIT           regres/defscan.py
+      WHY: 1261L, 1 classes, max CC=17
+      EFFORT: ~4h  IMPACT: 21437
 
   [3] !! SPLIT           regres/refactor.py
       WHY: 1237L, 0 classes, max CC=16
       EFFORT: ~4h  IMPACT: 19792
 
-  [4] !! SPLIT-FUNC      main  CC=42  fan=18
-      WHY: CC=42 exceeds 15
-      EFFORT: ~1h  IMPACT: 756
+  [4] !  SPLIT-FUNC      _handle_url_mode  CC=20  fan=24
+      WHY: CC=20 exceeds 15
+      EFFORT: ~1h  IMPACT: 480
 
   [5] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
       WHY: CC=16 exceeds 15
@@ -918,14 +954,14 @@ NEXT[9] (ranked by impact):
 
 RISKS[3]:
   ⚠ Splitting regres/regres.py may break 55 import paths
-  ⚠ Splitting regres/defscan.py may break 38 import paths
+  ⚠ Splitting regres/defscan.py may break 45 import paths
   ⚠ Splitting regres/refactor.py may break 52 import paths
 
 METRICS-TARGET:
-  CC̄:          1.5 → ≤1.0
-  max-CC:      42 → ≤20
+  CC̄:          1.0 → ≤0.7
+  max-CC:      20 → ≤10
   god-modules: 4 → 0
-  high-CC(≥15): 9 → ≤4
+  high-CC(≥15): 8 → ≤4
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -953,7 +989,7 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.6 → now CC̄=1.5
+  prev CC̄=1.1 → now CC̄=1.0
 ```
 
 ## Intent

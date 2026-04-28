@@ -749,6 +749,41 @@ def cmd_cluster(args, root: Path):
         print()
 
 
+def _deps_filter_by_word(import_map: dict[str, list[str]], word: str) -> tuple[list, list]:
+    """Filter import map by a search word."""
+    importers, targets = [], []
+    for path, imports in import_map.items():
+        matched = [i for i in imports if word.lower() in i.lower()]
+        if matched:
+            importers.append({'file': path, 'imports': matched})
+        if word.lower() in path.lower():
+            targets.append({'file': path, 'imports': import_map[path]})
+    return importers, targets
+
+
+def _deps_print_word_results(word: str, targets: list, importers: list) -> None:
+    """Print dependency results filtered by word."""
+    print(f"=== Pliki z '{word}' w nazwie ===")
+    for t in targets:
+        print(f"\n  {t['file']}")
+        if t['imports']:
+            print(f"  importuje: {', '.join(t['imports'][:10])}")
+    print(f"\n=== Pliki importujące '{word}' ===")
+    for im in importers:
+        print(f"\n  {im['file']}")
+        for i in im['imports']:
+            print(f"    -> {i}")
+
+
+def _deps_print_all(import_map: dict[str, list[str]]) -> None:
+    """Print full dependency map."""
+    for path, imports in sorted(import_map.items()):
+        if imports:
+            print(f"{path}")
+            for i in imports:
+                print(f"  -> {i}")
+
+
 def cmd_deps(args, root: Path):
     word = getattr(args, 'word', '') or ''
     files = iter_files(root)
@@ -757,14 +792,7 @@ def cmd_deps(args, root: Path):
         import_map[rel(p, root)] = extract_imports(read_text(p))
 
     if word:
-        importers, targets = [], []
-        for path, imports in import_map.items():
-            matched = [i for i in imports if word.lower() in i.lower()]
-            if matched:
-                importers.append({'file': path, 'imports': matched})
-            if word.lower() in path.lower():
-                targets.append({'file': path, 'imports': import_map[path]})
-
+        importers, targets = _deps_filter_by_word(import_map, word)
         if args.json:
             print(json.dumps({
                 'word': word,
@@ -772,25 +800,12 @@ def cmd_deps(args, root: Path):
                 'files_importing_word': importers,
             }, indent=2, ensure_ascii=False))
             return
-        print(f"=== Pliki z '{word}' w nazwie ===")
-        for t in targets:
-            print(f"\n  {t['file']}")
-            if t['imports']:
-                print(f"  importuje: {', '.join(t['imports'][:10])}")
-        print(f"\n=== Pliki importujące '{word}' ===")
-        for im in importers:
-            print(f"\n  {im['file']}")
-            for i in im['imports']:
-                print(f"    -> {i}")
+        _deps_print_word_results(word, targets, importers)
     else:
         if args.json:
             print(json.dumps({'import_map': import_map}, indent=2, ensure_ascii=False))
         else:
-            for path, imports in sorted(import_map.items()):
-                if imports:
-                    print(f"{path}")
-                    for i in imports:
-                        print(f"  -> {i}")
+            _deps_print_all(import_map)
 
 
 def _sanitize(value: str) -> str:

@@ -10,6 +10,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from .version_check import check_version
+try:
+    from importlib.metadata import version as _get_version
+except ImportError:
+    from importlib_metadata import version as _get_version  # type: ignore[no-redef]
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FRONTEND_CWD = PROJECT_ROOT / "frontend"
@@ -336,6 +342,7 @@ def render_markdown(report: ReportData, scan_root: str, max_files: int, max_erro
 
 
 def main() -> int:
+    check_version(_get_version("regres"))
     args = parse_args()
     include_codes = {x.strip() for x in args.include_codes.split(",") if x.strip()}
 

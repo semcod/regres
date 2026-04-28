@@ -12,6 +12,11 @@ from typing import Any, Dict, List
 
 from .doctor_models import Diagnosis
 from .doctor_orchestrator import DoctorOrchestrator
+from .version_check import check_version
+try:
+    from importlib.metadata import version as _get_version
+except ImportError:
+    from importlib_metadata import version as _get_version  # type: ignore[no-redef]
 
 
 def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
@@ -284,6 +289,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     """Main entry point for doctor CLI."""
+    check_version(_get_version("regres"))
     parser = _build_parser()
     args = parser.parse_args()
 

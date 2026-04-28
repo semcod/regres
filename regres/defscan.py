@@ -1046,6 +1046,39 @@ def _run_seed_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set)
     print(f"  Łączna liczba dopasowań: {n_total}", file=sys.stderr)
 
 
+def _build_focus_groups(
+    focus_index: dict, full_index: dict, min_count: int
+) -> list[tuple[str, list]]:
+    """Build groups of definitions that exist in focus and elsewhere."""
+    groups_raw = []
+    for name, focus_defs in focus_index.items():
+        other_defs_all = full_index.get(name, [])
+        if not other_defs_all:
+            continue
+        focus_keys = {_def_key(d) for d in focus_defs}
+        other_defs = [d for d in other_defs_all if _def_key(d) not in focus_keys]
+        if not other_defs:
+            continue
+        combined = focus_defs + other_defs
+        if len(combined) < min_count:
+            continue
+        groups_raw.append((name, combined))
+    return groups_raw
+
+
+def _analyse_and_sort_groups(groups_raw: list[tuple[str, list]]) -> list[tuple[str, list, list]]:
+    """Analyse groups for similarity and sort by size and max similarity."""
+    groups_analysed = []
+    for name, defs in groups_raw:
+        pairs = analyse_group(defs)
+        groups_analysed.append((name, defs, pairs))
+    groups_analysed.sort(
+        key=lambda x: (len(x[1]), max((p['similarity'] for p in x[2]), default=0)),
+        reverse=True,
+    )
+    return groups_analysed
+
+
 def _run_focus_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set):
     """Execute FOCUS mode: compare folder vs rest of project by name."""
     focus_path = Path(args.focus).resolve()
@@ -1072,31 +1105,8 @@ def _run_focus_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set
                       gitignore_root=root,
                       ext_filter=ext_set)
 
-    groups_raw = []
-    for name, focus_defs in focus_index.items():
-        other_defs_all = full_index.get(name, [])
-        if not other_defs_all:
-            continue
-        focus_keys = {_def_key(d) for d in focus_defs}
-        other_defs = [d for d in other_defs_all
-                      if _def_key(d) not in focus_keys]
-        if not other_defs:
-            continue
-        combined = focus_defs + other_defs
-        if len(combined) < args.min_count:
-            continue
-        groups_raw.append((name, combined))
-
-    groups_analysed = []
-    for name, defs in groups_raw:
-        pairs = analyse_group(defs)
-        groups_analysed.append((name, defs, pairs))
-
-    groups_analysed.sort(
-        key=lambda x: (len(x[1]),
-                       max((p['similarity'] for p in x[2]), default=0)),
-        reverse=True,
-    )
+    groups_raw = _build_focus_groups(focus_index, full_index, args.min_count)
+    groups_analysed = _analyse_and_sort_groups(groups_raw)
 
     if args.top:
         groups_analysed = groups_analysed[:args.top]
@@ -1162,17 +1172,33 @@ def _run_default_mode(args, root: Path, root_str: str, gitignore_patterns, ext_s
                           min_sim=args.min_sim,
                           show_body_lines=args.preview))
 
+    _print_pair_summary(groups_analysed)
+
+
+def _count_similarity_levels(pairs: list) -> tuple[int, int, int]:
+    """Count pairs by similarity thresholds."""
+    identyczne, kopie, podobne = 0, 0, 0
+    for p in pairs:
+        sim = p['similarity']
+        if sim >= 95:
+            identyczne += 1
+        elif sim >= 75:
+            kopie += 1
+        elif sim >= 50:
+            podobne += 1
+    return identyczne, kopie, podobne
+
+
+def _print_pair_summary(groups_analysed: list) -> None:
+    """Print summary of similarity levels across all groups."""
     total_identyczne = 0
     total_kopie = 0
     total_podobne = 0
     for _, _, pairs in groups_analysed:
-        for p in pairs:
-            if p['similarity'] >= 95:
-                total_identyczne += 1
-            elif p['similarity'] >= 75:
-                total_kopie += 1
-            elif p['similarity'] >= 50:
-                total_podobne += 1
+        i, k, p = _count_similarity_levels(pairs)
+        total_identyczne += i
+        total_kopie += k
+        total_podobne += p
 
     print(f"\nPodsumowanie par:", file=sys.stderr)
     print(f"  Identyczne (≥95%):   {total_identyczne}", file=sys.stderr)

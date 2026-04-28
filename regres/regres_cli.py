@@ -30,9 +30,12 @@ from . import refactor
 from . import defscan
 from . import doctor
 from .import_error_toon_report import main as import_error_toon_report_main
+from .version_check import check_version
+from importlib.metadata import version as _get_version
 
 
 def main() -> int:
+    check_version(_get_version("regres"))
     parser = argparse.ArgumentParser(
         prog="regres",
         description="Narzędzia do analizy regresji, refaktoryzacji i duplikatów kodu.",

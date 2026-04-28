@@ -242,42 +242,51 @@ def extract_python(path: Path) -> list[Definition]:
     return defs
 
 
+def _advance_past_string(text: str, i: int, quote: str) -> int:
+    """Advance index past a quoted string, handling backslash escapes."""
+    i += 1
+    while i < len(text):
+        if text[i] == '\\':
+            i += 2
+            continue
+        if text[i] == quote:
+            return i + 1
+        i += 1
+    return i
+
+
+def _advance_past_comment(text: str, i: int) -> int:
+    """Advance index past a comment (// or /* style)."""
+    if i + 1 < len(text) and text[i + 1] == '/':
+        nl = text.find('\n', i)
+        return nl + 1 if nl != -1 else len(text)
+    elif i + 1 < len(text) and text[i + 1] == '*':
+        end = text.find('*/', i + 2)
+        return end + 2 if end != -1 else len(text)
+    return i + 1
+
+
 def _extract_block_ts(text: str, start_pos: int) -> str:
     """
     Wyciąga blok { ... } z pozycji start_pos w tekście TS/JS.
     Obsługuje zagnieżdżenia i stringi.
     """
     depth = 0
-    in_string = None
     i = start_pos
     block_start = None
 
     while i < len(text):
         ch = text[i]
 
-        # Obsługa stringów
-        if in_string:
-            if ch == '\\':
-                i += 2
-                continue
-            if ch == in_string:
-                in_string = None
-            i += 1
+        if ch in ('"', "'", '`'):
+            i = _advance_past_string(text, i, ch)
             continue
 
-        if ch in ('"', "'", '`'):
-            in_string = ch
-        elif ch == '/' and i + 1 < len(text):
-            if text[i + 1] == '/':
-                # Jednolinijkowy komentarz
-                nl = text.find('\n', i)
-                i = nl + 1 if nl != -1 else len(text)
-                continue
-            elif text[i + 1] == '*':
-                end = text.find('*/', i + 2)
-                i = end + 2 if end != -1 else len(text)
-                continue
-        elif ch == '{':
+        if ch == '/' and i + 1 < len(text) and text[i + 1] in ('/', '*'):
+            i = _advance_past_comment(text, i)
+            continue
+
+        if ch == '{':
             if block_start is None:
                 block_start = i
             depth += 1

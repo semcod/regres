@@ -157,13 +157,21 @@ class DoctorOrchestrator:
                     matches.append(file_path)
         return matches
 
+    # c2004-maskservice-patch-v3: history scan tunables. We default to a
+    # 2-day OR 10-iterations window (whichever yields more candidates) so the
+    # operator gets enough versions to pick from when the current file looks
+    # smaller/different from recent past.
+    HISTORY_DEFAULT_DAYS = 2
+    HISTORY_DEFAULT_ITERATIONS = 10
+    HISTORY_SHRINKAGE_FACTOR = 0.5  # current must be < 50% of recent max to flag
+
     def _diagnose_page_stub(
         self,
         page_file: Path,
         page_token: str,
         module_name: str,
     ) -> Optional[Diagnosis]:
-        """Zwraca diagnozę, jeżeli plik strony to stub/placeholder."""
+        """Zwraca diagnozę, jeżeli plik strony to stub/placeholder lub uległa skróceniu."""
         try:
             text = page_file.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
@@ -175,14 +183,31 @@ class DoctorOrchestrator:
         is_short_stub = line_count <= 15 and 'render' in text and 'placeholder' in lower_text
         empty_render = bool(re.search(r"render\s*\([^)]*\)\s*[:\w\s<>|]*\{\s*return\s+['\"`]['\"`]\s*;?\s*\}", text))
 
-        if not (has_placeholder_text or is_short_stub or empty_render):
-            return None
-
         try:
             relative = page_file.relative_to(self.scan_root)
         except ValueError:
             relative = page_file
         relative_str = str(relative).replace("\\", "/")
+
+        # Always collect git history candidates for the page name across the
+        # repository — even if the current file is not a recognized stub. This
+        # lets us flag content regression (e.g. user replaced a 517-line page
+        # with a 159-line minimal config form) and offer concrete restore
+        # actions with hashes/dates/stats.
+        history_candidates = self._collect_page_history_candidates(
+            page_token, module_name, page_file,
+        )
+
+        max_historical_lines = max((c["line_count"] for c in history_candidates), default=0)
+        is_content_regression = (
+            history_candidates
+            and max_historical_lines > 0
+            and line_count < max(40, int(max_historical_lines * self.HISTORY_SHRINKAGE_FACTOR))
+            and not has_placeholder_text  # placeholder case handled separately
+        )
+
+        if not (has_placeholder_text or is_short_stub or empty_render or is_content_regression):
+            return None
 
         backup_candidate = self._find_backup_page_implementation(page_token, module_name)
 
@@ -194,25 +219,47 @@ class DoctorOrchestrator:
                     f"Plik strony zawiera placeholder ({line_count} linii). "
                     "Zaimplementuj klasę `*Page` z metodami `render()`/`getStyles()`/"
                     "`setupEventListeners()` używanymi przez `pages-index.ts`."
+                    if has_placeholder_text or is_short_stub or empty_render
+                    else (
+                        f"Aktualna wersja ma {line_count} linii, ale w historii git "
+                        f"istnieje wersja o {max_historical_lines} liniach. Wybierz "
+                        "kandydata z listy historycznej i przywróć jego zawartość."
+                    )
                 ),
             )
         ]
         commands: List[ShellCommand] = [
             ShellCommand(
                 command=f"sed -n '1,40p' {relative_str}",
-                description="Podgląd aktualnej zawartości placeholder-a",
+                description="Podgląd aktualnej zawartości",
             )
         ]
 
-        nlp_lines = [
-            f"Plik `{relative_str}` jest placeholder-em (długość {line_count} linii). "
-            "URL kieruje na ten plik, więc UI pokazuje komunikat zamiast właściwej strony."
-        ]
+        if has_placeholder_text or is_short_stub or empty_render:
+            problem_type = "page_placeholder"
+            summary = f"Strona '{page_token}' w module '{module_name}' to placeholder"
+            nlp_lines = [
+                f"Plik `{relative_str}` jest placeholder-em (długość {line_count} linii). "
+                "URL kieruje na ten plik, więc UI pokazuje komunikat zamiast właściwej strony."
+            ]
+        else:
+            problem_type = "page_content_regression"
+            summary = (
+                f"Strona '{page_token}' uległa skróceniu "
+                f"({line_count} linii vs historyczne max {max_historical_lines})"
+            )
+            nlp_lines = [
+                f"Plik `{relative_str}` ma obecnie {line_count} linii, ale w historii git "
+                f"występuje wersja {max_historical_lines}-liniowa. Możliwe, że ostatnia "
+                "edycja usunęła fragmenty (np. listę dynamicznych tras, sekcje pomocnicze). "
+                "Sprawdź kandydatów historycznych i przywróć właściwą zawartość."
+            ]
+
+        # Add backup module candidate (other repo location, not git history)
         if backup_candidate:
             backup_str = str(backup_candidate).replace("\\", "/")
             nlp_lines.append(
-                f"Pełna implementacja istnieje w `{backup_str}` – skopiuj `render()`, "
-                "`setupEventListeners()` i pomocnicze metody."
+                f"Pełna implementacja istnieje w `{backup_str}` – możliwe źródło referencyjne."
             )
             actions.append(
                 FileAction(
@@ -224,19 +271,201 @@ class DoctorOrchestrator:
             commands.append(
                 ShellCommand(
                     command=f"diff -u {backup_str} {relative_str}",
-                    description="Porównaj implementację referencyjną z placeholder-em",
+                    description="Porównaj implementację referencyjną z aktualnym plikiem",
                 )
             )
 
+        # c2004-maskservice-patch-v3: emit git history candidates as actionable
+        # restore options. Each candidate lists hash, date, line count, source
+        # path (in case the file was renamed/moved) and a short content
+        # fingerprint so the user can pick the right version.
+        if history_candidates:
+            nlp_lines.append(
+                f"Znaleziono {len(history_candidates)} kandydatów w historii git "
+                f"(okres ostatnie {self.HISTORY_DEFAULT_DAYS} dni lub "
+                f"{self.HISTORY_DEFAULT_ITERATIONS} iteracji, sortowane od najnowszego)."
+            )
+            for cand in history_candidates:
+                fp = cand.get("fingerprint") or ""
+                fp_short = (fp[:80] + "…") if len(fp) > 80 else fp
+                actions.append(
+                    FileAction(
+                        path=relative_str,
+                        action="modify",
+                        target=f"git:{cand['hash']}:{cand['source_path']}",
+                        reason=(
+                            f"[{cand['date']}] {cand['hash']} • "
+                            f"{cand['line_count']} linii • {cand['source_path']}"
+                            + (f" • {fp_short}" if fp_short else "")
+                        ),
+                    )
+                )
+                commands.append(
+                    ShellCommand(
+                        command=(
+                            f"git show {cand['hash']}:{cand['source_path']} "
+                            f"> {relative_str}"
+                        ),
+                        description=(
+                            f"Przywróć wersję {cand['hash']} z {cand['date']} "
+                            f"({cand['line_count']} linii) jeśli to poprawna treść"
+                        ),
+                    )
+                )
+            commands.append(
+                ShellCommand(
+                    command=(
+                        f"for h in "
+                        + " ".join(c['hash'] for c in history_candidates[:5])
+                        + f"; do echo \"=== $h ===\"; "
+                        + "git show $h:"
+                        + history_candidates[0]['source_path']
+                        + " | wc -l; done"
+                    ),
+                    description="Porównaj statystyki wszystkich kandydatów",
+                )
+            )
+
+        confidence = 0.9 if (has_placeholder_text or is_short_stub or empty_render) else 0.7
+
         return Diagnosis(
-            summary=f"Strona '{page_token}' w module '{module_name}' to placeholder",
-            problem_type="page_placeholder",
+            summary=summary,
+            problem_type=problem_type,
             severity="high",
             nlp_description=" ".join(nlp_lines),
             file_actions=actions,
             shell_commands=commands,
-            confidence=0.9,
+            confidence=confidence,
         )
+
+    def _collect_page_history_candidates(
+        self,
+        page_token: str,
+        module_name: str,
+        current_file: Path,
+        days: Optional[int] = None,
+        iterations: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Zbiera kandydatów z historii git dla danej strony.
+
+        Strategia:
+        1. Wyszukaj wszystkie commity dotyczące plików `*<token>.page.ts`
+           w całym repozytorium (głębokość = max(days, iterations)).
+        2. Dla każdego (hash, plik) zapisz hash, datę, ścieżkę, liczbę linii
+           i krótki fingerprint (pierwsze nietrywialne nagłówki).
+        3. Deduplikuj po (hash, ścieżka) i sortuj od najnowszego.
+        """
+        if not (self.scan_root / ".git").exists():
+            return []
+
+        days = days if days is not None else self.HISTORY_DEFAULT_DAYS
+        iterations = iterations if iterations is not None else self.HISTORY_DEFAULT_ITERATIONS
+
+        # Pathspecs: any file ending in `<token>.page.ts` anywhere in the repo.
+        pathspec = f"*{page_token}.page.ts"
+        try:
+            since_arg = f"--since={days}.days.ago"
+            # Get a wider window initially: max(days*5, iterations*3) commits.
+            log_cmd = [
+                "git", "log", "--all",
+                "--pretty=format:%H|%ad",
+                "--date=short",
+                "--name-only",
+                f"-n{max(iterations * 3, 30)}",
+                "--", pathspec,
+            ]
+            res = subprocess.run(
+                log_cmd, cwd=str(self.scan_root),
+                capture_output=True, text=True, timeout=30,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return []
+        if res.returncode != 0 or not res.stdout.strip():
+            return []
+
+        # Parse commits — alternating "hash|date" lines and file paths.
+        candidates: List[Dict[str, Any]] = []
+        seen_keys: set = set()
+        current_commit: Optional[Dict[str, Any]] = None
+        for line in res.stdout.splitlines():
+            if not line.strip():
+                current_commit = None
+                continue
+            if "|" in line and len(line.split("|", 1)[0]) == 40:
+                commit_hash, date_str = line.split("|", 1)
+                current_commit = {"hash": commit_hash[:8], "full_hash": commit_hash, "date": date_str}
+                continue
+            if current_commit is None:
+                continue
+            file_path = line.strip()
+            if not file_path.endswith(f"{page_token}.page.ts") and not file_path.endswith(".page.ts"):
+                continue
+            # Match the page token in the basename
+            base = file_path.rsplit("/", 1)[-1].lower().replace(".page.ts", "")
+            tok = page_token.lower()
+            if not (base == tok or base.endswith("-" + tok)):
+                continue
+            key = (current_commit["full_hash"], file_path)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+
+            # Read content at this commit
+            try:
+                show = subprocess.run(
+                    ["git", "show", f"{current_commit['full_hash']}:{file_path}"],
+                    cwd=str(self.scan_root),
+                    capture_output=True, text=True, timeout=10,
+                )
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+            if show.returncode != 0:
+                continue
+            content = show.stdout
+            line_count = content.count("\n") + (0 if content.endswith("\n") else 1)
+            fingerprint = self._fingerprint_page_content(content)
+            candidates.append({
+                "hash": current_commit["hash"],
+                "full_hash": current_commit["full_hash"],
+                "date": current_commit["date"],
+                "source_path": file_path,
+                "line_count": line_count,
+                "fingerprint": fingerprint,
+            })
+
+        # Sort newest first by date+hash; cap to iterations.
+        candidates.sort(key=lambda c: (c["date"], c["full_hash"]), reverse=True)
+        # De-dupe near-identical sizes from same source_path keeping newest.
+        deduped: List[Dict[str, Any]] = []
+        size_seen: set = set()
+        for c in candidates:
+            sig = (c["source_path"], c["line_count"])
+            if sig in size_seen:
+                continue
+            size_seen.add(sig)
+            deduped.append(c)
+            if len(deduped) >= iterations:
+                break
+        return deduped
+
+    def _fingerprint_page_content(self, content: str) -> str:
+        """Krótki opis zawartości — wyciąga znaczące nagłówki/tytuły z HTML/string."""
+        keywords: List[str] = []
+        # Extract <h1>..<h3>, page-header titles, and known section markers.
+        for match in re.finditer(r"<h[1-3][^>]*>([^<]{3,80})</h[1-3]>", content, re.IGNORECASE):
+            keywords.append(match.group(1).strip())
+            if len(keywords) >= 3:
+                break
+        for match in re.finditer(r"\b(label|title)>([^<]{3,80})<", content, re.IGNORECASE):
+            keywords.append(match.group(2).strip())
+            if len(keywords) >= 5:
+                break
+        # Detect signature sections in the page (Polish UI hints).
+        for marker in ("Wszystkie dostępne strony", "Sitemap", "Konfiguracja",
+                       "Lista", "Tabela", "Routes", "discoveredRoutes"):
+            if marker in content and marker not in keywords:
+                keywords.append(marker)
+        return "; ".join(dict.fromkeys(keywords))[:200]
 
     def _find_backup_page_implementation(
         self,

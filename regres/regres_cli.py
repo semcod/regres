@@ -97,103 +97,98 @@ def main() -> int:
     ier_parser.add_argument("--scan-root", help="Wartość scan_root do raportu")
 
     args = parser.parse_args()
+    return _dispatch_command(args, parser)
 
-    if args.command == "regres":
-        sys.argv = ["regres.py"]
-        if args.path:
-            sys.argv.append(args.path)
-        if args.name:
-            sys.argv.extend(["--name", args.name])
-        if args.hash:
-            sys.argv.extend(["--hash", args.hash])
-        if args.history:
-            sys.argv.append("--history")
-        return regres.main()
 
-    elif args.command == "refactor":
-        sys.argv = ["refactor.py"]
-        if args.mode:
-            sys.argv.append(args.mode)
-        sys.argv.extend(args.args)
-        return refactor.main()
+def _build_regres_argv(args) -> list[str]:
+    argv = ["regres.py"]
+    if args.path:
+        argv.append(args.path)
+    if args.name:
+        argv.extend(["--name", args.name])
+    if args.hash:
+        argv.extend(["--hash", args.hash])
+    if args.history:
+        argv.append("--history")
+    return argv
 
-    elif args.command == "defscan":
-        sys.argv = ["defscan.py"]
-        if args.path:
-            sys.argv.extend(["--path", args.path])
-        if args.name:
-            sys.argv.extend(["--name", args.name])
-        if args.kind:
-            sys.argv.extend(["--kind", args.kind])
-        if args.min_count:
-            sys.argv.extend(["--min-count", str(args.min_count)])
-        if args.min_sim:
-            sys.argv.extend(["--min-sim", str(args.min_sim)])
-        if args.json:
-            sys.argv.append("--json")
-        if args.md:
-            sys.argv.append("--md")
-        if args.focus:
-            sys.argv.extend(["--focus", args.focus])
-        if args.scope:
-            sys.argv.extend(["--scope", args.scope])
-        if args.seed:
-            sys.argv.extend(["--seed", args.seed])
-        if args.similar_global:
-            sys.argv.append("--similar-global")
-        return defscan.main()
 
-    elif args.command == "doctor":
-        sys.argv = ["doctor.py"]
-        if args.scan_root:
-            sys.argv.extend(["--scan-root", args.scan_root])
-        if args.import_log:
-            sys.argv.extend(["--import-log", args.import_log])
-        if args.defscan_report:
-            sys.argv.extend(["--defscan-report", args.defscan_report])
-        if args.regres_report:
-            sys.argv.extend(["--regres-report", args.regres_report])
-        if args.all:
-            sys.argv.append("--all")
-        if args.url:
-            sys.argv.extend(["--url", args.url])
-        if args.apply:
-            sys.argv.append("--apply")
-        if args.dry_run:
-            sys.argv.append("--dry-run")
-        if args.llm:
-            sys.argv.append("--llm")
-        if args.git_history:
-            sys.argv.append("--git-history")
-        if args.defscan_scan:
-            sys.argv.extend(["--defscan-scan", args.defscan_scan])
-        if args.refactor_scan:
-            sys.argv.extend(["--refactor-scan", args.refactor_scan])
-        if args.out_md:
-            sys.argv.extend(["--out-md", args.out_md])
-        if args.out_json:
-            sys.argv.extend(["--out-json", args.out_json])
-        return doctor.main()
+def _build_refactor_argv(args) -> list[str]:
+    argv = ["refactor.py"]
+    if args.mode:
+        argv.append(args.mode)
+    argv.extend(args.args)
+    return argv
 
-    elif args.command == "import-error-toon-report":
-        sys.argv = ["import-error-toon-report.py"]
-        if args.input_log:
-            sys.argv.extend(["--input-log", args.input_log])
-        if args.frontend_cwd:
-            sys.argv.extend(["--frontend-cwd", args.frontend_cwd])
-        if args.typecheck_cmd:
-            sys.argv.extend(["--typecheck-cmd", args.typecheck_cmd])
-        if args.out_md:
-            sys.argv.extend(["--out-md", args.out_md])
-        if args.out_raw_log:
-            sys.argv.extend(["--out-raw-log", args.out_raw_log])
-        if args.scan_root:
-            sys.argv.extend(["--scan-root", args.scan_root])
-        return import_error_toon_report_main()
 
-    else:
-        parser.print_help()
-        return 0
+def _build_defscan_argv(args) -> list[str]:
+    argv = ["defscan.py"]
+    _extend_if_set(argv, "--path", args.path)
+    _extend_if_set(argv, "--name", args.name)
+    _extend_if_set(argv, "--kind", args.kind)
+    _extend_if_set(argv, "--min-count", args.min_count, str)
+    _extend_if_set(argv, "--min-sim", args.min_sim, str)
+    _append_if_true(argv, "--json", args.json)
+    _append_if_true(argv, "--md", args.md)
+    _extend_if_set(argv, "--focus", args.focus)
+    _extend_if_set(argv, "--scope", args.scope)
+    _extend_if_set(argv, "--seed", args.seed)
+    _append_if_true(argv, "--similar-global", args.similar_global)
+    return argv
+
+
+def _build_doctor_argv(args) -> list[str]:
+    argv = ["doctor.py"]
+    _extend_if_set(argv, "--scan-root", args.scan_root)
+    _extend_if_set(argv, "--import-log", args.import_log)
+    _extend_if_set(argv, "--defscan-report", args.defscan_report)
+    _extend_if_set(argv, "--regres-report", args.regres_report)
+    _append_if_true(argv, "--all", args.all)
+    _extend_if_set(argv, "--url", args.url)
+    _append_if_true(argv, "--apply", args.apply)
+    _append_if_true(argv, "--dry-run", args.dry_run)
+    _append_if_true(argv, "--llm", args.llm)
+    _append_if_true(argv, "--git-history", args.git_history)
+    _extend_if_set(argv, "--defscan-scan", args.defscan_scan)
+    _extend_if_set(argv, "--refactor-scan", args.refactor_scan)
+    _extend_if_set(argv, "--out-md", args.out_md)
+    _extend_if_set(argv, "--out-json", args.out_json)
+    return argv
+
+
+def _build_ier_argv(args) -> list[str]:
+    argv = ["import-error-toon-report.py"]
+    _extend_if_set(argv, "--input-log", args.input_log)
+    _extend_if_set(argv, "--frontend-cwd", args.frontend_cwd)
+    _extend_if_set(argv, "--typecheck-cmd", args.typecheck_cmd)
+    _extend_if_set(argv, "--out-md", args.out_md)
+    _extend_if_set(argv, "--out-raw-log", args.out_raw_log)
+    _extend_if_set(argv, "--scan-root", args.scan_root)
+    return argv
+
+
+def _extend_if_set(argv: list[str], flag: str, value, transform=None) -> None:
+    if value:
+        argv.extend([flag, transform(value) if transform else value])
+
+
+def _append_if_true(argv: list[str], flag: str, value) -> None:
+    if value:
+        argv.append(flag)
+
+
+def _dispatch_command(args, parser) -> int:
+    dispatch_map = {
+        "regres": (lambda a: setattr(sys, "argv", _build_regres_argv(a)) or regres.main(),),
+        "refactor": (lambda a: setattr(sys, "argv", _build_refactor_argv(a)) or refactor.main(),),
+        "defscan": (lambda a: setattr(sys, "argv", _build_defscan_argv(a)) or defscan.main(),),
+        "doctor": (lambda a: setattr(sys, "argv", _build_doctor_argv(a)) or doctor.main(),),
+        "import-error-toon-report": (lambda a: setattr(sys, "argv", _build_ier_argv(a)) or import_error_toon_report_main(),),
+    }
+    if args.command in dispatch_map:
+        return dispatch_map[args.command][0](args)
+    parser.print_help()
+    return 0
 
 
 if __name__ == "__main__":

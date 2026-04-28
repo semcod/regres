@@ -802,6 +802,7 @@ class DoctorOrchestrator:
             "scan_root": str(self.scan_root),
             "analysis_plan": self.analysis_plan,
             "analysis_context": self.analysis_context,
+            "affected_files": self.summarize_affected_files(),
             "diagnoses": [
                 {
                     "summary": d.summary,
@@ -836,6 +837,7 @@ class DoctorOrchestrator:
         lines = ["# Doctor Report\n", f"**Scan Root:** `{report['scan_root']}`\n", f"**Diagnoses:** {len(report['diagnoses'])}\n"]
 
         lines.extend(self._render_decision_workflow(report))
+        lines.extend(self._render_affected_files(report))
         lines.extend(self._render_structure_snapshot(report))
         lines.extend(self._render_preliminary_refactor_proposals(report))
 
@@ -882,8 +884,18 @@ class DoctorOrchestrator:
         command: str,
         status: str = "planned",
         details: Optional[str] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        decision: Optional[str] = None,
     ) -> None:
-        step = {
+        """Rejestruje krok planu z pełnym kontekstem decyzji.
+
+        - inputs: predykaty/parametry, na podstawie których krok wybrano
+          (np. {"url": "...", "module_name": "connect-config", "had_route_hint": True}).
+        - outputs: rezultaty kroku (np. {"placeholder_files_found": 1}).
+        - decision: krótkie zdanie wyjaśniające: dlaczego ten krok teraz, na bazie inputs.
+        """
+        step: Dict[str, Any] = {
             "name": name,
             "reason": reason,
             "command": command,
@@ -891,10 +903,285 @@ class DoctorOrchestrator:
         }
         if details:
             step["details"] = details
+        if inputs:
+            step["inputs"] = inputs
+        if outputs:
+            step["outputs"] = outputs
+        if decision:
+            step["decision"] = decision
         self.analysis_plan.append(step)
+
+    def update_last_plan_step(self, **kwargs: Any) -> None:
+        """Aktualizuje ostatni dodany krok planu (np. po wykonaniu)."""
+        if not self.analysis_plan:
+            return
+        self.analysis_plan[-1].update(kwargs)
 
     def set_analysis_context(self, key: str, value: Any) -> None:
         self.analysis_context[key] = value
+
+    # c2004-maskservice-patch-v4: collect a single source of truth for which
+    # files would be modified by the diagnoses, so the report (and any
+    # downstream patch script generation) can show the user exactly what
+    # changes are proposed.
+    def summarize_affected_files(self) -> List[Dict[str, Any]]:
+        seen: Dict[str, Dict[str, Any]] = {}
+        for diag in self.diagnoses:
+            for action in diag.file_actions:
+                if action.action not in ("modify", "create", "delete", "move"):
+                    continue
+                key = action.path
+                if key not in seen:
+                    seen[key] = {
+                        "path": action.path,
+                        "actions": [],
+                        "diagnoses": [],
+                    }
+                target = action.target or ""
+                seen[key]["actions"].append({
+                    "action": action.action,
+                    "target": target,
+                    "reason": action.reason,
+                    "problem_type": diag.problem_type,
+                })
+                if diag.summary not in seen[key]["diagnoses"]:
+                    seen[key]["diagnoses"].append(diag.summary)
+        return list(seen.values())
+
+    # c2004-maskservice-patch-v4: per-candidate `.sh` patch generator.
+    # When a diagnosis lists several restore candidates (e.g. multiple git
+    # history hashes for a `page_content_regression`), we want the user to
+    # be able to apply each one independently with a backup safety-net.
+    def generate_patch_scripts(
+        self,
+        out_dir: Path,
+        basename: str,
+    ) -> List[Dict[str, str]]:
+        """Tworzy `.sh` patche dla każdej opcji w diagnozach.
+
+        Zwraca listę metadanych: [{"path": ..., "diagnosis": ..., "candidate": ..., "kind": ...}].
+        Każdy skrypt:
+          1. Drukuje banner co robi.
+          2. Sprawdza czy plik docelowy istnieje (jeśli tak — backup z timestampem).
+          3. Aplikuje zmianę (git show / cp / sed).
+          4. Drukuje podsumowanie + wskazówkę jak cofnąć (revert hint).
+        """
+        out_dir.mkdir(parents=True, exist_ok=True)
+        generated: List[Dict[str, str]] = []
+        index_lines: List[str] = [
+            "#!/usr/bin/env bash",
+            "# Auto-generated patch index by regres doctor",
+            f"# Basename: {basename}",
+            "# Use: bash <patch-file>.sh",
+            "",
+            "set -euo pipefail",
+            "",
+            'cat <<"EOF"',
+            "Available patches (run any of them individually):",
+            "EOF",
+            "",
+        ]
+
+        counter = 0
+        for diag_idx, diag in enumerate(self.diagnoses, 1):
+            # Group git history candidates per diagnosis.
+            history_candidates = [
+                a for a in diag.file_actions
+                if a.action == "modify" and (a.target or "").startswith("git:")
+            ]
+            if history_candidates:
+                # Detect target file (the "modify" action without git target).
+                primary_target_path = None
+                for a in diag.file_actions:
+                    if a.action == "modify" and not (a.target or "").startswith("git:"):
+                        primary_target_path = a.path
+                        break
+                if primary_target_path is None and history_candidates:
+                    primary_target_path = history_candidates[0].path
+
+                for cand_idx, cand_action in enumerate(history_candidates, 1):
+                    counter += 1
+                    target_spec = cand_action.target or ""
+                    # target format: git:<short_hash>:<source_path>
+                    parts = target_spec.split(":", 2)
+                    if len(parts) != 3:
+                        continue
+                    _, git_hash, source_path = parts
+                    script_path = out_dir / (
+                        f"{basename}-patch-{counter:02d}-{git_hash}.sh"
+                    )
+                    script_lines = self._render_patch_script(
+                        diag=diag,
+                        diag_idx=diag_idx,
+                        cand_idx=cand_idx,
+                        total_cands=len(history_candidates),
+                        git_hash=git_hash,
+                        source_path=source_path,
+                        target_path=primary_target_path or "",
+                        reason=cand_action.reason,
+                    )
+                    script_path.write_text("\n".join(script_lines), encoding="utf-8")
+                    try:
+                        script_path.chmod(0o755)
+                    except OSError:
+                        pass
+                    generated.append({
+                        "path": str(script_path),
+                        "diagnosis": diag.summary,
+                        "candidate": git_hash,
+                        "kind": "git_history_restore",
+                    })
+                    index_lines.append(
+                        f'echo "  bash {script_path.name}  # [{diag.problem_type}] {git_hash} → {primary_target_path}"'
+                    )
+
+            # Fallback: plain shell commands not tied to candidate hashes.
+            if not history_candidates and diag.shell_commands:
+                # Only generate a script if there is a real "modify" action.
+                modify_action = next(
+                    (a for a in diag.file_actions if a.action == "modify"), None,
+                )
+                if modify_action is None:
+                    continue
+                counter += 1
+                script_path = out_dir / (
+                    f"{basename}-patch-{counter:02d}-{diag.problem_type}.sh"
+                )
+                script_lines = self._render_generic_patch_script(
+                    diag=diag,
+                    diag_idx=diag_idx,
+                    target_path=modify_action.path,
+                )
+                script_path.write_text("\n".join(script_lines), encoding="utf-8")
+                try:
+                    script_path.chmod(0o755)
+                except OSError:
+                    pass
+                generated.append({
+                    "path": str(script_path),
+                    "diagnosis": diag.summary,
+                    "candidate": diag.problem_type,
+                    "kind": "manual_fix",
+                })
+                index_lines.append(
+                    f'echo "  bash {script_path.name}  # [{diag.problem_type}] manual fix → {modify_action.path}"'
+                )
+
+        if generated:
+            index_path = out_dir / f"{basename}-patches-index.sh"
+            index_lines.append("")
+            index_path.write_text("\n".join(index_lines), encoding="utf-8")
+            try:
+                index_path.chmod(0o755)
+            except OSError:
+                pass
+            generated.insert(0, {
+                "path": str(index_path),
+                "diagnosis": "INDEX",
+                "candidate": "",
+                "kind": "index",
+            })
+
+        return generated
+
+    def _render_patch_script(
+        self,
+        diag: "Diagnosis",
+        diag_idx: int,
+        cand_idx: int,
+        total_cands: int,
+        git_hash: str,
+        source_path: str,
+        target_path: str,
+        reason: str,
+    ) -> List[str]:
+        scan_root = str(self.scan_root)
+        # Quote-safe heredoc-style banner.
+        return [
+            "#!/usr/bin/env bash",
+            "# Auto-generated by regres doctor — git history restore patch.",
+            f"# Diagnosis #{diag_idx}: {diag.summary}",
+            f"# Candidate {cand_idx}/{total_cands}: {git_hash}",
+            f"# Reason: {reason}",
+            "#",
+            "# Behavior:",
+            "#   1. Backup current target file to <target>.before-<timestamp>",
+            "#   2. Restore content from git <hash>:<source_path>",
+            "#   3. Print summary and revert hint",
+            "",
+            "set -euo pipefail",
+            "",
+            f'SCAN_ROOT="{scan_root}"',
+            f'TARGET="{target_path}"',
+            f'GIT_HASH="{git_hash}"',
+            f'SOURCE_PATH="{source_path}"',
+            f'TS="$(date +%Y%m%dT%H%M%S)"',
+            'BACKUP="${TARGET}.before-${TS}"',
+            "",
+            'cd "$SCAN_ROOT"',
+            "",
+            'echo "[regres-patch] Diagnosis: ' + diag.summary.replace('"', '\\"') + '"',
+            'echo "[regres-patch] Restoring ${TARGET} from git ${GIT_HASH}:${SOURCE_PATH}"',
+            "",
+            'if [ -f "$TARGET" ]; then',
+            '  cp -p "$TARGET" "$BACKUP"',
+            '  echo "[regres-patch] Backup saved: $BACKUP"',
+            "else",
+            '  mkdir -p "$(dirname "$TARGET")"',
+            '  echo "[regres-patch] Target did not exist; will be created."',
+            "fi",
+            "",
+            'git show "${GIT_HASH}:${SOURCE_PATH}" > "$TARGET"',
+            'echo "[regres-patch] Wrote $(wc -l < "$TARGET") lines to $TARGET"',
+            "",
+            'echo "[regres-patch] Done. To revert:"',
+            'if [ -f "$BACKUP" ]; then',
+            '  echo "  cp \\"$BACKUP\\" \\"$TARGET\\""',
+            "else",
+            '  echo "  rm \\"$TARGET\\"   # target was created from scratch"',
+            "fi",
+            "",
+        ]
+
+    def _render_generic_patch_script(
+        self,
+        diag: "Diagnosis",
+        diag_idx: int,
+        target_path: str,
+    ) -> List[str]:
+        scan_root = str(self.scan_root)
+        lines = [
+            "#!/usr/bin/env bash",
+            "# Auto-generated by regres doctor — manual fix patch.",
+            f"# Diagnosis #{diag_idx}: {diag.summary}",
+            f"# Problem type: {diag.problem_type}",
+            "#",
+            "# This patch is a thin wrapper around the suggested shell commands.",
+            "# Review and edit before running if you are unsure.",
+            "",
+            "set -euo pipefail",
+            "",
+            f'SCAN_ROOT="{scan_root}"',
+            f'TARGET="{target_path}"',
+            f'TS="$(date +%Y%m%dT%H%M%S)"',
+            'BACKUP="${TARGET}.before-${TS}"',
+            "",
+            'cd "$SCAN_ROOT"',
+            "",
+            'if [ -f "$TARGET" ]; then',
+            '  cp -p "$TARGET" "$BACKUP"',
+            '  echo "[regres-patch] Backup saved: $BACKUP"',
+            "fi",
+            "",
+        ]
+        for cmd in diag.shell_commands:
+            desc = cmd.description.replace('"', '\\"')
+            lines.append(f'echo "[regres-patch] {desc}"')
+            lines.append(cmd.command)
+            lines.append("")
+        lines.append('echo "[regres-patch] Done. Review changes and revert from \\"$BACKUP\\" if needed."')
+        lines.append("")
+        return lines
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -1317,12 +1604,29 @@ class DoctorOrchestrator:
             lines.append("")
             return lines
 
-        lines.append("Kolejność kroków wybrana automatycznie na bazie parametrów wejściowych:")
+        lines.append("Drzewo decyzyjne — każdy krok pokazuje predykaty wejściowe, decyzję i rezultat:")
         lines.append("")
         for idx, step in enumerate(plan, 1):
-            lines.append(f"{idx}. **{step.get('name', 'step')}** — {step.get('reason', '')}")
+            status = step.get("status", "planned")
+            status_icon = {
+                "done": "✓", "warning": "⚠", "skipped": "⊘",
+                "planned": "…", "error": "✗",
+            }.get(status, "•")
+            lines.append(f"{idx}. {status_icon} **{step.get('name', 'step')}** [{status}] — {step.get('reason', '')}")
+            if step.get("decision"):
+                lines.append(f"   - **Decision:** {step['decision']}")
+            if step.get("inputs"):
+                inputs_str = ", ".join(
+                    f"`{k}`={self._fmt_plan_value(v)}" for k, v in step["inputs"].items()
+                )
+                lines.append(f"   - **Inputs:** {inputs_str}")
+            if step.get("outputs"):
+                outputs_str = ", ".join(
+                    f"`{k}`={self._fmt_plan_value(v)}" for k, v in step["outputs"].items()
+                )
+                lines.append(f"   - **Outputs:** {outputs_str}")
             if step.get("details"):
-                lines.append(f"   - {step['details']}")
+                lines.append(f"   - **Details:** {step['details']}")
         lines.append("")
         lines.append("```bash")
         for step in plan:
@@ -1332,6 +1636,43 @@ class DoctorOrchestrator:
                 lines.append(cmd)
                 lines.append("")
         lines.append("```")
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _fmt_plan_value(value: Any) -> str:
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if value is None:
+            return "null"
+        if isinstance(value, (list, tuple)):
+            return "[" + ", ".join(str(v) for v in value) + "]"
+        s = str(value)
+        if len(s) > 80:
+            return s[:77] + "..."
+        return s
+
+    def _render_affected_files(self, report: Dict[str, Any]) -> List[str]:
+        affected = report.get("affected_files", []) or []
+        lines = ["## Affected Files", ""]
+        if not affected:
+            lines.append("Brak plików do zmiany — diagnozy nie proponują modyfikacji.")
+            lines.append("")
+            return lines
+        lines.append(
+            f"Pliki, które zostałyby zmienione przez sugestie regres ({len(affected)} unikalnych):"
+        )
+        lines.append("")
+        lines.append("| Plik | Akcje | Diagnozy |")
+        lines.append("|---|---|---|")
+        for entry in affected:
+            actions = entry.get("actions", []) or []
+            action_summary = ", ".join(
+                a["action"] + (f" ({a['target']})" if a.get("target") else "")
+                for a in actions
+            )
+            diag_summary = "; ".join(entry.get("diagnoses", []) or [])
+            lines.append(f"| `{entry['path']}` | {action_summary} | {diag_summary} |")
         lines.append("")
         return lines
 

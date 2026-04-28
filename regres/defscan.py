@@ -153,6 +153,73 @@ def sim(a: Definition, b: Definition) -> float:
 # Ekstraktory per język
 # ---------------------------------------------------------------------------
 
+def _get_body(node, lines: list[str]) -> tuple[int, int, str]:
+    """Get the start line, end line, and body text of an AST node."""
+    start = node.lineno
+    end = max(
+        getattr(n, 'end_lineno', node.lineno)
+        for n in ast.walk(node)
+    )
+    body_lines = lines[start - 1:end]
+    return start, end, '\n'.join(body_lines)
+
+
+def _get_decorators(node) -> list[str]:
+    """Extract decorator strings from an AST node."""
+    return [
+        ast.unparse(dec) if hasattr(ast, 'unparse') else ''
+        for dec in getattr(node, 'decorator_list', [])
+    ]
+
+
+def _collect_class_method_ids(tree) -> set[int]:
+    """Collect ids of methods defined inside classes."""
+    class_method_ids: set[int] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            for item in node.body:
+                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    class_method_ids.add(id(item))
+    return class_method_ids
+
+
+def _extract_class_definitions(node: ast.ClassDef, path: Path, lines: list[str]) -> list[Definition]:
+    """Extract class and method definitions from a ClassDef node."""
+    defs = []
+    start, end, body = _get_body(node, lines)
+    bases = [ast.unparse(b) if hasattr(ast, 'unparse') else '' for b in node.bases]
+    defs.append(Definition(
+        name=node.name, kind='class',
+        path=path, line_start=start, line_end=end,
+        body=body, lang='python',
+        bases=bases,
+        decorators=_get_decorators(node),
+    ))
+    for item in node.body:
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            ms, me, mb = _get_body(item, lines)
+            defs.append(Definition(
+                name=f"{node.name}.{item.name}", kind='method',
+                path=path, line_start=ms, line_end=me,
+                body=mb, lang='python',
+                decorators=_get_decorators(item),
+            ))
+    return defs
+
+
+def _extract_function_definition(node, path: Path, lines: list[str], class_method_ids: set[int]) -> list[Definition]:
+    """Extract a top-level function definition, skipping class methods."""
+    if id(node) in class_method_ids:
+        return []
+    start, end, body = _get_body(node, lines)
+    return [Definition(
+        name=node.name, kind='function',
+        path=path, line_start=start, line_end=end,
+        body=body, lang='python',
+        decorators=_get_decorators(node),
+    )]
+
+
 def extract_python(path: Path) -> list[Definition]:
     """Używa modułu ast — precyzyjne wyodrębnienie z zachowaniem linii."""
     text = path.read_text(encoding='utf-8', errors='ignore')
@@ -164,63 +231,13 @@ def extract_python(path: Path) -> list[Definition]:
     except SyntaxError:
         return []
 
-    def get_body(node) -> tuple[int, int, str]:
-        start = node.lineno
-        # Znajdź koniec: ostatnia linia w poddrzewie
-        end = max(
-            getattr(n, 'end_lineno', node.lineno)
-            for n in ast.walk(node)
-        )
-        body_lines = lines[start - 1:end]
-        return start, end, '\n'.join(body_lines)
-
-    def get_decorators(node) -> list[str]:
-        result = []
-        for dec in getattr(node, 'decorator_list', []):
-            result.append(ast.unparse(dec) if hasattr(ast, 'unparse') else '')
-        return result
-
-    # Zbierz nazwy metod klas — żeby nie duplikować jako top-level funkcje
-    class_method_ids: set[int] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef):
-            for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    class_method_ids.add(id(item))
+    class_method_ids = _collect_class_method_ids(tree)
 
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
-            start, end, body = get_body(node)
-            bases = [ast.unparse(b) if hasattr(ast, 'unparse') else '' for b in node.bases]
-            defs.append(Definition(
-                name=node.name, kind='class',
-                path=path, line_start=start, line_end=end,
-                body=body, lang='python',
-                bases=bases,
-                decorators=get_decorators(node),
-            ))
-            # Metody klasy
-            for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    ms, me, mb = get_body(item)
-                    defs.append(Definition(
-                        name=f"{node.name}.{item.name}", kind='method',
-                        path=path, line_start=ms, line_end=me,
-                        body=mb, lang='python',
-                        decorators=get_decorators(item),
-                    ))
-
+            defs.extend(_extract_class_definitions(node, path, lines))
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            # Pomiń metody — już dodane jako ClassName.method
-            if id(node) in class_method_ids:
-                continue
-            start, end, body = get_body(node)
-            defs.append(Definition(
-                name=node.name, kind='function',
-                path=path, line_start=start, line_end=end,
-                body=body, lang='python',
-                decorators=get_decorators(node),
-            ))
+            defs.extend(_extract_function_definition(node, path, lines, class_method_ids))
 
     return defs
 

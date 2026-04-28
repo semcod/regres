@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-878-green)
-> **878** functions | **29** classes | **40** files | CC̄ = 6.7
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-951-green)
+> **951** functions | **21** classes | **41** files | CC̄ = 5.8
 
 > Auto-generated project documentation from source code analysis.
 
@@ -89,21 +89,22 @@ regres/
     ├── regres
     ├── doctor_models
     ├── doctor
+    ├── doctor_cli
 ├── regres/
     ├── refactor
     ├── import_error_toon_report
     ├── regres_cli
-    ├── defscan
     ├── doctor_orchestrator
+    ├── context
+        ├── toon
+        ├── toon
+    ├── README
         ├── toon
     ├── prompt
         ├── toon
-        ├── toon
-    ├── context
-    ├── README
-        ├── toon
     ├── calls
         ├── toon
+    ├── defscan
 ```
 
 ## API Overview
@@ -111,34 +112,26 @@ regres/
 ### Classes
 
 - **`GitCommit`** — —
+- **`DoctorOrchestrator`** — —
+- **`Definition`** — —
+- **`FileAction`** — —
+- **`ShellCommand`** — —
+- **`Diagnosis`** — —
+- **`GitCommit`** — —
+- **`DoctorOrchestrator`** — —
 - **`Definition`** — —
 - **`FileAction`** — —
 - **`ShellCommand`** — —
 - **`Diagnosis`** — —
 - **`DoctorOrchestrator`** — —
-- **`TsError`** — —
-- **`ReportData`** — —
-- **`GitCommit`** — —
-- **`Definition`** — —
-- **`FileAction`** — —
-- **`ShellCommand`** — —
-- **`Diagnosis`** — —
-- **`DoctorOrchestrator`** — —
-- **`TsError`** — —
-- **`ReportData`** — —
-- **`DoctorOrchestrator`** — —
 - **`GitCommit`** — —
 - **`FileAction`** — Akcja na pliku.
 - **`ShellCommand`** — Polecenie shell do wykonania.
 - **`Diagnosis`** — Diagnoza problemu i plan naprawy.
-- **`FileAction`** — Akcja na pliku.
-- **`ShellCommand`** — Polecenie shell do wykonania.
-- **`Diagnosis`** — Diagnoza problemu i plan naprawy.
+- **`TsError`** — —
+- **`ReportData`** — —
 - **`DoctorOrchestrator`** — Orchestrator analizy i generator akcji.
-- **`TsError`** — —
-- **`ReportData`** — —
 - **`Definition`** — Pojedyncza definicja (klasa / funkcja / enum / interface / mixin).
-- **`DoctorOrchestrator`** — Orchestrator analizy i generator akcji.
 
 ### Functions
 
@@ -177,6 +170,15 @@ regres/
 - `render_markdown()` — —
 - `analyze_file()` — —
 - `main()` — —
+- `analyze_from_url()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
 - `iter_files()` — —
 - `read_text()` — —
 - `md5_file()` — —
@@ -222,26 +224,6 @@ regres/
 - `render_seed_json()` — —
 - `render_json()` — —
 - `loc()` — —
-- `analyze_from_url()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
-- `toon_quote()` — —
-- `parse_args()` — —
-- `run_typecheck()` — —
-- `normalize_file_rel()` — —
-- `parse_ts_errors()` — —
-- `suggestions_for_error()` — —
-- `grouped_errors()` — —
-- `metrics()` — —
-- `to_toon_block_legacy()` — —
-- `to_toon_global_payload()` — —
-- `to_toon_compact_per_file()` — —
 - `c()` — —
 - `sim()` — —
 - `extract_python()` — —
@@ -423,7 +405,6 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
-- `loc()` — —
 - `analyze_from_url()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -433,6 +414,7 @@ regres/
 - `apply_fixes()` — —
 - `generate_llm_diagnosis()` — —
 - `generate_report()` — —
+- `loc()` — —
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
@@ -471,7 +453,7 @@ regres/
 - `render_markdown(report)` — —
 - `analyze_file(target_file, scan_root, max_commits, tree_depth)` — —
 - `main()` — —
-- `main()` — —
+- `main()` — Main entry point for doctor CLI.
 - `iter_files(root, extensions, word_filter, case_sensitive)` — —
 - `read_text(p)` — —
 - `md5_file(p)` — —
@@ -514,26 +496,25 @@ regres/
 - `render_markdown(report, scan_root, max_files, max_errors_per_file)` — —
 - `main()` — —
 - `main()` — —
-- `c(text, code)` — —
-- `sim(a, b)` — Podobieństwo ciał (0–100%).
-- `extract_python(path)` — Używa modułu ast — precyzyjne wyodrębnienie z zachowaniem linii.
-- `extract_typescript(path)` — —
-- `extract_go(path)` — —
-- `extract_rust(path)` — —
-- `extract_file(path)` — —
-- `load_gitignore(root)` — Wczytuje wzorce z ``root/.gitignore``. Zwraca listę (pattern, is_negation).
-- `scan(root, name_filter, kind_filter, only_within)` — Zwraca słownik: base_name → [Definition, ...]
-- `compare_seed_to_all(seed_defs, all_defs, min_sim, skip_same_name)` — Dla każdej definicji z seed znajduje wszystkie definicje w all_defs
-- `analyse_group(defs)` — Dla listy definicji o tej samej nazwie oblicza macierz podobieństwa
-- `classify_similarity(pct)` — Zwraca (etykieta, kolor_ANSI).
-- `render_text(groups, root, min_sim, show_body_lines)` — —
-- `render_markdown(groups, root, min_sim)` — —
-- `render_seed_text(results, root, top_per_seed, show_body_lines)` — —
-- `render_seed_markdown(results, root, top_per_seed)` — —
-- `render_seed_json(results, root)` — —
-- `render_json(groups, root)` — —
 - `main()` — —
-- `main()` — —
+- `c()` — —
+- `sim()` — —
+- `extract_python()` — —
+- `extract_typescript()` — —
+- `extract_go()` — —
+- `extract_rust()` — —
+- `extract_file()` — —
+- `load_gitignore()` — —
+- `scan()` — —
+- `compare_seed_to_all()` — —
+- `analyse_group()` — —
+- `classify_similarity()` — —
+- `render_text()` — —
+- `render_markdown()` — —
+- `render_seed_text()` — —
+- `render_seed_markdown()` — —
+- `render_seed_json()` — —
+- `render_json()` — —
 - `iter_files()` — —
 - `read_text()` — —
 - `md5_file()` — —
@@ -561,24 +542,6 @@ regres/
 - `to_json_toon()` — —
 - `cmd_report()` — —
 - `build_parser()` — —
-- `c()` — —
-- `sim()` — —
-- `extract_python()` — —
-- `extract_typescript()` — —
-- `extract_go()` — —
-- `extract_rust()` — —
-- `extract_file()` — —
-- `load_gitignore()` — —
-- `scan()` — —
-- `compare_seed_to_all()` — —
-- `analyse_group()` — —
-- `classify_similarity()` — —
-- `render_text()` — —
-- `render_markdown()` — —
-- `render_seed_text()` — —
-- `render_seed_markdown()` — —
-- `render_seed_json()` — —
-- `render_json()` — —
 - `run_git()` — —
 - `find_repo_root()` — —
 - `resolve_target_file()` — —
@@ -623,10 +586,9 @@ regres/
 - `to_toon_block_legacy()` — —
 - `to_toon_global_payload()` — —
 - `to_toon_compact_per_file()` — —
-- `analyze_custom_metric()` — —
 - `print()` — —
+- `analyze_custom_metric()` — —
 - `generate_readme()` — —
-- `loc()` — —
 - `analyze_from_url()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -636,6 +598,7 @@ regres/
 - `apply_fixes()` — —
 - `generate_llm_diagnosis()` — —
 - `generate_report()` — —
+- `loc()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -727,6 +690,25 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
+- `c(text, code)` — —
+- `sim(a, b)` — Podobieństwo ciał (0–100%).
+- `extract_python(path)` — Używa modułu ast — precyzyjne wyodrębnienie z zachowaniem linii.
+- `extract_typescript(path)` — —
+- `extract_go(path)` — —
+- `extract_rust(path)` — —
+- `extract_file(path)` — —
+- `load_gitignore(root)` — Wczytuje wzorce z ``root/.gitignore``. Zwraca listę (pattern, is_negation).
+- `scan(root, name_filter, kind_filter, only_within)` — Zwraca słownik: base_name → [Definition, ...]
+- `compare_seed_to_all(seed_defs, all_defs, min_sim, skip_same_name)` — Dla każdej definicji z seed znajduje wszystkie definicje w all_defs
+- `analyse_group(defs)` — Dla listy definicji o tej samej nazwie oblicza macierz podobieństwa
+- `classify_similarity(pct)` — Zwraca (etykieta, kolor_ANSI).
+- `render_text(groups, root, min_sim, show_body_lines)` — —
+- `render_markdown(groups, root, min_sim)` — —
+- `render_seed_text(results, root, top_per_seed, show_body_lines)` — —
+- `render_seed_markdown(results, root, top_per_seed)` — —
+- `render_seed_json(results, root)` — —
+- `render_json(groups, root)` — —
+- `main()` — —
 
 
 ## Project Structure
@@ -735,8 +717,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (403 functions, 8 classes)
-📄 `SUMR` (169 functions, 8 classes)
+📄 `SUMD` (431 functions, 7 classes)
+📄 `SUMR` (197 functions, 7 classes)
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
 📄 `docs.README` (1 functions)
@@ -752,18 +734,19 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (952 functions)
+📄 `project.map.toon` (1030 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
-📄 `regres.defscan` (31 functions, 1 classes)
-📄 `regres.doctor` (30 functions, 4 classes)
+📄 `regres.defscan` (43 functions, 1 classes)
+📄 `regres.doctor`
+📄 `regres.doctor_cli` (8 functions)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (41 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (49 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
-📄 `regres.refactor` (41 functions)
-📄 `regres.regres` (53 functions, 1 classes)
+📄 `regres.refactor` (52 functions)
+📄 `regres.regres` (55 functions, 1 classes)
 📄 `regres.regres_cli` (1 functions)
 📄 `scripts.import-error-toon-report`
 📄 `testql-scenarios.generated-cli-tests.testql.toon`

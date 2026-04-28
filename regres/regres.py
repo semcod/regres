@@ -519,60 +519,72 @@ def _classify_import_problem(repo_root: Path, mh: dict) -> dict:
     }
 
 
-def _determine_primary_type(import_problems: list, broken: list, target_dir: str, 
-                            current_lines: int, evolution: list) -> tuple[str, float, list]:
-    """Determine the primary problem type and confidence."""
+def _analyze_import_problems(import_problems: list, broken: list, target_dir: str) -> tuple[str, float, list]:
+    """Analyze import problems and return primary type, confidence, evidence."""
+    evidence: List[str] = []
+    type_counts: Dict[str, int] = {}
+    for ip in import_problems:
+        type_counts[ip["type"]] = type_counts.get(ip["type"], 0) + 1
+    if not type_counts:
+        return "HEALTHY", 1.0, evidence
+    primary_type = max(type_counts.items(), key=lambda x: x[1])[0]
+    total = len(import_problems)
+    confidence = round(type_counts[primary_type] / total, 2)
+    evidence.append(
+        f"{type_counts[primary_type]}/{total} popsutych importów ma typ {primary_type}"
+    )
+
+    if "modules/" in target_dir and primary_type == "FILE_RENAMED":
+        module_jump = any(imp.count("../") >= 3 for imp in broken)
+        if module_jump:
+            primary_type = "BROKEN_IMPORTS_MOVED_MODULE"
+            evidence.append(
+                f"Plik znajduje się w `{target_dir}`, ale ma importy z głębokim `../` — "
+                f"prawdopodobnie został przeniesiony bez aktualizacji ścieżek"
+            )
+    return primary_type, confidence, evidence
+
+
+def _analyze_evolution(current_lines: int, evolution: list) -> tuple[str, float, list]:
+    """Analyze git evolution and return primary type, confidence, evidence."""
+    evidence: List[str] = []
     primary_type = "HEALTHY"
     confidence = 1.0
-    evidence: List[str] = []
-    
-    all_ok = len(broken) == 0
-    
-    if not all_ok:
-        type_counts: Dict[str, int] = {}
-        for ip in import_problems:
-            type_counts[ip["type"]] = type_counts.get(ip["type"], 0) + 1
-        if type_counts:
-            primary_type = max(type_counts.items(), key=lambda x: x[1])[0]
-            total = len(import_problems)
-            confidence = round(type_counts[primary_type] / total, 2)
-            evidence.append(
-                f"{type_counts[primary_type]}/{total} popsutych importów ma typ {primary_type}"
-            )
 
-        if "modules/" in target_dir and primary_type == "FILE_RENAMED":
-            module_jump = any(imp.count("../") >= 3 for imp in broken)
-            if module_jump:
-                primary_type = "BROKEN_IMPORTS_MOVED_MODULE"
+    if current_lines <= 5 and evolution:
+        for e in evolution[1:]:
+            if e["lines"] >= 20 and e["similarity_to_current"] < 0.3:
+                primary_type = "WRAPPER_REGRESSION"
+                confidence = 0.8
                 evidence.append(
-                    f"Plik znajduje się w `{target_dir}`, ale ma importy z głębokim `../` — "
-                    f"prawdopodobnie został przeniesiony bez aktualizacji ścieżek"
+                    f"Aktualnie {current_lines} linii, w `{e['short_sha']}` było {e['lines']} linii "
+                    f"(similarity {e['similarity_to_current']})"
                 )
-    else:
-        if current_lines <= 5 and evolution:
-            for e in evolution[1:]:
-                if e["lines"] >= 20 and e["similarity_to_current"] < 0.3:
-                    primary_type = "WRAPPER_REGRESSION"
-                    confidence = 0.8
-                    evidence.append(
-                        f"Aktualnie {current_lines} linii, w `{e['short_sha']}` było {e['lines']} linii "
-                        f"(similarity {e['similarity_to_current']})"
-                    )
-                    break
+                break
 
-        if evolution and len(evolution) >= 2:
-            for e in evolution[:5]:
-                if e["similarity_to_current"] < 0.1 and abs(e["line_delta"]) > 50:
-                    if primary_type == "HEALTHY":
-                        primary_type = "MASS_REWRITE"
-                        confidence = 0.7
-                        evidence.append(
-                            f"Commit `{e['short_sha']}`: similarity {e['similarity_to_current']}, "
-                            f"line_delta {e['line_delta']}"
-                        )
-                    break
-    
+    if evolution and len(evolution) >= 2:
+        for e in evolution[:5]:
+            if e["similarity_to_current"] < 0.1 and abs(e["line_delta"]) > 50:
+                if primary_type == "HEALTHY":
+                    primary_type = "MASS_REWRITE"
+                    confidence = 0.7
+                    evidence.append(
+                        f"Commit `{e['short_sha']}`: similarity {e['similarity_to_current']}, "
+                        f"line_delta {e['line_delta']}"
+                    )
+                break
+
     return primary_type, confidence, evidence
+
+
+def _determine_primary_type(import_problems: list, broken: list, target_dir: str,
+                            current_lines: int, evolution: list) -> tuple[str, float, list]:
+    """Determine the primary problem type and confidence."""
+    all_ok = len(broken) == 0
+
+    if not all_ok:
+        return _analyze_import_problems(import_problems, broken, target_dir)
+    return _analyze_evolution(current_lines, evolution)
 
 
 def classify_problem(

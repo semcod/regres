@@ -1,57 +1,53 @@
-# code2llm/evolution | 850 func | 13f | 2026-04-28
+# code2llm/evolution | 879 func | 13f | 2026-04-28
 
-NEXT[10] (ranked by impact):
-  [1] !! SPLIT           regres/regres.py
-      WHY: 1483L, 1 classes, max CC=19
-      EFFORT: ~4h  IMPACT: 28177
+NEXT[9] (ranked by impact):
+  [1] !! SPLIT           regres/defscan.py
+      WHY: 1252L, 1 classes, max CC=18
+      EFFORT: ~4h  IMPACT: 22536
 
-  [2] !! SPLIT           regres/refactor.py
-      WHY: 1198L, 0 classes, max CC=23
-      EFFORT: ~4h  IMPACT: 27554
+  [2] !! SPLIT           regres/regres.py
+      WHY: 1495L, 1 classes, max CC=15
+      EFFORT: ~4h  IMPACT: 22425
 
-  [3] !! SPLIT           regres/doctor.py
-      WHY: 1209L, 4 classes, max CC=20
-      EFFORT: ~4h  IMPACT: 24180
+  [3] !! SPLIT           regres/refactor.py
+      WHY: 1237L, 0 classes, max CC=16
+      EFFORT: ~4h  IMPACT: 19792
 
   [4] !! SPLIT-FUNC      main  CC=42  fan=18
       WHY: CC=42 exceeds 15
       EFFORT: ~1h  IMPACT: 756
 
-  [5] !  SPLIT-FUNC      scan  CC=23  fan=21
-      WHY: CC=23 exceeds 15
-      EFFORT: ~1h  IMPACT: 483
-
-  [6] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
+  [5] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
       WHY: CC=16 exceeds 15
       EFFORT: ~1h  IMPACT: 384
 
-  [7] !  SPLIT-FUNC      _run_focus_mode  CC=20  fan=18
-      WHY: CC=20 exceeds 15
-      EFFORT: ~1h  IMPACT: 360
-
-  [8] !  SPLIT-FUNC      to_json_toon  CC=23  fan=15
-      WHY: CC=23 exceeds 15
-      EFFORT: ~1h  IMPACT: 345
-
-  [9] !  SPLIT-FUNC      DoctorOrchestrator.generate_llm_diagnosis  CC=16  fan=19
-      WHY: CC=16 exceeds 15
-      EFFORT: ~1h  IMPACT: 304
-
-  [10] !  SPLIT-FUNC      cmd_deps  CC=18  fan=15
+  [6] !  SPLIT-FUNC      _handle_auto_decision_flow  CC=18  fan=17
       WHY: CC=18 exceeds 15
-      EFFORT: ~1h  IMPACT: 270
+      EFFORT: ~1h  IMPACT: 306
+
+  [7] !  SPLIT-FUNC      _run_seed_mode  CC=17  fan=14
+      WHY: CC=17 exceeds 15
+      EFFORT: ~1h  IMPACT: 238
+
+  [8] !  SPLIT-FUNC      DoctorOrchestrator._diagnose_import_issue  CC=15  fan=14
+      WHY: CC=15 exceeds 15
+      EFFORT: ~1h  IMPACT: 210
+
+  [9] !  SPLIT-FUNC      iter_files  CC=15  fan=9
+      WHY: CC=15 exceeds 15
+      EFFORT: ~1h  IMPACT: 135
 
 
 RISKS[3]:
-  ⚠ Splitting regres/regres.py may break 53 import paths
-  ⚠ Splitting regres/doctor.py may break 30 import paths
-  ⚠ Splitting regres/refactor.py may break 41 import paths
+  ⚠ Splitting regres/regres.py may break 55 import paths
+  ⚠ Splitting regres/defscan.py may break 38 import paths
+  ⚠ Splitting regres/refactor.py may break 52 import paths
 
 METRICS-TARGET:
-  CC̄:          1.6 → ≤1.1
+  CC̄:          1.5 → ≤1.0
   max-CC:      42 → ≤20
-  god-modules: 5 → 0
-  high-CC(≥15): 19 → ≤9
+  god-modules: 4 → 0
+  high-CC(≥15): 9 → ≤4
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -79,4 +75,4 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.5 → now CC̄=1.6
+  prev CC̄=1.6 → now CC̄=1.5

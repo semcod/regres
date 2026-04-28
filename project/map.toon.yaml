@@ -1,24 +1,28 @@
-# regres | 19f 7582L | python:16,shell:2,less:1 | 2026-04-28
-# stats: 234 func | 12 cls | 19 mod | CC̄=5.4 | critical:39 | cycles:0
-# alerts[5]: CC main=42; CC scan=23; CC to_json_toon=23; CC _run_focus_mode=20; CC _path_ignored_by_gitignore=19
-# hotspots[5]: cmd_hotmap fan=23; analyze_file fan=22; trace_name_and_hash_candidates fan=21; extract_python fan=18; _run_focus_mode fan=17
+# regres | 23f 8038L | python:20,shell:2,less:1 | 2026-04-28
+# stats: 380 func | 8 cls | 23 mod | CC̄=4.2 | critical:37 | cycles:0
+# alerts[5]: CC main=42; CC _extract_block_ts=18; CC _handle_auto_decision_flow=18; CC _run_seed_mode=17; CC cmd_hotmap=16
+# hotspots[5]: cmd_hotmap fan=23; analyze_file fan=22; trace_name_and_hash_candidates fan=21; _handle_auto_decision_flow fan=17; cmd_similar fan=17
 # evolution: baseline
 # Keys: M=modules, D=details, i=imports, e=exports, c=classes, f=functions, m=methods
-M[19]:
+M[23]:
   app.doql.less,114
   project.sh,41
   regres/__init__.py,14
-  regres/defscan.py,1189
-  regres/doctor.py,1210
+  regres/defscan.py,1252
+  regres/doctor.py,7
+  regres/doctor_cli.py,304
   regres/doctor_models.py,37
-  regres/doctor_orchestrator.py,875
+  regres/doctor_orchestrator.py,993
   regres/import_error_toon_report.py,366
-  regres/refactor.py,1198
-  regres/regres.py,1483
+  regres/refactor.py,1237
+  regres/regres.py,1495
   regres/regres_cli.py,198
   scripts/import-error-toon-report.py,12
   tests/test_defscan.py,138
   tests/test_doctor.py,59
+  tests/test_doctor_cli.py,315
+  tests/test_doctor_models.py,248
+  tests/test_doctor_orchestrator.py,560
   tests/test_import_error_toon_report.py,201
   tests/test_refactor.py,151
   tests/test_regres.py,121
@@ -27,11 +31,16 @@ M[19]:
 D:
   regres/__init__.py:
   regres/defscan.py:
-    e: c,_normalize,sim,extract_python,_extract_block_ts,_lineno_at,extract_typescript,extract_go,extract_rust,extract_file,load_gitignore,_path_ignored_by_gitignore,scan,_def_key,compare_seed_to_all,analyse_group,classify_similarity,_short_path,render_text,render_markdown,render_seed_text,render_seed_markdown,render_seed_json,render_json,_build_argument_parser,_run_seed_mode,_run_focus_mode,_run_default_mode,main,Definition
+    e: c,_normalize,sim,_get_body,_get_decorators,_collect_class_method_ids,_extract_class_definitions,_extract_function_definition,extract_python,_extract_block_ts,_lineno_at,extract_typescript,extract_go,extract_rust,extract_file,load_gitignore,_match_anchored_pattern,_match_unanchored_pattern,_path_ignored_by_gitignore,_should_skip_file,scan,_def_key,compare_seed_to_all,analyse_group,classify_similarity,_short_path,render_text,render_markdown,render_seed_text,render_seed_markdown,render_seed_json,render_json,_build_argument_parser,_run_seed_mode,_build_focus_groups,_analyse_and_sort_groups,_run_focus_mode,_run_default_mode,_count_similarity_levels,_print_pair_summary,main,Definition
     Definition: __init__(9),loc(0),__repr__(0)  # Pojedyncza definicja (klasa / funkcja / enum / interface / m
     c(text;code)
     _normalize(text)
     sim(a;b)
+    _get_body(node;lines)
+    _get_decorators(node)
+    _collect_class_method_ids(tree)
+    _extract_class_definitions(node;path;lines)
+    _extract_function_definition(node;path;lines;class_method_ids)
     extract_python(path)
     _extract_block_ts(text;start_pos)
     _lineno_at(text;pos)
@@ -40,7 +49,10 @@ D:
     extract_rust(path)
     extract_file(path)
     load_gitignore(root)
+    _match_anchored_pattern(rel_str;pat_cmp;is_dir)
+    _match_unanchored_pattern(name;rel;rel_str;pat_cmp;is_dir)
     _path_ignored_by_gitignore(path;root;patterns)
+    _should_skip_file(p;exts;only_within_resolved;gitignore_root_resolved;gitignore_patterns)
     scan(root;name_filter;kind_filter;only_within;gitignore_patterns;gitignore_root;ext_filter)
     _def_key(d)
     compare_seed_to_all(seed_defs;all_defs;min_sim;skip_same_name)
@@ -55,20 +67,23 @@ D:
     render_json(groups;root)
     _build_argument_parser()
     _run_seed_mode(args;root;root_str;gitignore_patterns;ext_set)
+    _build_focus_groups(focus_index;full_index;min_count)
+    _analyse_and_sort_groups(groups_raw)
     _run_focus_mode(args;root;root_str;gitignore_patterns;ext_set)
     _run_default_mode(args;root;root_str;gitignore_patterns;ext_set)
+    _count_similarity_levels(pairs)
+    _print_pair_summary(groups_analysed)
     main()
   regres/doctor.py:
-    e: _handle_url_mode,_handle_import_errors,_handle_defscan_refactor,_save_report,_refresh_import_error_log,main,FileAction,ShellCommand,Diagnosis,DoctorOrchestrator
-    FileAction:  # Akcja na pliku.
-    ShellCommand:  # Polecenie shell do wykonania.
-    Diagnosis:  # Diagnoza problemu i plan naprawy.
-    DoctorOrchestrator: __init__(1),analyze_from_url(1),analyze_import_errors(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_extract_missing_modules(1),_diagnose_import_issue(2),analyze_duplicates(1),_diagnose_duplicate(1),_find_main_location(1),analyze_git_history(1),_analyze_history_patterns(2),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),_render_step_by_step_playbook(2),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1),generate_report(0),render_markdown(1)  # Orchestrator analizy i generator akcji.
+  regres/doctor_cli.py:
+    e: _handle_url_mode,_handle_import_errors,_handle_defscan_refactor,_handle_auto_decision_flow,_save_report,_refresh_import_error_log,_build_parser,main
     _handle_url_mode(args;doctor;scan_root)
     _handle_import_errors(args;doctor;scan_root;refresh_fn)
     _handle_defscan_refactor(args;doctor)
+    _handle_auto_decision_flow(args;doctor;scan_root;refresh_fn)
     _save_report(doctor;args)
     _refresh_import_error_log(project_root;log_path)
+    _build_parser()
     main()
   regres/doctor_models.py:
     e: FileAction,ShellCommand,Diagnosis
@@ -77,7 +92,7 @@ D:
     Diagnosis:  # Diagnoza problemu i plan naprawy.
   regres/doctor_orchestrator.py:
     e: DoctorOrchestrator
-    DoctorOrchestrator: __init__(1),analyze_from_url(1),analyze_import_errors(1),analyze_duplicates(1),analyze_git_history(1),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),generate_report(0),render_markdown(1),_extract_module_name(1),_resolve_module_path(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_validate_errors(2),_extract_missing_modules(1),_diagnose_import_issue(2),_diagnose_duplicate(1),_find_main_location(1),_analyze_history_patterns(2),_apply_file_action(3),_apply_shell_command(3),_build_header(2),_build_section(2),_build_nlp_diagnosis(1),_build_proposed_fixes(1),_build_shell_commands(1),_build_playbook(1),_build_summary(1),_collect_all_diagnoses(1),_normalize_diagnoses(1),_render_step_by_step_playbook(2),_render_analyze_step(2),_render_apply_step(2),_render_validate_step(1),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1)  # Orchestrator analizy i generator akcji.
+    DoctorOrchestrator: __init__(1),analyze_from_url(1),analyze_import_errors(1),analyze_duplicates(1),analyze_git_history(1),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),generate_report(0),render_markdown(1),reset_analysis_plan(0),add_plan_step(5),set_analysis_context(2),_extract_module_name(1),_resolve_module_path(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_validate_errors(2),_extract_missing_modules(1),_diagnose_import_issue(2),_diagnose_duplicate(1),_find_main_location(1),_analyze_history_patterns(2),_apply_file_action(3),_apply_shell_command(3),_build_header(2),_build_section(2),_build_nlp_diagnosis(1),_build_proposed_fixes(1),_build_shell_commands(1),_build_playbook(1),_build_summary(1),_collect_all_diagnoses(1),_normalize_diagnoses(1),_render_decision_workflow(1),_render_structure_snapshot(1),_render_preliminary_refactor_proposals(1),collect_structure_snapshot(1),collect_preliminary_refactor_proposals(0),_render_step_by_step_playbook(2),_render_analyze_step(2),_render_apply_step(2),_render_validate_step(1),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1)  # Orchestrator analizy i generator akcji.
   regres/import_error_toon_report.py:
     e: toon_quote,parse_args,run_typecheck,normalize_file_rel,parse_ts_errors,suggestions_for_error,grouped_errors,metrics,to_toon_block_legacy,to_toon_global_payload,to_toon_compact_per_file,render_markdown,main,TsError,ReportData
     TsError:
@@ -96,7 +111,7 @@ D:
     render_markdown(report;scan_root;max_files;max_errors_per_file)
     main()
   regres/refactor.py:
-    e: iter_files,read_text,md5_file,count_word,line_count,similarity_ratio,normalize_code,rel,name_prefix,extract_imports,extract_symbols_ast,extract_symbols_regex,get_symbols,wrapper_score,cmd_find,cmd_duplicates,cmd_similar,_build_symbol_index,_render_cross_lang_symbols,_render_duplicate_symbols,_render_file_symbols,cmd_symbols,cmd_wrappers,cmd_dead,cmd_diff,cmd_hotmap,cmd_cluster,cmd_deps,to_json_toon,_collect_file_infos,_find_md5_duplicates,_find_name_clusters,_find_similar_pairs,_find_duplicate_symbols,_find_cross_language_symbols,_find_external_importers,_build_report,_save_report,cmd_report,build_parser,main
+    e: iter_files,read_text,md5_file,count_word,line_count,similarity_ratio,normalize_code,rel,name_prefix,extract_imports,extract_symbols_ast,extract_symbols_regex,get_symbols,wrapper_score,cmd_find,cmd_duplicates,cmd_similar,_build_symbol_index,_render_cross_lang_symbols,_render_duplicate_symbols,_render_file_symbols,cmd_symbols,cmd_wrappers,cmd_dead,cmd_diff,cmd_hotmap,cmd_cluster,_deps_filter_by_word,_deps_print_word_results,_deps_print_all,cmd_deps,_sanitize,_format_imports,_format_preview,_toon_meta_section,_toon_files_section,_toon_clusters_section,_toon_similar_pairs_section,_toon_llm_hint,to_json_toon,_collect_file_infos,_find_md5_duplicates,_find_name_clusters,_find_similar_pairs,_find_duplicate_symbols,_find_cross_language_symbols,_find_external_importers,_build_report,_save_report,cmd_report,build_parser,main
     iter_files(root;extensions;word_filter;case_sensitive;ext_filter)
     read_text(p)
     md5_file(p)
@@ -124,7 +139,18 @@ D:
     cmd_diff(args;root)
     cmd_hotmap(args;root)
     cmd_cluster(args;root)
+    _deps_filter_by_word(import_map;word)
+    _deps_print_word_results(word;targets;importers)
+    _deps_print_all(import_map)
     cmd_deps(args;root)
+    _sanitize(value)
+    _format_imports(raw_imports)
+    _format_preview(raw_preview;max_len)
+    _toon_meta_section(meta)
+    _toon_files_section(files)
+    _toon_clusters_section(clusters)
+    _toon_similar_pairs_section(similar_pairs)
+    _toon_llm_hint(llm_hint)
     to_json_toon(data)
     _collect_file_infos(files;root;word;args;max_preview)
     _find_md5_duplicates(texts)
@@ -139,7 +165,7 @@ D:
     build_parser()
     main()
   regres/regres.py:
-    e: run_git,find_repo_root,_dedupe_paths,_check_absolute_path,_check_relative_paths,_search_by_name_suffix,_resolve_single_or_error,resolve_target_file,to_rel,safe_read_text,sha256_of_file,content_metrics,resolve_local_import,extract_local_imports,resolve_import_at_commit,check_imports_at_commit,find_last_working_commit,search_missing_in_history,analyze_regression,extract_symbols,track_filename_history,find_current_locations,_classify_import_problem,_determine_primary_type,classify_problem,dependency_tree,reverse_references,exact_and_near_duplicates,trace_name_and_hash_candidates,parse_numstat_block,file_lineage,changed_files_for_commit,references_in_recent_commits,file_content_at_commit,resolve_import_historical,historical_dependency_tree,analyze_evolution,_collect_tree_paths,find_last_good_version,llm_context_packet,_render_classification_section,_render_name_hash_section,_render_metrics_section,_render_references_section,_render_duplicates_section,_render_lineage_section,_render_evolution_section,_render_last_good_section,_render_regression_section,render_markdown,analyze_file,_resolve_output_path,main,GitCommit
+    e: run_git,find_repo_root,_dedupe_paths,_check_absolute_path,_check_relative_paths,_search_by_name_suffix,_resolve_single_or_error,resolve_target_file,to_rel,safe_read_text,sha256_of_file,content_metrics,resolve_local_import,extract_local_imports,resolve_import_at_commit,check_imports_at_commit,find_last_working_commit,search_missing_in_history,analyze_regression,extract_symbols,track_filename_history,find_current_locations,_classify_import_problem,_analyze_import_problems,_analyze_evolution,_determine_primary_type,classify_problem,dependency_tree,reverse_references,exact_and_near_duplicates,trace_name_and_hash_candidates,parse_numstat_block,file_lineage,changed_files_for_commit,references_in_recent_commits,file_content_at_commit,resolve_import_historical,historical_dependency_tree,analyze_evolution,_collect_tree_paths,find_last_good_version,llm_context_packet,_render_classification_section,_render_name_hash_section,_render_metrics_section,_render_references_section,_render_duplicates_section,_render_lineage_section,_render_evolution_section,_render_last_good_section,_render_regression_section,render_markdown,analyze_file,_resolve_output_path,main,GitCommit
     GitCommit:
     run_git(args;cwd)
     find_repo_root(start)
@@ -164,6 +190,8 @@ D:
     track_filename_history(repo_root;basename)
     find_current_locations(repo_root;basename)
     _classify_import_problem(repo_root;mh)
+    _analyze_import_problems(import_problems;broken;target_dir)
+    _analyze_evolution(current_lines;evolution)
     _determine_primary_type(import_problems;broken;target_dir;current_lines;evolution)
     classify_problem(repo_root;target_rel;current_text;evolution;regression;duplicates)
     dependency_tree(file_path;repo_root;max_depth)
@@ -223,6 +251,131 @@ D:
     test_diagnosis()
     test_import_doctor()
     test_import_doctor_main()
+  tests/test_doctor_cli.py:
+    e: test_build_parser,test_parser_scan_root,test_parser_all,test_parser_url,test_parser_llm,test_parser_import_log,test_parser_defscan_report,test_parser_apply,test_parser_dry_run,test_parser_git_history,test_parser_out_md,test_parser_out_json,test_parser_defscan_scan,test_parser_refactor_scan,test_parser_multiple_args,test_refresh_import_no_frontend,test_refresh_import_with_frontend_subprocess_failure,test_refresh_import_timeout,test_handle_url_mode_without_llm,test_handle_url_mode_with_llm,test_handle_url_mode_with_llm_saves_to_file,test_handle_url_mode_with_apply,test_handle_import_errors_with_log,test_handle_import_errors_without_log_all_flag,test_handle_import_errors_with_git_history,test_handle_defscan_refactor_with_report,test_handle_defscan_refactor_with_scan,test_handle_defscan_refactor_with_refactor_scan,test_handle_defscan_refactor_none,test_save_report_to_stdout,test_save_report_to_json,test_save_report_to_md,test_save_report_to_both_formats
+    test_build_parser()
+    test_parser_scan_root()
+    test_parser_all()
+    test_parser_url()
+    test_parser_llm()
+    test_parser_import_log()
+    test_parser_defscan_report()
+    test_parser_apply()
+    test_parser_dry_run()
+    test_parser_git_history()
+    test_parser_out_md()
+    test_parser_out_json()
+    test_parser_defscan_scan()
+    test_parser_refactor_scan()
+    test_parser_multiple_args()
+    test_refresh_import_no_frontend()
+    test_refresh_import_with_frontend_subprocess_failure(tmp_path)
+    test_refresh_import_timeout(tmp_path)
+    test_handle_url_mode_without_llm(tmp_path)
+    test_handle_url_mode_with_llm(tmp_path)
+    test_handle_url_mode_with_llm_saves_to_file(tmp_path)
+    test_handle_url_mode_with_apply(tmp_path)
+    test_handle_import_errors_with_log(tmp_path)
+    test_handle_import_errors_without_log_all_flag(tmp_path)
+    test_handle_import_errors_with_git_history(tmp_path)
+    test_handle_defscan_refactor_with_report(tmp_path)
+    test_handle_defscan_refactor_with_scan(tmp_path)
+    test_handle_defscan_refactor_with_refactor_scan(tmp_path)
+    test_handle_defscan_refactor_none(tmp_path)
+    test_save_report_to_stdout(tmp_path)
+    test_save_report_to_json(tmp_path)
+    test_save_report_to_md(tmp_path)
+    test_save_report_to_both_formats(tmp_path)
+  tests/test_doctor_models.py:
+    e: test_file_action_defaults,test_file_action_full,test_file_action_all_action_types,test_file_action_empty_path,test_file_action_none_path,test_file_action_with_special_characters,test_file_action_target_without_reason,test_file_action_reason_without_target,test_file_action_equality,test_shell_command,test_shell_command_with_cwd,test_shell_command_empty_command,test_shell_command_empty_description,test_shell_command_none_description,test_shell_command_multiline,test_shell_command_with_special_chars,test_shell_command_with_quotes,test_diagnosis_defaults,test_diagnosis_with_actions,test_diagnosis_with_shell_commands,test_diagnosis_with_both_actions_and_commands,test_diagnosis_confidence_bounds,test_diagnosis_severity_levels,test_diagnosis_problem_types,test_diagnosis_empty_summary,test_diagnosis_empty_nlp_description,test_diagnosis_multiple_file_actions,test_diagnosis_multiple_shell_commands,test_diagnosis_unicode_in_fields,test_diagnosis_long_description,test_diagnosis_confidence_out_of_bounds,test_diagnosis_immutability_of_lists,test_diagnosis_with_none_confidence
+    test_file_action_defaults()
+    test_file_action_full()
+    test_file_action_all_action_types()
+    test_file_action_empty_path()
+    test_file_action_none_path()
+    test_file_action_with_special_characters()
+    test_file_action_target_without_reason()
+    test_file_action_reason_without_target()
+    test_file_action_equality()
+    test_shell_command()
+    test_shell_command_with_cwd()
+    test_shell_command_empty_command()
+    test_shell_command_empty_description()
+    test_shell_command_none_description()
+    test_shell_command_multiline()
+    test_shell_command_with_special_chars()
+    test_shell_command_with_quotes()
+    test_diagnosis_defaults()
+    test_diagnosis_with_actions()
+    test_diagnosis_with_shell_commands()
+    test_diagnosis_with_both_actions_and_commands()
+    test_diagnosis_confidence_bounds()
+    test_diagnosis_severity_levels()
+    test_diagnosis_problem_types()
+    test_diagnosis_empty_summary()
+    test_diagnosis_empty_nlp_description()
+    test_diagnosis_multiple_file_actions()
+    test_diagnosis_multiple_shell_commands()
+    test_diagnosis_unicode_in_fields()
+    test_diagnosis_long_description()
+    test_diagnosis_confidence_out_of_bounds()
+    test_diagnosis_immutability_of_lists()
+    test_diagnosis_with_none_confidence()
+  tests/test_doctor_orchestrator.py:
+    e: test_init_sets_scan_root,test_module_path_map_non_empty,test_module_path_map_contains_all_modules,test_reset_analysis_plan,test_add_plan_step_basic,test_add_plan_step_with_status,test_add_plan_step_with_details,test_set_analysis_context,test_analyze_from_url_valid_module,test_analyze_from_url_invalid_url,test_analyze_from_url_module_not_exists,test_analyze_import_errors_missing_log,test_analyze_import_errors_with_valid_log,test_analyze_import_errors_empty_log,test_analyze_duplicates_missing_report,test_analyze_duplicates_valid_report,test_analyze_duplicates_invalid_json,test_analyze_git_history_no_git,test_analyze_git_history_with_git,test_analyze_git_history_timeout,test_analyze_with_defscan_subprocess_failure,test_analyze_with_defscan_timeout,test_analyze_with_refactor_subprocess_failure,test_analyze_with_refactor_with_wrappers,test_apply_fixes_empty,test_apply_fixes_with_modify_action,test_apply_fixes_with_delete_action,test_apply_fixes_with_shell_command,test_apply_fixes_error_handling,test_generate_report_empty,test_generate_report_with_diagnoses,test_generate_report_with_analysis_plan,test_generate_report_with_analysis_context,test_render_markdown_empty,test_render_markdown_with_diagnoses,test_render_markdown_with_file_actions,test_render_markdown_with_shell_commands,test_render_markdown_severity_emojis,test_render_markdown_with_decision_workflow,test_generate_llm_diagnosis,test_generate_llm_diagnosis_sections,test_extract_module_name,test_resolve_module_path,test_import_exists_in_source,test_import_exists_in_source_commented,test_resolve_alias_target,test_parse_ts_errors,test_validate_errors,test_extract_missing_modules,test_find_main_location,test_find_main_location_no_shared,test_analyze_history_patterns,test_analyze_history_patterns_no_moves
+    test_init_sets_scan_root()
+    test_module_path_map_non_empty()
+    test_module_path_map_contains_all_modules()
+    test_reset_analysis_plan()
+    test_add_plan_step_basic()
+    test_add_plan_step_with_status()
+    test_add_plan_step_with_details()
+    test_set_analysis_context()
+    test_analyze_from_url_valid_module(tmp_path)
+    test_analyze_from_url_invalid_url(tmp_path)
+    test_analyze_from_url_module_not_exists(tmp_path)
+    test_analyze_import_errors_missing_log()
+    test_analyze_import_errors_with_valid_log(tmp_path)
+    test_analyze_import_errors_empty_log(tmp_path)
+    test_analyze_duplicates_missing_report()
+    test_analyze_duplicates_valid_report(tmp_path)
+    test_analyze_duplicates_invalid_json(tmp_path)
+    test_analyze_git_history_no_git()
+    test_analyze_git_history_with_git(tmp_path)
+    test_analyze_git_history_timeout(tmp_path)
+    test_analyze_with_defscan_subprocess_failure(tmp_path)
+    test_analyze_with_defscan_timeout(tmp_path)
+    test_analyze_with_refactor_subprocess_failure(tmp_path)
+    test_analyze_with_refactor_with_wrappers(tmp_path)
+    test_apply_fixes_empty()
+    test_apply_fixes_with_modify_action()
+    test_apply_fixes_with_delete_action(tmp_path)
+    test_apply_fixes_with_shell_command()
+    test_apply_fixes_error_handling()
+    test_generate_report_empty()
+    test_generate_report_with_diagnoses()
+    test_generate_report_with_analysis_plan()
+    test_generate_report_with_analysis_context()
+    test_render_markdown_empty()
+    test_render_markdown_with_diagnoses()
+    test_render_markdown_with_file_actions()
+    test_render_markdown_with_shell_commands()
+    test_render_markdown_severity_emojis()
+    test_render_markdown_with_decision_workflow()
+    test_generate_llm_diagnosis()
+    test_generate_llm_diagnosis_sections()
+    test_extract_module_name()
+    test_resolve_module_path()
+    test_import_exists_in_source(tmp_path)
+    test_import_exists_in_source_commented(tmp_path)
+    test_resolve_alias_target(tmp_path)
+    test_parse_ts_errors(tmp_path)
+    test_validate_errors(tmp_path)
+    test_extract_missing_modules()
+    test_find_main_location()
+    test_find_main_location_no_shared()
+    test_analyze_history_patterns()
+    test_analyze_history_patterns_no_moves()
   tests/test_import_error_toon_report.py:
     e: test_ts_error_re_matches,test_ts_error_re_no_match_for_plain_text,test_missing_module_re,test_exported_member_re,test_toon_quote_escapes,test_parse_ts_errors_basic,test_parse_ts_errors_filters_code,test_parse_ts_errors_empty,test_suggestions_ts2307_alias,test_suggestions_ts2307_relative,test_suggestions_ts2305,test_suggestions_unknown_code,test_grouped_errors,test_metrics,test_metrics_empty,test_to_toon_block_legacy,test_to_toon_global_payload,test_to_toon_compact_per_file,test_ts_error_dataclass,test_report_data
     test_ts_error_re_matches()

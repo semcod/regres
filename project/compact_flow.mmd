@@ -1,12 +1,14 @@
 flowchart TD
+    SUMR["SUMR<br/>166 funcs"]
     docs__DEFSCAN["docs.DEFSCAN<br/>1 funcs"]
-    regres__defscan["regres.defscan<br/>31 funcs"]
-    regres__doctor["regres.doctor<br/>30 funcs"]
+    regres__defscan["regres.defscan<br/>38 funcs"]
+    regres__doctor_cli["regres.doctor_cli<br/>8 funcs"]
     regres__import_error_toon_report["regres.import_error_toon_report<br/>13 funcs"]
-    regres__refactor["regres.refactor<br/>41 funcs"]
-    regres__regres["regres.regres<br/>53 funcs"]
+    regres__refactor["regres.refactor<br/>52 funcs"]
+    regres__regres["regres.regres<br/>55 funcs"]
     regres__refactor ==>|76| docs__DEFSCAN
     regres__defscan ==>|34| docs__DEFSCAN
-    regres__doctor ==>|9| docs__DEFSCAN
+    regres__doctor_cli ==>|9| docs__DEFSCAN
     regres__import_error_toon_report -->|3| docs__DEFSCAN
+    regres__defscan -->|1| SUMR
     regres__regres -->|1| docs__DEFSCAN

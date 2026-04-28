@@ -39,10 +39,44 @@ def _read_env() -> dict[str, str]:
 
 
 def _write_env(data: dict[str, str]) -> None:
+    """Persist ``data`` to ``.regres/.env`` while preserving comments / order.
+
+    Earlier versions rewrote the whole file from scratch which destroyed the
+    self-documenting template emitted by ``doctor_config._ensure_env_file``.
+    We now read the existing file line-by-line, update keys in place, and
+    append any keys that didn't already exist.
+    """
     env_path = _find_env_path()
     env_path.parent.mkdir(parents=True, exist_ok=True)
-    lines = [f"{k}={v}" for k, v in data.items()]
-    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    existing_lines: list[str] = []
+    if env_path.exists():
+        try:
+            existing_lines = env_path.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeDecodeError):
+            existing_lines = []
+
+    remaining = dict(data)
+    out_lines: list[str] = []
+    for line in existing_lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            out_lines.append(line)
+            continue
+        key = stripped.split("=", 1)[0].strip()
+        if key in remaining:
+            out_lines.append(f"{key}={remaining.pop(key)}")
+        else:
+            out_lines.append(line)
+
+    # Append keys that weren't already present.
+    for key, val in remaining.items():
+        out_lines.append(f"{key}={val}")
+
+    text = "\n".join(out_lines)
+    if not text.endswith("\n"):
+        text += "\n"
+    env_path.write_text(text, encoding="utf-8")
 
 
 def _get_pypi_version() -> str | None:

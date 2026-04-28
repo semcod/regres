@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.44] - 2026-04-28
+
+### Docs
+- Update README.md
+
+### Test
+- Update tests/test_doctor_config.py
+
+### Other
+- Update regres/version_check.py
+
 ## [0.1.43] - 2026-04-28
 
 ### Docs

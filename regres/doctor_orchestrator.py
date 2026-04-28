@@ -10,14 +10,22 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .doctor_config import DoctorConfig, load_config
 from .doctor_models import Diagnosis, FileAction, ShellCommand
 
 
 class DoctorOrchestrator:
     """Orchestrator analizy i generator akcji."""
 
-    def __init__(self, scan_root: Path):
+    def __init__(self, scan_root: Path, config: Optional["DoctorConfig"] = None):
         self.scan_root = scan_root.resolve()
+        # ``config`` is optional so callers that just want the default
+        # behavior (e.g. unit tests) need not construct one explicitly.
+        # When omitted we fall back to a minimal config with the historical
+        # defaults, *without* writing a .regres/.env file (load_config does).
+        self.config: DoctorConfig = config if config is not None else DoctorConfig(
+            scan_root=self.scan_root,
+        )
         self.diagnoses: List[Diagnosis] = []
         self.analysis_plan: List[Dict[str, Any]] = []
         self.analysis_context: Dict[str, Any] = {}

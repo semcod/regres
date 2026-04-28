@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.23] - 2026-04-28
+
+### Docs
+- Update README.md
+
+### Other
+- Update VERSION
+- Update regres/doctor_cli.py
+
 ## [0.1.21] - 2026-04-28
 
 ### Docs

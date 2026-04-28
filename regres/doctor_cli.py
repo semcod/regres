@@ -8,7 +8,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .doctor_models import Diagnosis
 from .doctor_orchestrator import DoctorOrchestrator
@@ -55,6 +55,20 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
         details=(
             f"route hint matched: {route_hint}" if route_hint
             else f"module inferred: {module_name or 'unknown'}"
+        ),
+        inputs={
+            "url": args.url,
+            "url_path": normalized_path,
+            "had_route_hint": bool(route_hint),
+        },
+        outputs={
+            "module_name": module_name or "unknown",
+            "route_hint": route_hint,
+        },
+        decision=(
+            f"URL prefix dopasowany do hint-a `{route_hint}` → moduł `{module_name}`"
+            if route_hint else
+            f"Brak hint-a; pierwszy segment URL → moduł `{module_name}`"
         ),
     )
 
@@ -106,6 +120,7 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
             # even in --llm mode so URL-targeted stub/placeholder pages are
             # always reported as actionable diagnoses, not just hidden inside
             # an LLM narrative.
+            page_token = doctor._extract_page_token(normalized_path, module_name)
             doctor.add_plan_step(
                 name="page implementation analysis",
                 reason="Wykrycie placeholder/stub plików strony pasujących do URL.",
@@ -114,10 +129,25 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                     f"--url {args.url}"
                 ),
                 status="done",
+                inputs={
+                    "module_path": str(module_path),
+                    "page_token": page_token,
+                    "history_window_days": doctor.HISTORY_DEFAULT_DAYS,
+                    "history_max_iterations": doctor.HISTORY_DEFAULT_ITERATIONS,
+                },
+                decision=(
+                    f"Z URL `{normalized_path}` wyciągnięto token strony `{page_token}`. "
+                    f"Szukam plików `*{page_token}.page.ts` w `{module_path}` i sprawdzam "
+                    "stub/placeholder oraz regresję względem historii git."
+                ),
             )
             page_diagnoses = doctor.analyze_page_implementations(
                 normalized_path, module_path, module_name,
             )
+            doctor.update_last_plan_step(outputs={
+                "diagnoses_found": len(page_diagnoses),
+                "problem_types": [d.problem_type for d in page_diagnoses],
+            })
             doctor.diagnoses.extend(page_diagnoses)
             doctor.set_analysis_context(
                 "page_implementation_findings",
@@ -336,6 +366,34 @@ def _save_report(doctor: DoctorOrchestrator, args) -> None:
     """Save report to JSON/Markdown or print to stdout."""
     report = doctor.generate_report()
 
+    # c2004-maskservice-patch-v4: derive a stable basename for companion
+    # artifacts (.sh patches, index, future reports). Prefer --out-md, fall
+    # back to --out-json, finally to a generic 'doctor'.
+    basename = "doctor"
+    out_dir: Optional[Path] = None
+    if args.out_md:
+        out_md_path = Path(args.out_md)
+        basename = out_md_path.stem
+        out_dir = out_md_path.parent
+    elif args.out_json:
+        out_json_path = Path(args.out_json)
+        basename = out_json_path.stem
+        out_dir = out_json_path.parent
+
+    # Resolve patches output directory.
+    patches_dir: Optional[Path] = None
+    out_patches_dir_val = getattr(args, "out_patches_dir", None)
+    if out_patches_dir_val and isinstance(out_patches_dir_val, (str, Path)):
+        patches_dir = Path(out_patches_dir_val)
+    elif out_dir is not None:
+        patches_dir = out_dir
+
+    generated_patches: List[Dict[str, str]] = []
+    if patches_dir is not None and not getattr(args, "no_patches", False):
+        generated_patches = doctor.generate_patch_scripts(patches_dir, basename)
+        if generated_patches:
+            report["generated_patches"] = generated_patches
+
     if args.out_json:
         out_json = Path(args.out_json)
         out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -344,11 +402,63 @@ def _save_report(doctor: DoctorOrchestrator, args) -> None:
     if args.out_md:
         out_md = Path(args.out_md)
         md_text = doctor.render_markdown(report)
+        # Append patches section so the markdown report points at the .sh files.
+        if generated_patches:
+            md_text = md_text.rstrip() + "\n\n" + _render_patches_section(generated_patches)
         out_md.write_text(md_text, encoding="utf-8")
         print(f"Markdown report saved to {out_md}")
 
+    if generated_patches:
+        non_index = [p for p in generated_patches if p["kind"] != "index"]
+        print(f"Patch scripts generated: {len(non_index)} (in {patches_dir})")
+        for p in generated_patches:
+            kind_tag = "INDEX" if p["kind"] == "index" else p["candidate"]
+            print(f"  [{kind_tag}] {p['path']}")
+
     if not args.out_json and not args.out_md:
-        print(doctor.render_markdown(report))
+        md_text = doctor.render_markdown(report)
+        if generated_patches:
+            md_text = md_text.rstrip() + "\n\n" + _render_patches_section(generated_patches)
+        print(md_text)
+
+
+def _render_patches_section(patches: List[Dict[str, str]]) -> str:
+    """Render the 'Generated Patches' section appended to markdown reports."""
+    lines = ["## Generated Patches", ""]
+    non_index = [p for p in patches if p["kind"] != "index"]
+    index_entry = next((p for p in patches if p["kind"] == "index"), None)
+    if not non_index:
+        lines.append("Brak wygenerowanych patchy (żadna diagnoza nie sugerowała modyfikacji).")
+        lines.append("")
+        return "\n".join(lines)
+
+    lines.append(
+        f"Wygenerowano {len(non_index)} patch-y `.sh`. Każdy jest niezależny — "
+        "wykonuje backup (`<plik>.before-<timestamp>`), aplikuje zmianę i drukuje "
+        "instrukcję revert. Jeśli pierwsza opcja okaże się błędna, uruchom kolejną."
+    )
+    lines.append("")
+    if index_entry:
+        lines.append(f"**Index:** `bash {index_entry['path']}` — wypisuje wszystkie dostępne patche.")
+        lines.append("")
+    lines.append("| # | Diagnoza | Kandydat | Plik patcha |")
+    lines.append("|---|---|---|---|")
+    for i, p in enumerate(non_index, 1):
+        lines.append(
+            f"| {i} | {p['diagnosis']} | `{p['candidate']}` | `{p['path']}` |"
+        )
+    lines.append("")
+    lines.append("```bash")
+    lines.append("# Aplikuj wybrany patch:")
+    if non_index:
+        lines.append(f"bash {non_index[0]['path']}")
+    lines.append("# Jeśli treść jest błędna — przywróć backup i wybierz inny:")
+    lines.append("# cp <target>.before-<timestamp> <target>")
+    if len(non_index) > 1:
+        lines.append(f"bash {non_index[1]['path']}")
+    lines.append("```")
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
@@ -419,6 +529,19 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--refactor-scan', help='Uruchom refactor wrappers na konkretnym katalogu')
     parser.add_argument('--out-md', help='Ścieżka do raportu Markdown')
     parser.add_argument('--out-json', help='Ścieżka do raportu JSON')
+    parser.add_argument(
+        '--out-patches-dir',
+        help=(
+            'Katalog, do którego zostaną zapisane skrypty `.sh` patchy (po jednym na każdą '
+            'opcję restore-z-historii oraz na każdą diagnozę z file_actions=modify). '
+            'Domyślnie używany jest katalog --out-md/--out-json.'
+        ),
+    )
+    parser.add_argument(
+        '--no-patches',
+        action='store_true',
+        help='Nie generuj skryptów `.sh` (tylko raport JSON/MD).',
+    )
     return parser
 
 

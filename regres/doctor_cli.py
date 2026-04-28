@@ -102,6 +102,36 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 confidence=0.9,
             ))
         else:
+            # c2004-maskservice-patch-v2: page implementation analysis runs
+            # even in --llm mode so URL-targeted stub/placeholder pages are
+            # always reported as actionable diagnoses, not just hidden inside
+            # an LLM narrative.
+            doctor.add_plan_step(
+                name="page implementation analysis",
+                reason="Wykrycie placeholder/stub plików strony pasujących do URL.",
+                command=(
+                    f"python -m regres.regres_cli doctor --scan-root {scan_root} "
+                    f"--url {args.url}"
+                ),
+                status="done",
+            )
+            page_diagnoses = doctor.analyze_page_implementations(
+                normalized_path, module_path, module_name,
+            )
+            doctor.diagnoses.extend(page_diagnoses)
+            doctor.set_analysis_context(
+                "page_implementation_findings",
+                [
+                    {
+                        "summary": d.summary,
+                        "problem_type": d.problem_type,
+                        "severity": d.severity,
+                        "files": [a.path for a in d.file_actions],
+                    }
+                    for d in page_diagnoses
+                ],
+            )
+
             if args.llm:
                 doctor.add_plan_step(
                     name="llm report generation",
@@ -116,16 +146,18 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                     print(f"LLM diagnosis saved to {out_md}")
                 else:
                     print(llm_report)
-                return
+                # fall through so structured report (with page findings) is
+                # still saved by _save_report() in JSON/MD form.
 
-            doctor.add_plan_step(
-                name="targeted module analysis",
-                reason="Uruchomienie diagnostyki modułu wynikającego z URL.",
-                command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
-                status="done",
-            )
-            diagnoses = doctor.analyze_from_url(args.url)
-            doctor.diagnoses.extend(diagnoses)
+            else:
+                doctor.add_plan_step(
+                    name="targeted module analysis",
+                    reason="Uruchomienie diagnostyki modułu wynikającego z URL.",
+                    command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
+                    status="done",
+                )
+                diagnoses = doctor.analyze_from_url(args.url)
+                doctor.diagnoses.extend(diagnoses)
     else:
         doctor.add_plan_step(
             name="module scope resolution",

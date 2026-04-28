@@ -1,0 +1,2 @@
+napraw z uzyciem regres problem z brakiem wyswietlania http://localhost:8100/connect-config-sitemap?font=default&theme=dark&role=admin&lang=pl&size=100
+sprawdz to poprzez paczke regres, kktora powinna najpierw wygenerować sceizke decyzyjna  i potem wygenerowac na bazie tych decyzji raport i zapisac te wszystkie informacje na jakiej zasadzie wygenrowal raport i jak  wygenerujesz raport to sprawdz czy podpowiedzi algorymtu są słuszne w celu naprawy  i popraw paczke jesli niepoprawnie analizuje i nieporpawnie

@@ -69,6 +69,10 @@ class DoctorOrchestrator:
             return []
 
         diagnoses = []
+        # c2004-maskservice-patch-v2: page implementation analysis runs first
+        # so URL-targeted page stubs (e.g. "Strona w trakcie migracji") are
+        # detected before broader structural scans.
+        diagnoses.extend(self.analyze_page_implementations(path, full_module_path, module_name))
         diagnoses.extend(self.analyze_with_defscan(full_module_path))
         diagnoses.extend(self.analyze_with_refactor(full_module_path))
 
@@ -83,6 +87,254 @@ class DoctorOrchestrator:
 
         fallback = self._build_url_fallback_diagnosis(path, full_module_path)
         return [fallback] if fallback else []
+
+    # ------------------------------------------------------------------
+    # Page implementation analysis (URL-targeted stub/placeholder detection)
+    # ------------------------------------------------------------------
+
+    PLACEHOLDER_TEXT_PATTERNS = (
+        "strona w trakcie migracji",
+        "page under migration",
+        "coming soon",
+        "wkrótce",
+        "todo: implement",
+        "not implemented yet",
+        "placeholder-page",
+        "placeholder page",
+    )
+
+    def analyze_page_implementations(
+        self,
+        route_path: str,
+        module_path: Path,
+        module_name: str,
+    ) -> List[Diagnosis]:
+        """Wykrywa stub/placeholder strony powiązane z URL-em."""
+        page_token = self._extract_page_token(route_path, module_name)
+        if not page_token:
+            return []
+
+        candidates = self._find_page_files(module_path, page_token)
+        if not candidates:
+            return [self._build_missing_page_diagnosis(route_path, module_path, module_name, page_token)]
+
+        diagnoses: List[Diagnosis] = []
+        for page_file in candidates:
+            diag = self._diagnose_page_stub(page_file, page_token, module_name)
+            if diag is not None:
+                diagnoses.append(diag)
+        return diagnoses
+
+    def _extract_page_token(self, route_path: str, module_name: str) -> Optional[str]:
+        """Zwraca sub-token URL po nazwie modułu (np. 'sitemap')."""
+        if not route_path:
+            return None
+        path = route_path.strip('/').split('?', 1)[0]
+        first_segment = path.split('/', 1)[0]
+        if not first_segment:
+            return None
+        if first_segment == module_name:
+            return None
+        if first_segment.startswith(module_name + '-'):
+            return first_segment[len(module_name) + 1 :]
+        parts = path.split('/')
+        if len(parts) > 1 and parts[0] == module_name:
+            return parts[1]
+        return None
+
+    def _find_page_files(self, module_path: Path, page_token: str) -> List[Path]:
+        """Lokalizuje pliki strony pasujące do tokenu URL."""
+        token = page_token.lower()
+        matches: List[Path] = []
+        seen: set = set()
+        for file_path in module_path.rglob("*.page.ts"):
+            name = file_path.name.lower()
+            base = name.replace('.page.ts', '')
+            if base == token or base.endswith('-' + token) or base.endswith('.' + token):
+                key = str(file_path.resolve())
+                if key not in seen:
+                    seen.add(key)
+                    matches.append(file_path)
+        return matches
+
+    def _diagnose_page_stub(
+        self,
+        page_file: Path,
+        page_token: str,
+        module_name: str,
+    ) -> Optional[Diagnosis]:
+        """Zwraca diagnozę, jeżeli plik strony to stub/placeholder."""
+        try:
+            text = page_file.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
+
+        line_count = sum(1 for _ in text.splitlines())
+        lower_text = text.lower()
+        has_placeholder_text = any(p in lower_text for p in self.PLACEHOLDER_TEXT_PATTERNS)
+        is_short_stub = line_count <= 15 and 'render' in text and 'placeholder' in lower_text
+        empty_render = bool(re.search(r"render\s*\([^)]*\)\s*[:\w\s<>|]*\{\s*return\s+['\"`]['\"`]\s*;?\s*\}", text))
+
+        if not (has_placeholder_text or is_short_stub or empty_render):
+            return None
+
+        try:
+            relative = page_file.relative_to(self.scan_root)
+        except ValueError:
+            relative = page_file
+        relative_str = str(relative).replace("\\", "/")
+
+        backup_candidate = self._find_backup_page_implementation(page_token, module_name)
+
+        actions: List[FileAction] = [
+            FileAction(
+                path=relative_str,
+                action="modify",
+                reason=(
+                    f"Plik strony zawiera placeholder ({line_count} linii). "
+                    "Zaimplementuj klasę `*Page` z metodami `render()`/`getStyles()`/"
+                    "`setupEventListeners()` używanymi przez `pages-index.ts`."
+                ),
+            )
+        ]
+        commands: List[ShellCommand] = [
+            ShellCommand(
+                command=f"sed -n '1,40p' {relative_str}",
+                description="Podgląd aktualnej zawartości placeholder-a",
+            )
+        ]
+
+        nlp_lines = [
+            f"Plik `{relative_str}` jest placeholder-em (długość {line_count} linii). "
+            "URL kieruje na ten plik, więc UI pokazuje komunikat zamiast właściwej strony."
+        ]
+        if backup_candidate:
+            backup_str = str(backup_candidate).replace("\\", "/")
+            nlp_lines.append(
+                f"Pełna implementacja istnieje w `{backup_str}` – skopiuj `render()`, "
+                "`setupEventListeners()` i pomocnicze metody."
+            )
+            actions.append(
+                FileAction(
+                    path=backup_str,
+                    action="review",
+                    reason="Źródło referencyjne implementacji do skopiowania",
+                )
+            )
+            commands.append(
+                ShellCommand(
+                    command=f"diff -u {backup_str} {relative_str}",
+                    description="Porównaj implementację referencyjną z placeholder-em",
+                )
+            )
+
+        return Diagnosis(
+            summary=f"Strona '{page_token}' w module '{module_name}' to placeholder",
+            problem_type="page_placeholder",
+            severity="high",
+            nlp_description=" ".join(nlp_lines),
+            file_actions=actions,
+            shell_commands=commands,
+            confidence=0.9,
+        )
+
+    def _find_backup_page_implementation(
+        self,
+        page_token: str,
+        module_name: str,
+    ) -> Optional[Path]:
+        """Szuka pełnej implementacji strony w innych modułach (np. *-network/ui/)."""
+        token = page_token.lower()
+        modules_dir = self.scan_root / "modules"
+        if not modules_dir.exists():
+            return None
+        best_candidate: Optional[Path] = None
+        best_size = 0
+        for path in modules_dir.rglob("*.page.ts"):
+            name = path.name.lower()
+            base = name.replace('.page.ts', '')
+            if not (base == token or base.endswith('-' + token)):
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            lower_text = text.lower()
+            if any(p in lower_text for p in self.PLACEHOLDER_TEXT_PATTERNS):
+                continue
+            line_count = sum(1 for _ in text.splitlines())
+            if line_count < 30:
+                continue
+            if line_count > best_size:
+                best_size = line_count
+                best_candidate = path
+        if best_candidate is None:
+            return None
+        try:
+            return best_candidate.relative_to(self.scan_root)
+        except ValueError:
+            return best_candidate
+
+    def _build_missing_page_diagnosis(
+        self,
+        route_path: str,
+        module_path: Path,
+        module_name: str,
+        page_token: str,
+    ) -> Diagnosis:
+        """Diagnoza dla URL nie mającego pliku strony w module."""
+        try:
+            module_relative = module_path.relative_to(self.scan_root)
+        except ValueError:
+            module_relative = module_path
+        module_str = str(module_relative).replace("\\", "/")
+
+        backup = self._find_backup_page_implementation(page_token, module_name)
+        actions: List[FileAction] = [
+            FileAction(
+                path=f"{module_str}/pages/{module_name}-{page_token}.page.ts",
+                action="modify",
+                reason=(
+                    f"Brak pliku strony dla URL '/{route_path}'. Utwórz nową klasę "
+                    f"strony z metodami `render`/`getStyles` i zarejestruj ją w "
+                    f"`pages-index.ts` pod kluczem '{page_token}'."
+                ),
+            )
+        ]
+        commands: List[ShellCommand] = [
+            ShellCommand(
+                command=f"grep -RIn \"'{page_token}'\" {module_str}",
+                description="Sprawdź czy klucz strony jest już zarejestrowany",
+            )
+        ]
+        if backup is not None:
+            backup_str = str(backup).replace("\\", "/")
+            actions.append(
+                FileAction(
+                    path=backup_str,
+                    action="review",
+                    reason="Skopiuj implementację referencyjną",
+                )
+            )
+            commands.append(
+                ShellCommand(
+                    command=f"cat {backup_str}",
+                    description="Pokaż kod referencyjny strony",
+                )
+            )
+        return Diagnosis(
+            summary=f"Brak strony '{page_token}' w module '{module_name}'",
+            problem_type="page_missing",
+            severity="high",
+            nlp_description=(
+                f"URL '/{route_path}' wskazuje na stronę o tokenie '{page_token}', "
+                f"ale nie znaleziono żadnego pliku `*-{page_token}.page.ts` w "
+                f"`{module_str}`."
+            ),
+            file_actions=actions,
+            shell_commands=commands,
+            confidence=0.85,
+        )
 
     @staticmethod
     def _filter_actionable_diagnoses(diagnoses: List[Diagnosis]) -> List[Diagnosis]:

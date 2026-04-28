@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1361-green)
-> **1361** functions | **19** classes | **42** files | CC̄ = 5.5
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1378-green)
+> **1378** functions | **19** classes | **43** files | CC̄ = 5.9
 
 > Auto-generated project documentation from source code analysis.
 
@@ -73,6 +73,7 @@ regres/
 ├── SUMD
 ├── pyproject
 ├── tree
+├── TODO
 ├── CHANGELOG
 ├── project
 ├── README
@@ -97,12 +98,12 @@ regres/
     ├── regres_cli
     ├── defscan
     ├── doctor_orchestrator
+        ├── toon
     ├── prompt
         ├── toon
         ├── toon
         ├── toon
     ├── context
-        ├── toon
     ├── README
     ├── calls
         ├── toon
@@ -757,21 +758,6 @@ regres/
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
-- `analyze_from_url()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
-- `reset_analysis_plan()` — —
-- `add_plan_step()` — —
-- `set_analysis_context()` — —
-- `collect_structure_snapshot()` — —
-- `collect_preliminary_refactor_proposals()` — —
-- `loc()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -989,6 +975,21 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
+- `analyze_from_url()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `set_analysis_context()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
+- `loc()` — —
 
 
 ## Project Structure
@@ -999,6 +1000,7 @@ regres/
 📄 `README`
 📄 `SUMD` (626 functions, 5 classes)
 📄 `SUMR` (217 functions, 5 classes)
+📄 `TODO`
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
 📄 `docs.README` (1 functions)
@@ -1014,16 +1016,16 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1445 functions)
+📄 `project.map.toon` (1446 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
 📄 `regres.defscan` (45 functions, 1 classes)
 📄 `regres.doctor`
-📄 `regres.doctor_cli` (8 functions)
+📄 `regres.doctor_cli` (9 functions)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (51 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (66 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (52 functions)
 📄 `regres.regres` (55 functions, 1 classes)

@@ -242,11 +242,12 @@ flowchart TD
         regres__defscan__main("main CC=8")
     end
     subgraph regres__doctor_cli
-        regres__doctor_cli___handle_url_mode{{_handle_url_mode CC=20}}
+        regres__doctor_cli___handle_url_mode{{_handle_url_mode CC=26}}
         regres__doctor_cli___handle_import_errors("_handle_import_errors CC=10")
         regres__doctor_cli___handle_defscan_refactor["_handle_defscan_refactor"]
         regres__doctor_cli___handle_auto_decision_flow{{_handle_auto_decision_flow CC=18}}
-        regres__doctor_cli___save_report["_save_report"]
+        regres__doctor_cli___save_report{{_save_report CC=20}}
+        regres__doctor_cli___render_patches_section("_render_patches_section CC=10")
         regres__doctor_cli___refresh_import_error_log["_refresh_import_error_log"]
         regres__doctor_cli___build_parser["_build_parser"]
         regres__doctor_cli__main["main"]
@@ -254,6 +255,14 @@ flowchart TD
     subgraph regres__doctor_orchestrator
         regres__doctor_orchestrator__DoctorOrchestrator____init__["__init__"]
         regres__doctor_orchestrator__DoctorOrchestrator__analyze_from_url("analyze_from_url CC=8")
+        regres__doctor_orchestrator__DoctorOrchestrator__analyze_page_implementations["analyze_page_implementations"]
+        regres__doctor_orchestrator__DoctorOrchestrator___extract_page_token["_extract_page_token"]
+        regres__doctor_orchestrator__DoctorOrchestrator___find_page_files["_find_page_files"]
+        regres__doctor_orchestrator__DoctorOrchestrator___diagnose_page_stub{{_diagnose_page_stub CC=31}}
+        regres__doctor_orchestrator__DoctorOrchestrator___collect_page_history_candidates{{_collect_page_history_candidates CC=23}}
+        regres__doctor_orchestrator__DoctorOrchestrator___fingerprint_page_content("_fingerprint_page_content CC=8")
+        regres__doctor_orchestrator__DoctorOrchestrator___find_backup_page_implementation("_find_backup_page_implementation CC=13")
+        regres__doctor_orchestrator__DoctorOrchestrator___build_missing_page_diagnosis["_build_missing_page_diagnosis"]
         regres__doctor_orchestrator__DoctorOrchestrator___filter_actionable_diagnoses["_filter_actionable_diagnoses"]
         regres__doctor_orchestrator__DoctorOrchestrator___build_url_fallback_diagnosis["_build_url_fallback_diagnosis"]
         regres__doctor_orchestrator__DoctorOrchestrator__analyze_import_errors["analyze_import_errors"]
@@ -263,11 +272,16 @@ flowchart TD
         regres__doctor_orchestrator__DoctorOrchestrator__analyze_with_refactor["analyze_with_refactor"]
         regres__doctor_orchestrator__DoctorOrchestrator__apply_fixes["apply_fixes"]
         regres__doctor_orchestrator__DoctorOrchestrator__generate_llm_diagnosis["generate_llm_diagnosis"]
-        regres__doctor_orchestrator__DoctorOrchestrator__generate_report["generate_report"]
+        regres__doctor_orchestrator__DoctorOrchestrator__generate_report("generate_report CC=10")
         regres__doctor_orchestrator__DoctorOrchestrator__render_markdown("render_markdown CC=9")
         regres__doctor_orchestrator__DoctorOrchestrator__reset_analysis_plan["reset_analysis_plan"]
         regres__doctor_orchestrator__DoctorOrchestrator__add_plan_step["add_plan_step"]
+        regres__doctor_orchestrator__DoctorOrchestrator__update_last_plan_step["update_last_plan_step"]
         regres__doctor_orchestrator__DoctorOrchestrator__set_analysis_context["set_analysis_context"]
+        regres__doctor_orchestrator__DoctorOrchestrator__summarize_affected_files["summarize_affected_files"]
+        regres__doctor_orchestrator__DoctorOrchestrator__generate_patch_scripts{{generate_patch_scripts CC=26}}
+        regres__doctor_orchestrator__DoctorOrchestrator___render_patch_script["_render_patch_script"]
+        regres__doctor_orchestrator__DoctorOrchestrator___render_generic_patch_script["_render_generic_patch_script"]
         regres__doctor_orchestrator__DoctorOrchestrator___extract_module_name["_extract_module_name"]
         regres__doctor_orchestrator__DoctorOrchestrator___resolve_module_path["_resolve_module_path"]
         regres__doctor_orchestrator__DoctorOrchestrator___import_exists_in_source("_import_exists_in_source CC=11")
@@ -290,19 +304,15 @@ flowchart TD
         regres__doctor_orchestrator__DoctorOrchestrator___build_summary["_build_summary"]
         regres__doctor_orchestrator__DoctorOrchestrator___collect_all_diagnoses["_collect_all_diagnoses"]
         regres__doctor_orchestrator__DoctorOrchestrator___normalize_diagnoses["_normalize_diagnoses"]
-        regres__doctor_orchestrator__DoctorOrchestrator___render_decision_workflow["_render_decision_workflow"]
+        regres__doctor_orchestrator__DoctorOrchestrator___render_decision_workflow("_render_decision_workflow CC=12")
+        regres__doctor_orchestrator__DoctorOrchestrator___fmt_plan_value["_fmt_plan_value"]
+        regres__doctor_orchestrator__DoctorOrchestrator___render_affected_files{{_render_affected_files CC=19}}
         regres__doctor_orchestrator__DoctorOrchestrator___render_structure_snapshot["_render_structure_snapshot"]
         regres__doctor_orchestrator__DoctorOrchestrator___render_preliminary_refactor_proposals["_render_preliminary_refactor_propos"]
         regres__doctor_orchestrator__DoctorOrchestrator__collect_structure_snapshot["collect_structure_snapshot"]
         regres__doctor_orchestrator__DoctorOrchestrator__collect_preliminary_refactor_proposals["collect_preliminary_refactor_propos"]
         regres__doctor_orchestrator__DoctorOrchestrator___render_step_by_step_playbook("_render_step_by_step_playbook CC=8")
         regres__doctor_orchestrator__DoctorOrchestrator___render_analyze_step("_render_analyze_step CC=8")
-        regres__doctor_orchestrator__DoctorOrchestrator___render_apply_step["_render_apply_step"]
-        regres__doctor_orchestrator__DoctorOrchestrator___render_validate_step["_render_validate_step"]
-        regres__doctor_orchestrator__DoctorOrchestrator___collect_git_context["_collect_git_context"]
-        regres__doctor_orchestrator__DoctorOrchestrator___collect_structure_context["_collect_structure_context"]
-        regres__doctor_orchestrator__DoctorOrchestrator___collect_defscan_context["_collect_defscan_context"]
-        regres__doctor_orchestrator__DoctorOrchestrator___collect_refactor_context["_collect_refactor_context"]
     end
     subgraph regres__import_error_toon_report
         regres__import_error_toon_report__toon_quote["toon_quote"]
@@ -540,13 +550,6 @@ flowchart TD
     regres__version_check__check_version --> regres__version_check___should_check
     regres__version_check__check_version --> docs__DEFSCAN__print
     regres__version_check__check_version --> regres__version_check___save_skip_preference
-    regres__doctor_cli___save_report --> docs__DEFSCAN__print
-    regres__doctor_cli___refresh_import_error_log --> docs__DEFSCAN__print
-    regres__doctor_cli__main --> regres__version_check__check_version
-    regres__doctor_cli__main --> regres__doctor_cli___build_parser
-    regres__doctor_cli__main --> regres__doctor_cli___handle_auto_decision_flow
-    regres__doctor_cli__main --> regres__doctor_cli___save_report
-    regres__doctor_cli__main --> regres__doctor_cli___handle_url_mode
     regres__refactor__get_symbols --> regres__refactor__extract_symbols_regex
     regres__refactor__get_symbols --> regres__refactor__extract_symbols_ast
     regres__refactor__cmd_find --> regres__refactor__iter_files
@@ -728,8 +731,15 @@ flowchart TD
     regres__defscan__main --> regres__defscan___run_seed_mode
     regres__defscan__main --> regres__defscan___run_focus_mode
     regres__defscan__main --> regres__defscan___run_default_mode
+    regres__doctor_cli___save_report --> docs__DEFSCAN__print
+    regres__doctor_cli___refresh_import_error_log --> docs__DEFSCAN__print
+    regres__doctor_cli__main --> regres__version_check__check_version
+    regres__doctor_cli__main --> regres__doctor_cli___build_parser
+    regres__doctor_cli__main --> regres__doctor_cli___handle_auto_decision_flow
+    regres__doctor_cli__main --> regres__doctor_cli___save_report
+    regres__doctor_cli__main --> regres__doctor_cli___handle_url_mode
 
     classDef highCC fill:#ff6b6b,stroke:#c92a2a,color:#fff
     classDef medCC fill:#ffd43b,stroke:#f08c00,color:#000
-    class regres__regres___render_classification_section,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_auto_decision_flow,regres__refactor__iter_files,regres__refactor__wrapper_score,regres__refactor__cmd_hotmap,regres__defscan___run_seed_mode,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue highCC
-    class regres__regres___search_by_name_suffix,regres__regres__resolve_target_file,regres__regres__resolve_local_import,regres__regres__check_imports_at_commit,regres__regres__find_last_working_commit,regres__regres__analyze_regression,regres__regres__track_filename_history,regres__regres___analyze_evolution,regres__regres__reverse_references,regres__regres__exact_and_near_duplicates,regres__regres__trace_name_and_hash_candidates,regres__regres__file_lineage,regres__regres__analyze_evolution,regres__regres__llm_context_packet,regres__regres___render_regression_section,regres__doctor_cli___handle_import_errors,regres__refactor__extract_symbols_ast,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor___render_file_symbols,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_cluster,regres__import_error_toon_report__suggestions_for_error,regres__import_error_toon_report__to_toon_global_payload,regres__defscan___extract_block_ts,regres__defscan__extract_typescript,regres__defscan___should_skip_file,regres__defscan__scan medCC
+    class regres__regres___render_classification_section,regres__refactor__iter_files,regres__refactor__wrapper_score,regres__refactor__cmd_hotmap,regres__defscan___run_seed_mode,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_page_stub,regres__doctor_orchestrator__DoctorOrchestrator___collect_page_history_candidates,regres__doctor_orchestrator__DoctorOrchestrator__generate_patch_scripts,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue,regres__doctor_orchestrator__DoctorOrchestrator___render_affected_files,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_auto_decision_flow,regres__doctor_cli___save_report highCC
+    class regres__regres___search_by_name_suffix,regres__regres__resolve_target_file,regres__regres__resolve_local_import,regres__regres__check_imports_at_commit,regres__regres__find_last_working_commit,regres__regres__analyze_regression,regres__regres__track_filename_history,regres__regres___analyze_evolution,regres__regres__reverse_references,regres__regres__exact_and_near_duplicates,regres__regres__trace_name_and_hash_candidates,regres__regres__file_lineage,regres__regres__analyze_evolution,regres__regres__llm_context_packet,regres__regres___render_regression_section,regres__refactor__extract_symbols_ast,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor___render_file_symbols,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_cluster,regres__import_error_toon_report__suggestions_for_error,regres__import_error_toon_report__to_toon_global_payload,regres__defscan___extract_block_ts,regres__defscan__extract_typescript,regres__defscan___should_skip_file,regres__defscan__scan,regres__defscan__compare_seed_to_all medCC

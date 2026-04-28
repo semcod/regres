@@ -798,6 +798,23 @@ class DoctorOrchestrator:
 
     def generate_report(self) -> Dict[str, Any]:
         """Generuje kompletny raport diagnoz."""
+        # c2004-maskservice-patch-v4: dedupe diagnoses produced by overlapping
+        # analyzers (np. analyze_from_url + analyze_page_implementations).
+        # Klucz: (summary, problem_type, primary modify path).
+        deduped: List[Diagnosis] = []
+        seen_keys: set = set()
+        for diag in self.diagnoses:
+            primary_path = next(
+                (a.path for a in diag.file_actions
+                 if a.action == "modify" and not (a.target or "").startswith("git:")),
+                "",
+            )
+            key = (diag.summary, diag.problem_type, primary_path)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            deduped.append(diag)
+        self.diagnoses = deduped
         return {
             "scan_root": str(self.scan_root),
             "analysis_plan": self.analysis_plan,

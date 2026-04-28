@@ -153,14 +153,67 @@ class DoctorOrchestrator:
         errors_by_file = self._parse_ts_errors(log_path)
 
         for file_path, errors in errors_by_file.items():
-            # Analiza wzorców błędów
-            missing_modules = self._extract_missing_modules(errors)
+            # Filtrowanie: sprawdź czy import nadal istnieje w pliku źródłowym
+            # (wyklucza błędy ze starego cache tsc)
+            validated_errors = []
+            for err_line in errors:
+                mod_match = re.search(r"Cannot find module '([^']+)'", err_line)
+                if mod_match:
+                    module_name = mod_match.group(1)
+                    if self._import_exists_in_source(file_path, module_name):
+                        validated_errors.append(err_line)
+                else:
+                    validated_errors.append(err_line)
 
+            if not validated_errors:
+                continue
+
+            missing_modules = self._extract_missing_modules(validated_errors)
             if missing_modules:
                 diag = self._diagnose_import_issue(file_path, missing_modules)
                 diagnoses.append(diag)
 
         return diagnoses
+
+    def _import_exists_in_source(self, file_path: str, module_name: str) -> bool:
+        """Sprawdza czy dany import (niezakomentowany) wciąż istnieje w pliku źródłowym."""
+        full_path = self.scan_root / file_path
+        if not full_path.exists():
+            return False
+        try:
+            text = full_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return False
+
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+                continue
+            if module_name in line and ("import " in line or "from " in line or "require(" in line):
+                return True
+        return False
+
+    def _resolve_alias_target(self, alias_path: str) -> Optional[str]:
+        """Próbuje znaleźć rzeczywistą ścieżkę dla aliasu @c2004/*."""
+        # Mapowanie aliasów na katalogi (heurystyka bazująca na c2004)
+        suffix = alias_path.replace("@c2004/", "")
+        candidates = [
+            self.scan_root / "frontend" / "src" / suffix,
+            self.scan_root / "frontend" / "src" / "modules" / suffix,
+            self.scan_root / "frontend" / "src" / "components" / suffix,
+            self.scan_root / suffix,
+        ]
+        # Dodaj rozszerzenia TS jeśli brak
+        for cand in candidates:
+            if cand.exists():
+                return str(cand.relative_to(self.scan_root)).replace("\\", "/")
+            for ext in (".ts", ".tsx", ".js", ".json"):
+                if cand.with_suffix(ext).exists():
+                    return str(cand.with_suffix(ext).relative_to(self.scan_root)).replace("\\", "/")
+            # Sprawdź index
+            if (cand / "index.ts").exists():
+                return str((cand / "index.ts").relative_to(self.scan_root)).replace("\\", "/")
+        return None
 
     def _parse_ts_errors(self, log_path: Path) -> Dict[str, List[str]]:
         """Parsuje log błędów TS."""
@@ -201,44 +254,75 @@ class DoctorOrchestrator:
         """Diagnozuje problem z importami i generuje plan naprawy."""
         actions = []
         commands = []
+        concrete_fixes: list[str] = []
 
         # Analiza ścieżek modułów
         for module in missing_modules:
             if module.startswith("@c2004/"):
-                # Brakujący alias w monorepo
                 alias = module.replace("@c2004/", "")
-                actions.append(FileAction(
-                    path=file_path,
-                    action="modify",
-                    reason=f"Zmień import {module} na poprawną ścieżkę"
-                ))
+                resolved = self._resolve_alias_target(module)
+                if resolved:
+                    actions.append(FileAction(
+                        path=file_path,
+                        action="modify",
+                        reason=f"Zmień import `{module}` na relatywną ścieżkę do `{resolved}` (lub dodaj alias w vite.config.ts)"
+                    ))
+                    concrete_fixes.append(f"`{module}` → `../{resolved}` (dostosuj głębokość)")
+                else:
+                    actions.append(FileAction(
+                        path=file_path,
+                        action="modify",
+                        reason=f"Zmień import `{module}` na poprawną ścieżkę (plik nie istnieje pod żadnym znanym aliasem)"
+                    ))
                 commands.append(ShellCommand(
-                    command=f"# Przejrzyj {file_path} i popraw import {module}",
-                    description=f"Manualna korekta importu {module}"
+                    command=f"grep -n '{module}' {file_path}",
+                    description=f"Znajdź import {module} w pliku"
                 ))
 
             elif module.startswith("./") or module.startswith("../"):
-                # Relatywna ścieżka - może być problem z głębokością
-                actions.append(FileAction(
-                    path=file_path,
-                    action="modify",
-                    reason=f"Sprawdź czy ścieżka {module} jest poprawna"
-                ))
+                # Sprawdź czy plik istnieje
+                source_dir = (self.scan_root / file_path).parent
+                target = source_dir / module
+                ext_checks = [".ts", ".tsx", ".js", ""]
+                found = any((target.with_suffix(ext) if ext else target).exists() for ext in ext_checks)
+                if not found:
+                    actions.append(FileAction(
+                        path=file_path,
+                        action="modify",
+                        reason=f"Ścieżka `{module}` nie istnieje względem `{file_path}`"
+                    ))
+                    commands.append(ShellCommand(
+                        command=f"ls -la {(source_dir / module).parent} 2>/dev/null || echo 'Brak katalogu'",
+                        description=f"Sprawdź czy katalog dla {module} istnieje"
+                    ))
+                else:
+                    # Plik istnieje, może brak eksportu – niższy priorytet
+                    actions.append(FileAction(
+                        path=file_path,
+                        action="modify",
+                        reason=f"Plik `{module}` istnieje, ale brakuje w nim eksportu – sprawdź nazwę symbolu"
+                    ))
 
         nlp_desc = (
-            f"W pliku {file_path} wykryto błędy importów dla modułów: {', '.join(missing_modules)}. "
-            "Należy sprawdzić konfigurację ścieżek w tsconfig.json oraz upewnić się, "
+            f"W pliku `{file_path}` wykryto błędy importów dla modułów: {', '.join(missing_modules)}. "
+            + (f"Sugerowane poprawki: {', '.join(concrete_fixes)}. " if concrete_fixes else "")
+            + "Należy sprawdzić konfigurację ścieżek w tsconfig.json / vite.config.ts oraz upewnić się, "
             "że wszystkie wymagane moduły są dostępne w monorepo."
         )
+
+        severity = "high" if len(missing_modules) > 3 else "medium"
+        # Obniż priorytet jeśli nie znaleziono żadnych konkretnych ścieżek
+        if not concrete_fixes and not any(a.action == "modify" for a in actions):
+            severity = "low"
 
         return Diagnosis(
             summary=f"Błędy importów w {file_path}",
             problem_type="import_error",
-            severity="high" if len(missing_modules) > 3 else "medium",
+            severity=severity,
             nlp_description=nlp_desc,
             file_actions=actions,
             shell_commands=commands,
-            confidence=0.8
+            confidence=0.85 if concrete_fixes else 0.6
         )
 
     def analyze_duplicates(self, report_path: Path) -> List[Diagnosis]:
@@ -866,6 +950,43 @@ def main():
     scan_root = Path(args.scan_root).resolve()
     doctor = DoctorOrchestrator(scan_root)
 
+    def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
+        """Odświeża log błędów importów TS przez import_error_toon_report."""
+        frontend_cwd = project_root / "frontend"
+        if not frontend_cwd.exists():
+            return False
+
+        out_md = project_root / ".regres" / "import-error-toon-report.md"
+        cmd = [
+            sys.executable,
+            "-m",
+            "regres.import_error_toon_report",
+            "--frontend-cwd",
+            str(frontend_cwd),
+            "--scan-root",
+            str(project_root),
+            "--out-md",
+            str(out_md),
+            "--out-raw-log",
+            str(log_path),
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                cwd=str(project_root),
+                capture_output=True,
+                text=True,
+                timeout=180,
+            )
+            if result.returncode != 0:
+                if result.stderr:
+                    print(f"[doctor] warning: could not refresh import log: {result.stderr.strip()}")
+                return False
+            return True
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            return False
+
     # URL-based discovery
     if args.url:
         # Znajdź ścieżkę modułu
@@ -929,6 +1050,11 @@ def main():
     # Analiza błędów importów
     if args.import_log or args.all:
         import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
+
+        # Przy --all odśwież log, aby uniknąć diagnoz ze starych danych.
+        if args.all and not args.import_log:
+            _refresh_import_error_log(scan_root, import_log)
+
         diagnoses = doctor.analyze_import_errors(import_log)
         doctor.diagnoses.extend(diagnoses)
 

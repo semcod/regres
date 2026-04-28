@@ -60,6 +60,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_typecheck(cwd: Path, command: str) -> str:
+    # Clear TypeScript incremental cache to avoid stale diagnostics.
+    for tsbuildinfo in cwd.rglob("*.tsbuildinfo"):
+        try:
+            tsbuildinfo.unlink()
+        except OSError:
+            pass
     proc = subprocess.run(
         command,
         cwd=str(cwd),

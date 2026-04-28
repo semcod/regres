@@ -86,8 +86,12 @@ def main() -> int:
 
     # import-error-toon-report subcommand
     ier_parser = subparsers.add_parser("import-error-toon-report", help="Raport błędów importów TS w formacie Toon")
-    ier_parser.add_argument("--log-path", help="Ścieżka do logu kompilatora TS", default=".regres/import-error-toon-report.raw.log")
-    ier_parser.add_argument("--report-path", help="Ścieżka do raportu", default=".regres/import-error-toon-report.md")
+    ier_parser.add_argument("--input-log", help="Użyj istniejącego logu zamiast uruchamiania type-check")
+    ier_parser.add_argument("--frontend-cwd", help="Katalog frontend (dla type-check)")
+    ier_parser.add_argument("--typecheck-cmd", help="Komenda type-check (np. npm run -s type-check)")
+    ier_parser.add_argument("--out-md", help="Ścieżka do raportu markdown", default=".regres/import-error-toon-report.md")
+    ier_parser.add_argument("--out-raw-log", help="Ścieżka do surowego logu", default=".regres/import-error-toon-report.raw.log")
+    ier_parser.add_argument("--scan-root", help="Wartość scan_root do raportu")
 
     args = parser.parse_args()
 
@@ -170,8 +174,18 @@ def main() -> int:
 
     elif args.command == "import-error-toon-report":
         sys.argv = ["import-error-toon-report.py"]
-        sys.argv.extend(["--log-path", args.log_path])
-        sys.argv.extend(["--report-path", args.report_path])
+        if args.input_log:
+            sys.argv.extend(["--input-log", args.input_log])
+        if args.frontend_cwd:
+            sys.argv.extend(["--frontend-cwd", args.frontend_cwd])
+        if args.typecheck_cmd:
+            sys.argv.extend(["--typecheck-cmd", args.typecheck_cmd])
+        if args.out_md:
+            sys.argv.extend(["--out-md", args.out_md])
+        if args.out_raw_log:
+            sys.argv.extend(["--out-raw-log", args.out_raw_log])
+        if args.scan_root:
+            sys.argv.extend(["--scan-root", args.scan_root])
         return import_error_toon_report_main()
 
     else:

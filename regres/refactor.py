@@ -425,6 +425,77 @@ def cmd_similar(args, root: Path):
         print(f"{p['similarity']:>5}%  {p['file_a']:<50}  {p['file_b']}")
 
 
+def _build_symbol_index(files, root, kind_filter=''):
+    """Build index of symbols by name across all files."""
+    index: dict[str, list[dict]] = defaultdict(list)
+    file_symbols: dict[str, list[dict]] = {}
+    
+    for p in files:
+        text = read_text(p)
+        syms = get_symbols(p, text)
+        path_str = rel(p, root)
+        file_symbols[path_str] = syms
+        for s in syms:
+            if kind_filter and s['kind'] != kind_filter:
+                continue
+            index[s['name']].append({
+                'path': path_str, 'kind': s['kind'],
+                'line': s['line'], 'ext': p.suffix.lower(),
+            })
+    
+    return index, file_symbols
+
+
+def _render_cross_lang_symbols(cross_sorted, args):
+    """Render cross-language symbols output."""
+    if args.json:
+        print(json.dumps({'cross_language_symbols': {k: v for k, v in cross_sorted}},
+                         indent=2, ensure_ascii=False))
+        return
+    
+    print(f"Symbole w wielu językach ({len(cross_sorted)}):\n")
+    for name, defs in cross_sorted[:60]:
+        langs = sorted({d['ext'] for d in defs})
+        print(f"  {name:<40} [{', '.join(langs)}]")
+        for d in defs:
+            print(f"    {d['path']}:{d['line']} ({d['kind']})")
+
+
+def _render_duplicate_symbols(dups_sorted, args):
+    """Render duplicate symbols output."""
+    if args.json:
+        print(json.dumps({'duplicate_symbols': {k: v for k, v in dups_sorted}},
+                         indent=2, ensure_ascii=False))
+        return
+    
+    print(f"Symbole zdefiniowane wielokrotnie ({len(dups_sorted)}):\n")
+    for name, defs in dups_sorted[:60]:
+        kinds = sorted({d['kind'] for d in defs})
+        print(f"  {name:<40} ({', '.join(kinds)}) — {len(defs)}×")
+        for d in defs:
+            print(f"    {d['path']}:{d['line']}")
+
+
+def _render_file_symbols(file_symbols, kind_filter, args):
+    """Render symbols per file output."""
+    if args.json:
+        print(json.dumps({'file_symbols': file_symbols}, indent=2, ensure_ascii=False))
+        return
+    
+    kind_label = f" [{kind_filter}]" if kind_filter else ""
+    print(f"Symbole w plikach{kind_label}:\n")
+    for path, syms in sorted(file_symbols.items()):
+        filtered = [s for s in syms if not kind_filter or s['kind'] == kind_filter]
+        if not filtered:
+            continue
+        print(f"{path} ({len(filtered)} symboli)")
+        for s in filtered[:20]:
+            print(f"  {s['line']:>5}  {s['kind']:<12}  {s['name']}")
+        if len(filtered) > 20:
+            print(f"  … i {len(filtered) - 20} więcej")
+        print()
+
+
 def cmd_symbols(args, root: Path):
     """
     Indeks symboli (funkcje, klasy, selektory CSS, id HTML…).
@@ -439,70 +510,23 @@ def cmd_symbols(args, root: Path):
     find_dups = getattr(args, 'find_dups', False)
 
     files = iter_files(root, word_filter=word or None)
-    index: dict[str, list[dict]] = defaultdict(list)
-    file_symbols: dict[str, list[dict]] = {}
-
-    for p in files:
-        text = read_text(p)
-        syms = get_symbols(p, text)
-        path_str = rel(p, root)
-        file_symbols[path_str] = syms
-        for s in syms:
-            if kind_filter and s['kind'] != kind_filter:
-                continue
-            index[s['name']].append({
-                'path': path_str, 'kind': s['kind'],
-                'line': s['line'], 'ext': p.suffix.lower(),
-            })
+    index, file_symbols = _build_symbol_index(files, root, kind_filter)
 
     if cross_lang:
         cross = {name: defs for name, defs in index.items()
                  if len({d['ext'] for d in defs}) > 1}
         cross_sorted = sorted(cross.items(),
                               key=lambda x: len({d['ext'] for d in x[1]}), reverse=True)
-        if args.json:
-            print(json.dumps({'cross_language_symbols': {k: v for k, v in cross_sorted}},
-                             indent=2, ensure_ascii=False))
-            return
-        print(f"Symbole w wielu językach ({len(cross_sorted)}):\n")
-        for name, defs in cross_sorted[:60]:
-            langs = sorted({d['ext'] for d in defs})
-            print(f"  {name:<40} [{', '.join(langs)}]")
-            for d in defs:
-                print(f"    {d['path']}:{d['line']} ({d['kind']})")
+        _render_cross_lang_symbols(cross_sorted, args)
         return
 
     if find_dups:
         dups = {name: defs for name, defs in index.items() if len(defs) > 1}
         dups_sorted = sorted(dups.items(), key=lambda x: len(x[1]), reverse=True)
-        if args.json:
-            print(json.dumps({'duplicate_symbols': {k: v for k, v in dups_sorted}},
-                             indent=2, ensure_ascii=False))
-            return
-        print(f"Symbole zdefiniowane wielokrotnie ({len(dups_sorted)}):\n")
-        for name, defs in dups_sorted[:60]:
-            kinds = sorted({d['kind'] for d in defs})
-            print(f"  {name:<40} ({', '.join(kinds)}) — {len(defs)}×")
-            for d in defs:
-                print(f"    {d['path']}:{d['line']}")
+        _render_duplicate_symbols(dups_sorted, args)
         return
 
-    # Domyślnie: per plik
-    if args.json:
-        print(json.dumps({'file_symbols': file_symbols}, indent=2, ensure_ascii=False))
-        return
-    kind_label = f" [{kind_filter}]" if kind_filter else ""
-    print(f"Symbole w plikach{kind_label}:\n")
-    for path, syms in sorted(file_symbols.items()):
-        filtered = [s for s in syms if not kind_filter or s['kind'] == kind_filter]
-        if not filtered:
-            continue
-        print(f"{path} ({len(filtered)} symboli)")
-        for s in filtered[:20]:
-            print(f"  {s['line']:>5}  {s['kind']:<12}  {s['name']}")
-        if len(filtered) > 20:
-            print(f"  … i {len(filtered) - 20} więcej")
-        print()
+    _render_file_symbols(file_symbols, kind_filter, args)
 
 
 def cmd_wrappers(args, root: Path):
@@ -848,24 +872,16 @@ def to_json_toon(data: dict) -> str:
     return '\n'.join(lines)
 
 
-def cmd_report(args, root: Path):
-    """Generuje kompleksowy raport JSON dla LLM."""
-    word = args.word
-    MAX_PREVIEW = 2000
-    normalize = getattr(args, 'normalize', False)
-    toon_format = getattr(args, 'toon', False)
-    print(f"Generowanie raportu dla: '{word}'…", file=sys.stderr)
-
-    files = iter_files(root, word_filter=word)
+def _collect_file_infos(files, root, word, args, max_preview=2000):
+    """Collect file information including word count, symbols, and wrapper score."""
     file_infos, texts = [], {}
-
     for p in files:
         text = read_text(p)
         texts[rel(p, root)] = text
         cnt = count_word(text, word)
         syms = get_symbols(p, text)
         ws = wrapper_score(text)
-        preview = (text[:MAX_PREVIEW] + '…') if len(text) > MAX_PREVIEW else text
+        preview = (text[:max_preview] + '…') if len(text) > max_preview else text
         file_infos.append({
             'path': rel(p, root),
             'word_count': cnt,
@@ -879,29 +895,36 @@ def cmd_report(args, root: Path):
             'preview': preview.replace('\n', '↵ ') if getattr(args, 'preview', False) else None,
         })
     file_infos.sort(key=lambda x: x['word_count'], reverse=True)
+    return file_infos, texts
 
-    # MD5 duplikaty
+
+def _find_md5_duplicates(texts):
+    """Find duplicate files by MD5 hash."""
     hash_map: dict[str, list[str]] = defaultdict(list)
     for path, text in texts.items():
         hash_map[hashlib.md5(text.encode()).hexdigest()].append(path)
-    dup_groups = [paths for paths in hash_map.values() if len(paths) > 1]
+    return [paths for paths in hash_map.values() if len(paths) > 1]
 
-    # Klastry
+
+def _find_name_clusters(texts, depth=2, top_n=30):
+    """Find files with similar name prefixes."""
     clusters: dict[str, list[str]] = defaultdict(list)
     for path in texts:
-        clusters[name_prefix(Path(path).name, 2)].append(path)
+        clusters[name_prefix(Path(path).name, depth)].append(path)
     top_clusters = sorted(
         {k: v for k, v in clusters.items() if len(v) >= 2}.items(),
         key=lambda x: len(x[1]), reverse=True,
-    )[:30]
+    )[:top_n]
+    return dict(top_clusters)
 
-    # Podobne pary
-    threshold = getattr(args, 'min_sim', 60.0)
+
+def _find_similar_pairs(texts, normalize, threshold, max_files=200, max_pairs=50):
+    """Find similar file pairs based on content similarity."""
     texts_cmp = {k: normalize_code(v, Path(k).suffix) for k, v in texts.items()} \
         if normalize else texts
     paths_list = list(texts_cmp.keys())
     similar_pairs = []
-    if len(paths_list) <= 200:
+    if len(paths_list) <= max_files:
         for i in range(len(paths_list)):
             for j in range(i + 1, len(paths_list)):
                 a, b = paths_list[i], paths_list[j]
@@ -909,14 +932,14 @@ def cmd_report(args, root: Path):
                 if sim >= threshold:
                     similar_pairs.append({'file_a': a, 'file_b': b, 'similarity': round(sim, 1)})
         similar_pairs.sort(key=lambda x: x['similarity'], reverse=True)
-        similar_pairs = similar_pairs[:50]
+        similar_pairs = similar_pairs[:max_pairs]
     else:
         similar_pairs = [{'note': f'Za dużo plików ({len(paths_list)}) — użyj similar --word'}]
+    return similar_pairs
 
-    # Wrappery
-    wrappers_found = [f for f in file_infos if f['wrapper_score'] >= 40]
 
-    # Duplikaty symboli
+def _find_duplicate_symbols(files, root, top_n=30):
+    """Find symbols defined in multiple files."""
     sym_index: dict[str, list[dict]] = defaultdict(list)
     for p in files:
         text = read_text(p)
@@ -927,17 +950,23 @@ def cmd_report(args, root: Path):
     dup_symbols = sorted(
         [{'name': k, 'defs': v} for k, v in sym_index.items() if len(v) > 1],
         key=lambda x: len(x['defs']), reverse=True,
-    )[:30]
+    )[:top_n]
+    return dup_symbols, sym_index
 
-    # Cross-language symbols
+
+def _find_cross_language_symbols(sym_index, top_n=20):
+    """Find symbols defined in multiple languages."""
     sym_cross = []
     for name, defs in sym_index.items():
         langs = {Path(d['path']).suffix for d in defs}
         if len(langs) > 1:
             sym_cross.append({'name': name, 'langs': sorted(langs), 'defs': defs})
     sym_cross.sort(key=lambda x: len(x['langs']), reverse=True)
+    return sym_cross[:top_n]
 
-    # Zewnętrzni importerzy
+
+def _find_external_importers(files, root, word):
+    """Find files outside the matched set that import the word."""
     source_paths = {rel(p, root) for p in files}
     importers = []
     for p in iter_files(root):
@@ -947,8 +976,14 @@ def cmd_report(args, root: Path):
         matched = [i for i in extract_imports(read_text(p)) if word.lower() in i.lower()]
         if matched:
             importers.append({'file': path_str, 'matched_imports': matched})
+    return importers[:30]
 
-    report = {
+
+def _build_report(word, root, file_infos, dup_groups, top_clusters, 
+                  similar_pairs, wrappers_found, dup_symbols, sym_cross, 
+                  importers, threshold, normalize):
+    """Build the complete report structure."""
+    return {
         'meta': {
             'word': word,
             'root': str(root),
@@ -964,13 +999,13 @@ def cmd_report(args, root: Path):
         },
         'files': file_infos,
         'duplicate_groups': dup_groups,
-        'name_clusters': dict(top_clusters),
+        'name_clusters': top_clusters,
         'similar_pairs': similar_pairs,
         'wrappers': [{'path': w['path'], 'score': w['wrapper_score'],
                       'reasons': w['wrapper_reasons']} for w in wrappers_found],
         'duplicate_symbols': dup_symbols,
-        'cross_language_symbols': sym_cross[:20],
-        'external_importers': importers[:30],
+        'cross_language_symbols': sym_cross,
+        'external_importers': importers,
         'llm_prompt_hint': (
             f"Raport analizy kodu dla: '{word}'. "
             f"{len(file_infos)} plików, {len(dup_groups)} grup duplikatów MD5, "
@@ -984,26 +1019,50 @@ def cmd_report(args, root: Path):
         ),
     }
 
-    out_path = getattr(args, 'out', None) or f'refactor-report-{word}.json'
-    
+
+def _save_report(report, out_path, toon_format, word):
+    """Save report to file in JSON or TOON format."""
     if toon_format:
-        # Format toon
         toon_content = f"# Refactor Analysis Report: {word}\n"
         toon_content += "# Generated by refactor.py\n\n"
         toon_content += to_json_toon(report)
-        
         with open(out_path, 'w', encoding='utf-8') as f:
             f.write(toon_content)
         print(f"\n✅  Raport toon: {out_path}", file=sys.stderr)
-        for k, v in report['meta'].items():
-            print(f"   {k}: {v}", file=sys.stderr)
     else:
-        # Format JSON
         with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=2, ensure_ascii=False)
         print(f"\n✅  Raport: {out_path}", file=sys.stderr)
-        for k, v in report['meta'].items():
-            print(f"   {k}: {v}", file=sys.stderr)
+    
+    for k, v in report['meta'].items():
+        print(f"   {k}: {v}", file=sys.stderr)
+
+
+def cmd_report(args, root: Path):
+    """Generuje kompleksowy raport JSON dla LLM."""
+    word = args.word
+    normalize = getattr(args, 'normalize', False)
+    toon_format = getattr(args, 'toon', False)
+    threshold = getattr(args, 'min_sim', 60.0)
+    print(f"Generowanie raportu dla: '{word}'…", file=sys.stderr)
+
+    files = iter_files(root, word_filter=word)
+    file_infos, texts = _collect_file_infos(files, root, word, args)
+    
+    dup_groups = _find_md5_duplicates(texts)
+    top_clusters = _find_name_clusters(texts)
+    similar_pairs = _find_similar_pairs(texts, normalize, threshold)
+    wrappers_found = [f for f in file_infos if f['wrapper_score'] >= 40]
+    dup_symbols, sym_index = _find_duplicate_symbols(files, root)
+    sym_cross = _find_cross_language_symbols(sym_index)
+    importers = _find_external_importers(files, root, word)
+
+    report = _build_report(word, root, file_infos, dup_groups, top_clusters,
+                          similar_pairs, wrappers_found, dup_symbols, sym_cross,
+                          importers, threshold, normalize)
+
+    out_path = getattr(args, 'out', None) or f'refactor-report-{word}.json'
+    _save_report(report, out_path, toon_format, word)
 
     if getattr(args, 'json', False) and not toon_format:
         print(json.dumps(report, indent=2, ensure_ascii=False))

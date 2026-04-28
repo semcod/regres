@@ -1,0 +1,109 @@
+# code2llm | 35f 12121L | md:13,yaml:9,python:8,shell:2,toml:1,txt:1 | 2026-04-28
+# CC̄=2.2 | critical:18/543 | dups:0 | cycles:1
+
+HEALTH[20]:
+  🔴 GOD   SUMR.md = 855L, 8 classes, 123m, max CC=0.0
+  🔴 GOD   SUMD.md = 754L, 8 classes, 137m, max CC=0.0
+  🔴 GOD   regres/doctor.py = 1209L, 4 classes, 30m, max CC=20
+  🟡 CC    main CC=42 (limit:15)
+  🟡 CC    _extract_block_ts CC=18 (limit:15)
+  🟡 CC    _path_ignored_by_gitignore CC=19 (limit:15)
+  🟡 CC    scan CC=23 (limit:15)
+  🟡 CC    _run_seed_mode CC=17 (limit:15)
+  🟡 CC    _run_focus_mode CC=20 (limit:15)
+  🟡 CC    _run_default_mode CC=17 (limit:15)
+  🟡 CC    iter_files CC=15 (limit:15)
+  🟡 CC    wrapper_score CC=15 (limit:15)
+  🟡 CC    cmd_hotmap CC=16 (limit:15)
+  🟡 CC    cmd_deps CC=18 (limit:15)
+  🟡 CC    to_json_toon CC=23 (limit:15)
+  🟡 CC    _diagnose_import_issue CC=15 (limit:15)
+  🟡 CC    apply_fixes CC=18 (limit:15)
+  🟡 CC    generate_llm_diagnosis CC=16 (limit:15)
+  🟡 CC    _render_step_by_step_playbook CC=20 (limit:15)
+  🟡 CC    _determine_primary_type CC=19 (limit:15)
+
+REFACTOR[5]:
+  1. split SUMR.md  (god module)
+  2. split SUMD.md  (god module)
+  3. split regres/doctor.py  (god module)
+  4. split 17 high-CC methods  (CC>15)
+  5. break 1 circular dependencies
+
+PIPELINES[45]:
+  [1] Src [main]: main → parse_args
+      PURITY: 100% pure
+  [2] Src [main]: main
+      PURITY: 100% pure
+  [3] Src [__init__]: __init__ → _normalize
+      PURITY: 100% pure
+  [4] Src [_normalize]: _normalize
+      PURITY: 100% pure
+  [5] Src [main]: main → _build_argument_parser
+      PURITY: 100% pure
+
+LAYERS:
+  regres/                         CC̄=7.1    ←in:0  →out:124  !! split
+  │ !! regres                    1480L  1C   52m  CC=19     ←1
+  │ !! doctor                    1209L  4C   30m  CC=20     ←1
+  │ !! refactor                  1198L  0C   41m  CC=23     ←2
+  │ !! defscan                   1189L  1C   31m  CC=23     ←2
+  │ import_error_toon_report   365L  2C   13m  CC=10     ←0
+  │ !! regres_cli                 197L  0C    1m  CC=42     ←0
+  │ __init__                    13L  0C    0m  CC=0.0    ←0
+  │
+  docs/                           CC̄=0.0    ←in:123  →out:0
+  │ README.md                  371L  0C    1m  CC=0.0    ←0
+  │ REGRES.md                  220L  0C    0m  CC=0.0    ←0
+  │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←5
+  │ DOCTOR.md                  150L  1C    1m  CC=0.0    ←0
+  │ REFACTOR.md                 87L  0C    0m  CC=0.0    ←0
+  │ import-error-toon-report.md    76L  0C    0m  CC=0.0    ←0
+  │
+  project/                        CC̄=0.0    ←in:0  →out:0
+  │ !! calls.yaml                1112L  0C    0m  CC=0.0    ←0
+  │ context.md                 401L  0C    0m  CC=0.0    ←0
+  │ README.md                  339L  0C    0m  CC=0.0    ←0
+  │ map.toon.yaml              163L  0C  112m  CC=0.0    ←1
+  │ calls.toon.yaml            145L  0C    0m  CC=0.0    ←0
+  │ analysis.toon.yaml          91L  0C    0m  CC=0.0    ←0
+  │ evolution.toon.yaml         82L  0C    0m  CC=0.0    ←0
+  │ project.toon.yaml           52L  0C    0m  CC=0.0    ←0
+  │ prompt.txt                  49L  0C    0m  CC=0.0    ←0
+  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
+  │
+  ./                              CC̄=0.0    ←in:0  →out:0
+  │ !! SUMR.md                    855L  8C  123m  CC=0.0    ←0
+  │ !! SUMD.md                    754L  8C  137m  CC=0.0    ←0
+  │ !! goal.yaml                  512L  0C    0m  CC=0.0    ←0
+  │ CHANGELOG.md                98L  0C    0m  CC=0.0    ←0
+  │ README.md                   66L  0C    0m  CC=0.0    ←0
+  │ pyproject.toml              52L  0C    0m  CC=0.0    ←0
+  │ project.sh                  41L  0C    0m  CC=0.0    ←0
+  │ tree.sh                      1L  0C    0m  CC=0.0    ←0
+  │ Makefile                     0L  0C    0m  CC=0.0    ←0
+  │
+  .regres/                        CC̄=0.0    ←in:0  →out:0
+  │ !! import-error-toon-report.md   549L  0C    0m  CC=0.0    ←0
+  │
+  scripts/                        CC̄=0.0    ←in:0  →out:0
+  │ import-error-toon-report    11L  0C    0m  CC=0.0    ←0
+  │
+  testql-scenarios/               CC̄=0.0    ←in:0  →out:0
+  │ generated-cli-tests.testql.toon.yaml    20L  0C    0m  CC=0.0    ←0
+  │
+  ── zero ──
+     Makefile                                  0L
+
+COUPLING:
+                    regres         docs  project.map
+       regres           ──          123            1  !! fan-out
+         docs         ←123           ──               hub
+  project.map           ←1                        ──
+  CYCLES: 1
+  HUB: docs/ (fan-in=123)
+  SMELL: regres/ fan-out=124 → split needed
+
+EXTERNAL:
+  validation: run `vallm batch .` → validation.toon
+  duplication: run `redup scan .` → duplication.toon

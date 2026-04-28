@@ -1,0 +1,82 @@
+# code2llm/evolution | 543 func | 12f | 2026-04-28
+
+NEXT[10] (ranked by impact):
+  [1] !! SPLIT           regres/regres.py
+      WHY: 1480L, 1 classes, max CC=19
+      EFFORT: ~4h  IMPACT: 28120
+
+  [2] !! SPLIT           regres/refactor.py
+      WHY: 1198L, 0 classes, max CC=23
+      EFFORT: ~4h  IMPACT: 27554
+
+  [3] !! SPLIT           regres/doctor.py
+      WHY: 1209L, 4 classes, max CC=20
+      EFFORT: ~4h  IMPACT: 24180
+
+  [4] !! SPLIT-FUNC      main  CC=42  fan=18
+      WHY: CC=42 exceeds 15
+      EFFORT: ~1h  IMPACT: 756
+
+  [5] !  SPLIT-FUNC      scan  CC=23  fan=21
+      WHY: CC=23 exceeds 15
+      EFFORT: ~1h  IMPACT: 483
+
+  [6] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
+      WHY: CC=16 exceeds 15
+      EFFORT: ~1h  IMPACT: 384
+
+  [7] !  SPLIT-FUNC      _run_focus_mode  CC=20  fan=18
+      WHY: CC=20 exceeds 15
+      EFFORT: ~1h  IMPACT: 360
+
+  [8] !  SPLIT-FUNC      to_json_toon  CC=23  fan=15
+      WHY: CC=23 exceeds 15
+      EFFORT: ~1h  IMPACT: 345
+
+  [9] !  SPLIT-FUNC      DoctorOrchestrator.generate_llm_diagnosis  CC=16  fan=19
+      WHY: CC=16 exceeds 15
+      EFFORT: ~1h  IMPACT: 304
+
+  [10] !  SPLIT-FUNC      cmd_deps  CC=18  fan=15
+      WHY: CC=18 exceeds 15
+      EFFORT: ~1h  IMPACT: 270
+
+
+RISKS[3]:
+  ⚠ Splitting regres/regres.py may break 52 import paths
+  ⚠ Splitting regres/doctor.py may break 30 import paths
+  ⚠ Splitting regres/refactor.py may break 41 import paths
+
+METRICS-TARGET:
+  CC̄:          2.2 → ≤1.5
+  max-CC:      42 → ≤20
+  god-modules: 4 → 0
+  high-CC(≥15): 18 → ≤9
+  hub-types:   0 → ≤0
+
+PATTERNS (language parser shared logic):
+  _extract_declarations() in base.py — unified extraction for:
+    - TypeScript: interfaces, types, classes, functions, arrow funcs
+    - PHP: namespaces, traits, classes, functions, includes
+    - Ruby: modules, classes, methods, requires
+    - C++: classes, structs, functions, #includes
+    - C#: classes, interfaces, methods, usings
+    - Java: classes, interfaces, methods, imports
+    - Go: packages, functions, structs
+    - Rust: modules, functions, traits, use statements
+
+  Shared regex patterns per language:
+    - import: language-specific import/require/using patterns
+    - class: class/struct/trait declarations with inheritance
+    - function: function/method signatures with visibility
+    - brace_tracking: for C-family languages ({ })
+    - end_keyword_tracking: for Ruby (module/class/def...end)
+
+  Benefits:
+    - Consistent extraction logic across all languages
+    - Reduced code duplication (~70% reduction in parser LOC)
+    - Easier maintenance: fix once, apply everywhere
+    - Standardized FunctionInfo/ClassInfo models
+
+HISTORY:
+  prev CC̄=8.6 → now CC̄=2.2

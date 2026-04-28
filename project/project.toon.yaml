@@ -1,0 +1,53 @@
+# regres | 543 func | 12f | 12899L | md | 2026-04-28
+
+HEALTH:
+  CC̄=2.2  critical=45 (limit:10)  dup=8  cycles=1
+
+ALERTS[20]:
+  !!! cc_exceeded      main = 42 (limit:15)
+  !!! high_fan_out     cmd_hotmap = 24 (limit:10)
+  !!! high_fan_out     analyze_file = 23 (limit:10)
+  !!! high_fan_out     trace_name_and_hash_candidates = 22 (limit:10)
+  !!! high_fan_out     scan = 21 (limit:10)
+  !!  cc_exceeded      scan = 23 (limit:15)
+  !!  cc_exceeded      to_json_toon = 23 (limit:15)
+  !!  cc_exceeded      _run_focus_mode = 20 (limit:15)
+  !!  cc_exceeded      DoctorOrchestrator._render_step_by_step_playbook = 20 (limit:15)
+  !!  high_fan_out     extract_python = 19 (limit:10)
+
+MODULES[35] (top by size):
+  M[regres/regres.py] 1480L C:1 F:52 CC↑19 D:0 (python)
+  M[regres/doctor.py] 1209L C:4 F:30 CC↑20 D:0 (python)
+  M[regres/refactor.py] 1198L C:0 F:41 CC↑23 D:0 (python)
+  M[regres/defscan.py] 1189L C:1 F:31 CC↑23 D:0 (python)
+  M[project/calls.yaml] 1112L C:0 F:0 CC↑0 D:0 (yaml)
+  M[SUMR.md] 855L C:8 F:123 CC↑0 D:0 (md)
+  M[SUMD.md] 754L C:8 F:137 CC↑0 D:0 (md)
+  M[.regres/import-error-toon-report.md] 549L C:0 F:0 CC↑0 D:0 (md)
+  M[goal.yaml] 512L C:0 F:0 CC↑0 D:0 (yaml)
+  M[project/context.md] 401L C:0 F:0 CC↑0 D:0 (md)
+  M[docs/README.md] 371L C:0 F:1 CC↑0 D:0 (md)
+  M[regres/import_error_toon_report.py] 365L C:2 F:13 CC↑10 D:0 (python)
+  M[project/README.md] 339L C:0 F:0 CC↑0 D:0 (md)
+  M[docs/REGRES.md] 220L C:0 F:0 CC↑0 D:0 (md)
+  M[regres/regres_cli.py] 197L C:0 F:1 CC↑42 D:0 (python)
+  LANGS: md:13/yaml:9/python:8/shell:2/other:1/txt:1/toml:1
+
+HOTSPOTS[10]:
+  ★ cmd_hotmap fan=24  // Mapa katalogów wg koncentracji podobnych plików.
+Wskaźnik 'hotness' = liczba par
+  ★ analyze_file fan=23  // Analysis pipeline, 23 stages
+  ★ trace_name_and_hash_candidates fan=22  // Orchestrates 22 calls
+  ★ scan fan=21  // Zwraca słownik: base_name → [Definition, ...]
+Klucz to bazowa nazwa (bez prefiks
+  ★ extract_python fan=19  // Używa modułu ast — precyzyjne wyodrębnienie z zachowaniem linii.
+
+REFACTOR[15]:
+  [1] H/L Split main (CC=42)
+  [2] H/H Split god module regres/defscan.py (1189L, 1 classes)
+  [3] H/H Split god module regres/refactor.py (1198L, 0 classes)
+  [4] H/H Split god module regres/doctor.py (1209L, 4 classes)
+  [5] H/H Split god module regres/regres.py (1480L, 1 classes)
+
+EVOLUTION:
+  2026-04-28 CC̄=2.2 crit=45 12899L // Automated analysis

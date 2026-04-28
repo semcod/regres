@@ -736,6 +736,34 @@ class DoctorOrchestrator:
                 lines.append("")
         lines.append("```")
         lines.append("")
+
+        # Step-by-step playbook (LLM + manual)
+        normalized_diags = [
+            {
+                "summary": d.summary,
+                "nlp_description": d.nlp_description,
+                "file_actions": [
+                    {
+                        "path": a.path,
+                        "action": a.action,
+                        "target": a.target,
+                        "reason": a.reason,
+                    }
+                    for a in d.file_actions
+                ],
+                "shell_commands": [
+                    {
+                        "command": c.command,
+                        "description": c.description,
+                        "cwd": c.cwd,
+                    }
+                    for c in d.shell_commands
+                ],
+            }
+            for d in all_diagnoses
+        ]
+        lines.extend(self._render_step_by_step_playbook(normalized_diags, llm_mode=True))
+        lines.append("")
         
         # Summary
         lines.append("## Summary")
@@ -746,6 +774,85 @@ class DoctorOrchestrator:
         lines.append("")
         
         return "\n".join(lines)
+
+    def _render_step_by_step_playbook(self, diagnoses: List[Dict[str, Any]], llm_mode: bool = False) -> List[str]:
+        """Renderuje playbook krok po kroku z codeblockami do ręcznego lub LLM-driven wykonania."""
+        lines: List[str] = []
+        lines.append("## Step-by-Step Repair Playbook")
+        lines.append("")
+
+        if not diagnoses:
+            lines.append("Brak kroków naprawczych do wykonania.")
+            lines.append("")
+            return lines
+
+        for idx, diag in enumerate(diagnoses, 1):
+            summary = diag.get("summary", "Issue")
+            description = diag.get("nlp_description", "")
+            file_actions = diag.get("file_actions", []) or []
+            shell_commands = diag.get("shell_commands", []) or []
+
+            paths = sorted({a.get("path") for a in file_actions if a.get("path")})
+
+            lines.append(f"### Step {idx}. {summary}")
+            if description:
+                lines.append(description)
+            lines.append("")
+
+            lines.append("**1) Analyze**")
+            lines.append("```bash")
+            if shell_commands:
+                for cmd in shell_commands[:6]:
+                    if cmd.get("description"):
+                        lines.append(f"# {cmd['description']}")
+                    if cmd.get("command"):
+                        lines.append(cmd["command"])
+                    if cmd.get("cwd"):
+                        lines.append(f"# cwd: {cmd['cwd']}")
+                    lines.append("")
+            elif paths:
+                for p in paths:
+                    lines.append(f"grep -n \"import\" {p}")
+            else:
+                lines.append("# Brak shell commands dla tej diagnozy")
+            lines.append("```")
+            lines.append("")
+
+            lines.append("**2) Apply changes**")
+            if llm_mode:
+                lines.append("```text")
+                lines.append("Task: Apply the patch(es) below exactly, one file at a time.")
+                lines.append("Rules: Keep scope minimal, edit only indicated imports/exports, do not refactor unrelated code.")
+                lines.append("After patching: run validation commands from step 3.")
+                lines.append("```")
+                lines.append("")
+
+            lines.append("```diff")
+            if paths:
+                for p in paths:
+                    lines.append("*** Begin Patch")
+                    lines.append(f"*** Update File: {p}")
+                    lines.append("@@")
+                    lines.append("-<old_code>")
+                    lines.append("+<new_code>")
+                    lines.append("*** End Patch")
+                    lines.append("")
+            else:
+                lines.append("# No file path detected for this diagnosis")
+                lines.append("# Add a focused patch for the affected file manually")
+            lines.append("```")
+            lines.append("")
+
+            lines.append("**3) Validate**")
+            lines.append("```bash")
+            lines.append("python -m regres.regres_cli doctor --scan-root . --all --out-md .regres/doctor-after-step.md")
+            if paths:
+                for p in paths[:3]:
+                    lines.append(f"grep -n \"Cannot find module\" .regres/import-error-toon-report.raw.log | grep \"{p}\" || true")
+            lines.append("```")
+            lines.append("")
+
+        return lines
     
     def _collect_git_context(self, module_path: Path) -> str:
         """Zbiera kontekst historii git dla modułu."""
@@ -919,10 +1026,146 @@ class DoctorOrchestrator:
                     lines.append(cmd['command'])
                     if cmd['cwd']:
                         lines.append(f"# cwd: {cmd['cwd']}")
-                    lines.append("")
-                lines.append("```\n")
+                    lines.append("```")
+                lines.append("")
+
+        lines.extend(self._render_step_by_step_playbook(report.get('diagnoses', []), llm_mode=False))
 
         return "\n".join(lines)
+
+
+def _handle_url_mode(args, doctor, scan_root):
+    """Handle URL-based discovery and analysis mode."""
+    from urllib.parse import urlparse
+    
+    parsed = urlparse(args.url)
+    path = parsed.path.strip('/')
+    module_name = None
+    for possible_module in doctor.MODULE_PATH_MAP.keys():
+        if path.startswith(possible_module):
+            module_name = possible_module
+            break
+    if not module_name:
+        parts = path.split('/')
+        if parts:
+            module_name = parts[0]
+    
+    module_path_str = doctor.MODULE_PATH_MAP.get(module_name)
+    if module_path_str:
+        module_path = scan_root / module_path_str
+        
+        if args.llm:
+            llm_report = doctor.generate_llm_diagnosis(args.url, module_path)
+            if args.out_md:
+                out_md = Path(args.out_md)
+                out_md.write_text(llm_report, encoding="utf-8")
+                print(f"LLM diagnosis saved to {out_md}")
+            else:
+                print(llm_report)
+            return
+    
+    diagnoses = doctor.analyze_from_url(args.url)
+    doctor.diagnoses.extend(diagnoses)
+    
+    if args.apply:
+        dry_run = not args.dry_run if args.dry_run else True
+        fix_results = doctor.apply_fixes(diagnoses, dry_run=dry_run)
+        print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
+        if fix_results['errors']:
+            print("Errors:")
+            for err in fix_results['errors']:
+                print(f"  - {err}")
+
+
+def _handle_import_errors(args, doctor, scan_root, refresh_fn):
+    """Handle import error analysis."""
+    import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
+    
+    if args.all and not args.import_log:
+        refresh_fn(scan_root, import_log)
+    
+    diagnoses = doctor.analyze_import_errors(import_log)
+    doctor.diagnoses.extend(diagnoses)
+    
+    if args.git_history and args.all:
+        for diag in diagnoses:
+            if diag.problem_type == "import_error":
+                for action in diag.file_actions:
+                    if action.path:
+                        git_diagnoses = doctor.analyze_git_history(action.path)
+                        doctor.diagnoses.extend(git_diagnoses)
+
+
+def _handle_defscan_refactor(args, doctor):
+    """Handle defscan and refactor analyses."""
+    if args.defscan_report:
+        diagnoses = doctor.analyze_duplicates(Path(args.defscan_report))
+        doctor.diagnoses.extend(diagnoses)
+    
+    if args.defscan_scan:
+        diagnoses = doctor.analyze_with_defscan(Path(args.defscan_scan))
+        doctor.diagnoses.extend(diagnoses)
+    
+    if args.refactor_scan:
+        diagnoses = doctor.analyze_with_refactor(Path(args.refactor_scan))
+        doctor.diagnoses.extend(diagnoses)
+
+
+def _save_report(doctor, args):
+    """Save report to JSON/Markdown or print to stdout."""
+    report = doctor.generate_report()
+    
+    if args.out_json:
+        out_json = Path(args.out_json)
+        out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Report saved to {out_json}")
+    
+    if args.out_md:
+        out_md = Path(args.out_md)
+        md_text = doctor.render_markdown(report)
+        out_md.write_text(md_text, encoding="utf-8")
+        print(f"Markdown report saved to {out_md}")
+    
+    if not args.out_json and not args.out_md:
+        print(doctor.render_markdown(report))
+
+
+def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
+    """Odświeża log błędów importów TS przez import_error_toon_report."""
+    frontend_cwd = project_root / "frontend"
+    if not frontend_cwd.exists():
+        return False
+
+    out_md = project_root / ".regres" / "import-error-toon-report.md"
+    cmd = [
+        sys.executable,
+        "-m",
+        "regres.import_error_toon_report",
+        "--frontend-cwd",
+        str(frontend_cwd),
+        "--scan-root",
+        str(project_root),
+        "--out-md",
+        str(out_md),
+        "--out-raw-log",
+        str(log_path),
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        if result.returncode != 0:
+            if result.stderr:
+                print(f"[doctor] warning: could not refresh import log: {result.stderr.strip()}")
+            return False
+        return True
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return False
 
 
 def main():
@@ -950,155 +1193,16 @@ def main():
     scan_root = Path(args.scan_root).resolve()
     doctor = DoctorOrchestrator(scan_root)
 
-    def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
-        """Odświeża log błędów importów TS przez import_error_toon_report."""
-        frontend_cwd = project_root / "frontend"
-        if not frontend_cwd.exists():
-            return False
-
-        out_md = project_root / ".regres" / "import-error-toon-report.md"
-        cmd = [
-            sys.executable,
-            "-m",
-            "regres.import_error_toon_report",
-            "--frontend-cwd",
-            str(frontend_cwd),
-            "--scan-root",
-            str(project_root),
-            "--out-md",
-            str(out_md),
-            "--out-raw-log",
-            str(log_path),
-        ]
-
-        try:
-            result = subprocess.run(
-                cmd,
-                cwd=str(project_root),
-                capture_output=True,
-                text=True,
-                timeout=180,
-            )
-            if result.returncode != 0:
-                if result.stderr:
-                    print(f"[doctor] warning: could not refresh import log: {result.stderr.strip()}")
-                return False
-            return True
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            return False
-
-    # URL-based discovery
     if args.url:
-        # Znajdź ścieżkę modułu
-        from urllib.parse import urlparse
-        parsed = urlparse(args.url)
-        path = parsed.path.strip('/')
-        module_name = None
-        for possible_module in doctor.MODULE_PATH_MAP.keys():
-            if path.startswith(possible_module):
-                module_name = possible_module
-                break
-        if not module_name:
-            parts = path.split('/')
-            if parts:
-                module_name = parts[0]
-        
-        module_path_str = doctor.MODULE_PATH_MAP.get(module_name)
-        if module_path_str:
-            module_path = scan_root / module_path_str
-            
-            # LLM diagnosis
-            if args.llm:
-                llm_report = doctor.generate_llm_diagnosis(args.url, module_path)
-                if args.out_md:
-                    out_md = Path(args.out_md)
-                    out_md.write_text(llm_report, encoding="utf-8")
-                    print(f"LLM diagnosis saved to {out_md}")
-                else:
-                    print(llm_report)
-                return
-        
-        diagnoses = doctor.analyze_from_url(args.url)
-        doctor.diagnoses.extend(diagnoses)
-        
-        # Wykonaj akcje naprawcze jeśli --apply
-        if args.apply:
-            dry_run = not args.dry_run if args.dry_run else True  # domyślnie dry_run
-            fix_results = doctor.apply_fixes(diagnoses, dry_run=dry_run)
-            print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
-            if fix_results['errors']:
-                print("Errors:")
-                for err in fix_results['errors']:
-                    print(f"  - {err}")
-        
-        # Generowanie raportu
-        report = doctor.generate_report()
-        if args.out_json:
-            out_json = Path(args.out_json)
-            out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-            print(f"Report saved to {out_json}")
-        if args.out_md:
-            out_md = Path(args.out_md)
-            md_text = doctor.render_markdown(report)
-            out_md.write_text(md_text, encoding="utf-8")
-            print(f"Markdown report saved to {out_md}")
-        # Domyślnie wyświetl Markdown na stdout
-        if not args.out_json and not args.out_md:
-            print(doctor.render_markdown(report))
+        _handle_url_mode(args, doctor, scan_root)
+        _save_report(doctor, args)
         return
 
-    # Analiza błędów importów
     if args.import_log or args.all:
-        import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
+        _handle_import_errors(args, doctor, scan_root, _refresh_import_error_log)
 
-        # Przy --all odśwież log, aby uniknąć diagnoz ze starych danych.
-        if args.all and not args.import_log:
-            _refresh_import_error_log(scan_root, import_log)
-
-        diagnoses = doctor.analyze_import_errors(import_log)
-        doctor.diagnoses.extend(diagnoses)
-
-        # Jeśli --git-history, analizuj historię plików z błędami
-        if args.git_history and args.all:
-            for diag in diagnoses:
-                if diag.problem_type == "import_error":
-                    for action in diag.file_actions:
-                        if action.path:
-                            git_diagnoses = doctor.analyze_git_history(action.path)
-                            doctor.diagnoses.extend(git_diagnoses)
-
-    # Analiza duplikatów z raportu
-    if args.defscan_report:
-        diagnoses = doctor.analyze_duplicates(Path(args.defscan_report))
-        doctor.diagnoses.extend(diagnoses)
-
-    # Dynamiczna analiza defscan
-    if args.defscan_scan:
-        diagnoses = doctor.analyze_with_defscan(Path(args.defscan_scan))
-        doctor.diagnoses.extend(diagnoses)
-
-    # Dynamiczna analiza refactor
-    if args.refactor_scan:
-        diagnoses = doctor.analyze_with_refactor(Path(args.refactor_scan))
-        doctor.diagnoses.extend(diagnoses)
-
-    # Generowanie raportu
-    report = doctor.generate_report()
-
-    if args.out_json:
-        out_json = Path(args.out_json)
-        out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"Report saved to {out_json}")
-
-    if args.out_md:
-        out_md = Path(args.out_md)
-        md_text = doctor.render_markdown(report)
-        out_md.write_text(md_text, encoding="utf-8")
-        print(f"Markdown report saved to {out_md}")
-
-    # Domyślnie wyświetl Markdown na stdout
-    if not args.out_json and not args.out_md:
-        print(doctor.render_markdown(report))
+    _handle_defscan_refactor(args, doctor)
+    _save_report(doctor, args)
 
 
 if __name__ == '__main__':

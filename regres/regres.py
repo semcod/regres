@@ -61,32 +61,28 @@ def _dedupe_paths(paths: List[Path]) -> List[Path]:
     return out
 
 
-def resolve_target_file(file_arg: str, cwd: Path, repo_root: Path, scan_root: Path) -> Path:
-    raw = Path(file_arg)
-    candidates: List[Path] = []
-
+def _check_absolute_path(raw: Path) -> Path | None:
+    """Check if the raw path is absolute and exists."""
     if raw.is_absolute():
         if raw.exists() and raw.is_file():
             return raw.resolve()
-    else:
-        for base in (cwd, repo_root, scan_root):
-            cand = (base / raw).resolve()
-            if cand.exists() and cand.is_file():
-                candidates.append(cand)
+    return None
 
-    candidates = _dedupe_paths(candidates)
-    if len(candidates) == 1:
-        return candidates[0]
-    if len(candidates) > 1:
-        raise FileNotFoundError(
-            "Niejednoznaczny --file; podaj pełniejszą ścieżkę. Kandydaci: "
-            + ", ".join(str(p) for p in candidates[:12])
-        )
 
-    # Fallback: traktuj wartość jako nazwę/sufiks i przeszukaj scan_root + repo_root
-    suffix = file_arg.replace("\\", "/").lstrip("./")
-    name = raw.name if raw.name else suffix
-    for root in (scan_root, repo_root):
+def _check_relative_paths(raw: Path, bases: tuple) -> list[Path]:
+    """Check relative paths against multiple base directories."""
+    candidates = []
+    for base in bases:
+        cand = (base / raw).resolve()
+        if cand.exists() and cand.is_file():
+            candidates.append(cand)
+    return _dedupe_paths(candidates)
+
+
+def _search_by_name_suffix(name: str, suffix: str, roots: tuple) -> list[Path]:
+    """Search for files by name/suffix in given roots."""
+    candidates = []
+    for root in roots:
         if not root.exists() or not root.is_dir():
             continue
         for p in root.rglob(name):
@@ -98,13 +94,44 @@ def resolve_target_file(file_arg: str, cwd: Path, repo_root: Path, scan_root: Pa
                 rel = str(p.resolve()).replace("\\", "/")
             if not suffix or rel.endswith(suffix) or p.name == name:
                 candidates.append(p.resolve())
+    return _dedupe_paths(candidates)
 
-    candidates = _dedupe_paths(candidates)
+
+def _resolve_single_or_error(candidates: list[Path], error_msg: str) -> Path:
+    """Return single candidate or raise error with message."""
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        raise FileNotFoundError(
+            error_msg + ", ".join(str(p) for p in candidates[:12])
+        )
+    raise FileNotFoundError(error_msg)
+
+
+def resolve_target_file(file_arg: str, cwd: Path, repo_root: Path, scan_root: Path) -> Path:
+    raw = Path(file_arg)
+
+    abs_result = _check_absolute_path(raw)
+    if abs_result:
+        return abs_result
+
+    candidates = _check_relative_paths(raw, (cwd, repo_root, scan_root))
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        raise FileNotFoundError(
+            "Niejednoznaczny --file; podaj pełniejszą ścieżkę. Kandydaci: "
+            + ", ".join(str(p) for p in candidates[:12])
+        )
+
+    suffix = file_arg.replace("\\", "/").lstrip("./")
+    name = raw.name if raw.name else suffix
+    candidates = _search_by_name_suffix(name, suffix, (scan_root, repo_root))
+    
     if len(candidates) == 1:
         return candidates[0]
 
     if len(candidates) > 1:
-        # Preferuj trafienia pod scan_root
         preferred = [p for p in candidates if str(p).startswith(str(scan_root.resolve()))]
         preferred = _dedupe_paths(preferred)
         if len(preferred) == 1:
@@ -457,6 +484,97 @@ def find_current_locations(repo_root: Path, basename: str) -> List[str]:
     return sorted(out)
 
 
+def _classify_import_problem(repo_root: Path, mh: dict) -> dict:
+    """Classify a single import problem."""
+    imp = mh["import"]
+    stem = mh["stem"]
+    candidates = find_current_locations(repo_root, f"{stem}.ts")
+    candidates += find_current_locations(repo_root, f"{stem}.tsx")
+    candidates += find_current_locations(repo_root, f"{stem}.js")
+
+    if candidates:
+        problem_type = "FILE_RENAMED"
+        recommendation = (
+            f"Zaktualizuj ścieżkę importu — plik istnieje pod: "
+            + ", ".join(f"`{c}`" for c in candidates[:3])
+        )
+    elif mh["history_found"]:
+        problem_type = "FILE_DELETED"
+        recommendation = (
+            f"Plik istniał w historii ({mh['history_count']} commitów), ale został usunięty. "
+            f"Przywróć z `git show <sha>:<path>` lub zintegruj logikę inline."
+        )
+    else:
+        problem_type = "FILE_NEVER_EXISTED"
+        recommendation = (
+            f"Plik o nazwie `{stem}` nie istnieje w historii git. "
+            f"Sprawdź pisownię lub usuń import."
+        )
+    return {
+        "import": imp,
+        "stem": stem,
+        "type": problem_type,
+        "current_locations": candidates[:5],
+        "recommendation": recommendation,
+    }
+
+
+def _determine_primary_type(import_problems: list, broken: list, target_dir: str, 
+                            current_lines: int, evolution: list) -> tuple[str, float, list]:
+    """Determine the primary problem type and confidence."""
+    primary_type = "HEALTHY"
+    confidence = 1.0
+    evidence: List[str] = []
+    
+    all_ok = len(broken) == 0
+    
+    if not all_ok:
+        type_counts: Dict[str, int] = {}
+        for ip in import_problems:
+            type_counts[ip["type"]] = type_counts.get(ip["type"], 0) + 1
+        if type_counts:
+            primary_type = max(type_counts.items(), key=lambda x: x[1])[0]
+            total = len(import_problems)
+            confidence = round(type_counts[primary_type] / total, 2)
+            evidence.append(
+                f"{type_counts[primary_type]}/{total} popsutych importów ma typ {primary_type}"
+            )
+
+        if "modules/" in target_dir and primary_type == "FILE_RENAMED":
+            module_jump = any(imp.count("../") >= 3 for imp in broken)
+            if module_jump:
+                primary_type = "BROKEN_IMPORTS_MOVED_MODULE"
+                evidence.append(
+                    f"Plik znajduje się w `{target_dir}`, ale ma importy z głębokim `../` — "
+                    f"prawdopodobnie został przeniesiony bez aktualizacji ścieżek"
+                )
+    else:
+        if current_lines <= 5 and evolution:
+            for e in evolution[1:]:
+                if e["lines"] >= 20 and e["similarity_to_current"] < 0.3:
+                    primary_type = "WRAPPER_REGRESSION"
+                    confidence = 0.8
+                    evidence.append(
+                        f"Aktualnie {current_lines} linii, w `{e['short_sha']}` było {e['lines']} linii "
+                        f"(similarity {e['similarity_to_current']})"
+                    )
+                    break
+
+        if evolution and len(evolution) >= 2:
+            for e in evolution[:5]:
+                if e["similarity_to_current"] < 0.1 and abs(e["line_delta"]) > 50:
+                    if primary_type == "HEALTHY":
+                        primary_type = "MASS_REWRITE"
+                        confidence = 0.7
+                        evidence.append(
+                            f"Commit `{e['short_sha']}`: similarity {e['similarity_to_current']}, "
+                            f"line_delta {e['line_delta']}"
+                        )
+                    break
+    
+    return primary_type, confidence, evidence
+
+
 def classify_problem(
     repo_root: Path,
     target_rel: str,
@@ -469,100 +587,17 @@ def classify_problem(
     current_lines = len(current_text.splitlines())
     current_symbols = extract_symbols(current_text)
     broken = regression.get("current_broken_imports", [])
-    all_ok = regression.get("current_all_ok", True)
 
-    # Per-import classification
-    import_problems: List[Dict[str, Any]] = []
-    for mh in regression.get("missing_imports_history", []):
-        imp = mh["import"]
-        stem = mh["stem"]
-        # szukamy plików o tej nazwie w obecnym repo
-        candidates = find_current_locations(repo_root, f"{stem}.ts")
-        candidates += find_current_locations(repo_root, f"{stem}.tsx")
-        candidates += find_current_locations(repo_root, f"{stem}.js")
+    import_problems = [
+        _classify_import_problem(repo_root, mh)
+        for mh in regression.get("missing_imports_history", [])
+    ]
 
-        if candidates:
-            problem_type = "FILE_RENAMED"
-            recommendation = (
-                f"Zaktualizuj ścieżkę importu — plik istnieje pod: "
-                + ", ".join(f"`{c}`" for c in candidates[:3])
-            )
-        elif mh["history_found"]:
-            problem_type = "FILE_DELETED"
-            recommendation = (
-                f"Plik istniał w historii ({mh['history_count']} commitów), ale został usunięty. "
-                f"Przywróć z `git show <sha>:<path>` lub zintegruj logikę inline."
-            )
-        else:
-            problem_type = "FILE_NEVER_EXISTED"
-            recommendation = (
-                f"Plik o nazwie `{stem}` nie istnieje w historii git. "
-                f"Sprawdź pisownię lub usuń import."
-            )
-        import_problems.append({
-            "import": imp,
-            "stem": stem,
-            "type": problem_type,
-            "current_locations": candidates[:5],
-            "recommendation": recommendation,
-        })
+    target_dir = str(Path(target_rel).parent)
+    primary_type, confidence, evidence = _determine_primary_type(
+        import_problems, broken, target_dir, current_lines, evolution
+    )
 
-    # Top-level classification
-    primary_type = "HEALTHY"
-    confidence = 1.0
-    evidence: List[str] = []
-
-    if not all_ok:
-        # mamy popsute importy → najczęstszy podtyp wygrywa
-        type_counts: Dict[str, int] = {}
-        for ip in import_problems:
-            type_counts[ip["type"]] = type_counts.get(ip["type"], 0) + 1
-        if type_counts:
-            primary_type = max(type_counts.items(), key=lambda x: x[1])[0]
-            total = len(import_problems)
-            confidence = round(type_counts[primary_type] / total, 2)
-            evidence.append(
-                f"{type_counts[primary_type]}/{total} popsutych importów ma typ {primary_type}"
-            )
-
-        # Sprawdź czy plik został przeniesiony do innego modułu
-        target_dir = str(Path(target_rel).parent)
-        if "modules/" in target_dir and primary_type == "FILE_RENAMED":
-            # czy ścieżki względne wskazują na inny moduł?
-            module_jump = any(imp.count("../") >= 3 for imp in broken)
-            if module_jump:
-                primary_type = "BROKEN_IMPORTS_MOVED_MODULE"
-                evidence.append(
-                    f"Plik znajduje się w `{target_dir}`, ale ma importy z głębokim `../` — "
-                    f"prawdopodobnie został przeniesiony bez aktualizacji ścieżek"
-                )
-    else:
-        # plik OK — sprawdź czy nie jest wrapperem
-        if current_lines <= 5 and evolution:
-            for e in evolution[1:]:
-                if e["lines"] >= 20 and e["similarity_to_current"] < 0.3:
-                    primary_type = "WRAPPER_REGRESSION"
-                    confidence = 0.8
-                    evidence.append(
-                        f"Aktualnie {current_lines} linii, w `{e['short_sha']}` było {e['lines']} linii "
-                        f"(similarity {e['similarity_to_current']})"
-                    )
-                    break
-
-        # Mass rewrite
-        if evolution and len(evolution) >= 2:
-            for e in evolution[:5]:
-                if e["similarity_to_current"] < 0.1 and abs(e["line_delta"]) > 50:
-                    if primary_type == "HEALTHY":
-                        primary_type = "MASS_REWRITE"
-                        confidence = 0.7
-                        evidence.append(
-                            f"Commit `{e['short_sha']}`: similarity {e['similarity_to_current']}, "
-                            f"line_delta {e['line_delta']}"
-                        )
-                    break
-
-    # File-level history (rename detection by basename)
     name_history = track_filename_history(repo_root, basename)[:30]
     paths_in_history = sorted({h["path"] for h in name_history if h.get("path")})
     is_basename_unique = len([p for p in paths_in_history if Path(p).name == basename]) <= 1
@@ -1045,75 +1080,65 @@ def llm_context_packet(report: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def render_markdown(report: Dict[str, Any]) -> str:
-    m = report["metrics"]
-    d = report["duplicates"]
-    nh = report.get("name_hash_candidates", {})
-    refs = report["references"]
-    lineage = report["lineage"]
-    evolution = report.get("evolution", [])
-    last_good = report.get("last_good_version", [])
-
-    classification = report.get("classification", {})
-
-    lines = [
-        f"# REGRES report: `{report['target_file']}`",
-        "",
-    ]
-
-    if classification:
-        ptype = classification.get("primary_type", "HEALTHY")
-        pdesc = classification.get("primary_type_description", "")
-        conf = classification.get("confidence", 0)
-        lines.append(f"## Klasyfikacja problemu: **{ptype}** (confidence={conf})")
-        if pdesc:
-            lines.append(f"> {pdesc}")
-        ev = classification.get("evidence", [])
-        if ev:
-            lines.append("")
-            lines.append("**Dowody:**")
-            for e in ev:
-                lines.append(f"- {e}")
-
-        ips = classification.get("import_problems", [])
-        if ips:
-            lines.append("")
-            lines.append("### Klasyfikacja per-import")
-            lines.append("")
-            lines.append("| import | typ | obecne lokalizacje | rekomendacja |")
-            lines.append("|---|---|---|---|")
-            for ip in ips[:30]:
-                locs = ", ".join(f"`{l}`" for l in ip.get("current_locations", [])[:3]) or "—"
-                lines.append(
-                    f"| `{ip['import']}` | **{ip['type']}** | {locs} | {ip['recommendation']} |"
-                )
-
-        symbols = classification.get("current_symbols", [])
-        if symbols:
-            lines.append("")
-            lines.append(f"**Eksportowane symbole ({len(symbols)}):** "
-                         + ", ".join(f"`{s}`" for s in symbols[:20]))
-
-        fh = classification.get("filename_history", {})
-        if fh and fh.get("paths_seen"):
-            lines.append("")
-            lines.append(f"### Historia ścieżek dla nazwy `{fh['basename']}`")
-            for p in fh["paths_seen"][:10]:
-                lines.append(f"- `{p}`")
-            if not fh.get("is_basename_unique"):
-                lines.append(f"\n> Nazwa pliku występowała w wielu lokalizacjach — "
-                             f"możliwe rename'y lub duplikaty.")
+def _render_classification_section(classification: dict, lines: list):
+    """Render the classification section of the report."""
+    if not classification:
+        return
+    
+    ptype = classification.get("primary_type", "HEALTHY")
+    pdesc = classification.get("primary_type_description", "")
+    conf = classification.get("confidence", 0)
+    lines.append(f"## Klasyfikacja problemu: **{ptype}** (confidence={conf})")
+    if pdesc:
+        lines.append(f"> {pdesc}")
+    
+    ev = classification.get("evidence", [])
+    if ev:
         lines.append("")
+        lines.append("**Dowody:**")
+        for e in ev:
+            lines.append(f"- {e}")
 
+    ips = classification.get("import_problems", [])
+    if ips:
+        lines.append("")
+        lines.append("### Klasyfikacja per-import")
+        lines.append("")
+        lines.append("| import | typ | obecne lokalizacje | rekomendacja |")
+        lines.append("|---|---|---|---|")
+        for ip in ips[:30]:
+            locs = ", ".join(f"`{l}`" for l in ip.get("current_locations", [])[:3]) or "—"
+            lines.append(
+                f"| `{ip['import']}` | **{ip['type']}** | {locs} | {ip['recommendation']} |"
+            )
+
+    symbols = classification.get("current_symbols", [])
+    if symbols:
+        lines.append("")
+        lines.append(f"**Eksportowane symbole ({len(symbols)}):** "
+                     + ", ".join(f"`{s}`" for s in symbols[:20]))
+
+    fh = classification.get("filename_history", {})
+    if fh and fh.get("paths_seen"):
+        lines.append("")
+        lines.append(f"### Historia ścieżek dla nazwy `{fh['basename']}`")
+        for p in fh["paths_seen"][:10]:
+            lines.append(f"- `{p}`")
+        if not fh.get("is_basename_unique"):
+            lines.append(f"\n> Nazwa pliku występowała w wielu lokalizacjach — "
+                         f"możliwe rename'y lub duplikaty.")
+    lines.append("")
+
+
+def _render_name_hash_section(nh: dict, lines: list):
+    """Render the name/hash candidates section."""
     nh_candidates = nh.get("candidates", [])
-    lines.extend(
-        [
-            "## Name/Hash Candidates",
-            f"- target_name: `{nh.get('target_name', '')}`",
-            f"- candidates: {len(nh_candidates)}",
-            "",
-        ]
-    )
+    lines.extend([
+        "## Name/Hash Candidates",
+        f"- target_name: `{nh.get('target_name', '')}`",
+        f"- candidates: {len(nh_candidates)}",
+        "",
+    ])
     if nh_candidates:
         for item in nh_candidates:
             commit = item.get("last_commit") or {}
@@ -1126,6 +1151,9 @@ def render_markdown(report: Dict[str, Any]) -> str:
             )
         lines.append("")
 
+
+def _render_metrics_section(m: dict, lines: list):
+    """Render the metrics section."""
     lines.extend([
         "## Metryki",
         f"- lines: {m['lines']}",
@@ -1136,6 +1164,12 @@ def render_markdown(report: Dict[str, Any]) -> str:
         f"- function_like_count: {m['function_like_count']}",
         f"- sha256: `{m['sha256']}`",
         "",
+    ])
+
+
+def _render_references_section(refs: dict, lines: list):
+    """Render the references section."""
+    lines.extend([
         "## Referencje",
         f"- reverse_imports_count: {len(refs['reverse_imports'])}",
         "",
@@ -1147,14 +1181,15 @@ def render_markdown(report: Dict[str, Any]) -> str:
             lines.append(f"- `{r}`")
         lines.append("")
 
-    lines.extend(
-        [
-            "## Duplikaty",
-            f"- exact_duplicates: {len(d['exact_duplicates'])}",
-            f"- near_duplicates: {len(d['near_duplicates'])}",
-            "",
-        ]
-    )
+
+def _render_duplicates_section(d: dict, lines: list):
+    """Render the duplicates section."""
+    lines.extend([
+        "## Duplikaty",
+        f"- exact_duplicates: {len(d['exact_duplicates'])}",
+        f"- near_duplicates: {len(d['near_duplicates'])}",
+        "",
+    ])
 
     if d["exact_duplicates"]:
         lines.append("### Exact")
@@ -1175,90 +1210,124 @@ def render_markdown(report: Dict[str, Any]) -> str:
             )
         lines.append("")
 
+
+def _render_lineage_section(lineage: list, lines: list):
+    """Render the file lineage/history section."""
     lines.append("## Historia pliku")
     for c in lineage[:20]:
         lines.append(
             f"- `{c['short_sha']}` {c['date']} {c['author']}: {c['subject']} "
             f"(+{c['insertions']}/-{c['deletions']})"
         )
-
     lines.append("")
 
-    if evolution:
-        lines.append("## Ewolucja pliku (historia drzewa zależności)")
+
+def _render_evolution_section(evolution: list, lines: list):
+    """Render the evolution section."""
+    if not evolution:
+        return
+    
+    lines.append("## Ewolucja pliku (historia drzewa zależności)")
+    lines.append("")
+    lines.append("| commit | data | linie | delta | similarity | tree | zmiany w drzewie |")
+    lines.append("|---|---|---|---|---|---|---|")
+    for e in evolution[:20]:
+        tree_info = f"+{len(e['tree_added'])}/-{len(e['tree_removed'])}" if e["tree_changed"] else "="
+        tree_detail = ""
+        if e["tree_added"]:
+            tree_detail += f" +{', '.join(e['tree_added'][:2])}"
+        if e["tree_removed"]:
+            tree_detail += f" -{', '.join(e['tree_removed'][:2])}"
+        lines.append(
+            f"| `{e['short_sha']}` {e['date'][:10]} | {e['subject'][:30]} | "
+            f"{e['lines']} | {e['line_delta']:+,d} | {e['similarity_to_current']} | "
+            f"{e['tree_imports_count']} | {tree_info}{tree_detail[:40]} |"
+        )
+    lines.append("")
+
+
+def _render_last_good_section(last_good: list, lines: list):
+    """Render the last good versions section."""
+    if not last_good:
+        return
+    
+    lines.append("## Ostatnie wersje spełniające kryteria (>= aktualnych linii)")
+    for e in last_good:
+        lines.append(
+            f"- `{e['short_sha']}` {e['date'][:10]} — {e['lines']} linii "
+            f"(delta {e['line_delta']:+,d}), similarity={e['similarity_to_current']}, "
+            f"'{e['subject']}'"
+        )
+    lines.append("")
+
+
+def _render_regression_section(regression: dict, lines: list):
+    """Render the regression detective section."""
+    if not regression or regression.get("current_all_ok", True):
+        return
+    
+    lines.append("## Regression Detective")
+    lines.append("")
+    
+    broken = regression.get("current_broken_imports", [])
+    lines.append(f"### Aktualnie popsute importy ({len(broken)})")
+    for b in broken:
+        lines.append(f"- `{b}` → **NIE ISTNIEJE** w obecnej wersji")
+    lines.append("")
+
+    lw = regression.get("last_working_commit")
+    if lw:
+        lines.append("### Ostatni działający commit")
+        lines.append(
+            f"- `{lw['short_sha']}` {lw['date'][:10]} — {lw['lines']} linii, "
+            f"{lw['ok_count']} importów OK — '{lw['subject']}'"
+        )
         lines.append("")
-        lines.append("| commit | data | linie | delta | similarity | tree | zmiany w drzewie |")
-        lines.append("|---|---|---|---|---|---|---|")
-        for e in evolution[:20]:
-            tree_info = f"+{len(e['tree_added'])}/-{len(e['tree_removed'])}" if e["tree_changed"] else "="
-            tree_detail = ""
-            if e["tree_added"]:
-                tree_detail += f" +{', '.join(e['tree_added'][:2])}"
-            if e["tree_removed"]:
-                tree_detail += f" -{', '.join(e['tree_removed'][:2])}"
+
+    fb = regression.get("first_broken_commit")
+    if fb:
+        lines.append("### Pierwszy popsuty commit")
+        lines.append(
+            f"- `{fb['short_sha']}` {fb['date'][:10]} — '{fb['subject']}'"
+        )
+        lines.append("")
+
+    mh = regression.get("missing_imports_history", [])
+    if mh:
+        lines.append("### Poszukiwanie zaginionych plików w historii")
+        for item in mh:
+            status = "✅ ZNALEZIONO" if item["history_found"] else "❌ NIE ZNALEZIONO"
             lines.append(
-                f"| `{e['short_sha']}` {e['date'][:10]} | {e['subject'][:30]} | "
-                f"{e['lines']} | {e['line_delta']:+,d} | {e['similarity_to_current']} | "
-                f"{e['tree_imports_count']} | {tree_info}{tree_detail[:40]} |"
+                f"- `{item['import']}` (stem: `{item['stem']}`) — {status} "
+                f"({item['history_count']} commitów w historii)"
             )
+            if item["last_commit_line"]:
+                lines.append(f"  - Ostatni commit: `{item['last_commit_line']}`")
         lines.append("")
 
-    if last_good:
-        lines.append("## Ostatnie wersje spełniające kryteria (>= aktualnych linii)")
-        for e in last_good:
-            lines.append(
-                f"- `{e['short_sha']}` {e['date'][:10]} — {e['lines']} linii "
-                f"(delta {e['line_delta']:+,d}), similarity={e['similarity_to_current']}, "
-                f"'{e['subject']}'"
-            )
+    recs = regression.get("recommendations", [])
+    if recs:
+        lines.append("### Rekomendacje naprawy")
+        for i, r in enumerate(recs, 1):
+            lines.append(f"{i}. {r}")
         lines.append("")
 
-    regression = report.get("regression", {})
-    if regression and not regression.get("current_all_ok", True):
-        lines.append("## Regression Detective")
-        lines.append("")
-        broken = regression.get("current_broken_imports", [])
-        lines.append(f"### Aktualnie popsute importy ({len(broken)})")
-        for b in broken:
-            lines.append(f"- `{b}` → **NIE ISTNIEJE** w obecnej wersji")
-        lines.append("")
 
-        lw = regression.get("last_working_commit")
-        if lw:
-            lines.append("### Ostatni działający commit")
-            lines.append(
-                f"- `{lw['short_sha']}` {lw['date'][:10]} — {lw['lines']} linii, "
-                f"{lw['ok_count']} importów OK — '{lw['subject']}'"
-            )
-            lines.append("")
+def render_markdown(report: Dict[str, Any]) -> str:
+    lines = [
+        f"# REGRES report: `{report['target_file']}`",
+        "",
+    ]
 
-        fb = regression.get("first_broken_commit")
-        if fb:
-            lines.append("### Pierwszy popsuty commit")
-            lines.append(
-                f"- `{fb['short_sha']}` {fb['date'][:10]} — '{fb['subject']}'"
-            )
-            lines.append("")
-
-        mh = regression.get("missing_imports_history", [])
-        if mh:
-            lines.append("### Poszukiwanie zaginionych plików w historii")
-            for item in mh:
-                status = "✅ ZNALEZIONO" if item["history_found"] else "❌ NIE ZNALEZIONO"
-                lines.append(
-                    f"- `{item['import']}` (stem: `{item['stem']}`) — {status} "
-                    f"({item['history_count']} commitów w historii)"
-                )
-                if item["last_commit_line"]:
-                    lines.append(f"  - Ostatni commit: `{item['last_commit_line']}`")
-            lines.append("")
-
-        recs = regression.get("recommendations", [])
-        if recs:
-            lines.append("### Rekomendacje naprawy")
-            for i, r in enumerate(recs, 1):
-                lines.append(f"{i}. {r}")
-            lines.append("")
+    _render_classification_section(report.get("classification", {}), lines)
+    _render_name_hash_section(report.get("name_hash_candidates", {}), lines)
+    _render_metrics_section(report["metrics"], lines)
+    _render_references_section(report["references"], lines)
+    _render_duplicates_section(report["duplicates"], lines)
+    _render_lineage_section(report["lineage"], lines)
+    _render_evolution_section(report.get("evolution", []), lines)
+    _render_last_good_section(report.get("last_good_version", []), lines)
+    _render_regression_section(report.get("regression", {}), lines)
 
     lines.append("## Prompt-ready context")
     lines.append("```json")

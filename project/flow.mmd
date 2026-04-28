@@ -1,0 +1,29 @@
+flowchart TD
+
+    %% Entry points (blue)
+    classDef entry fill:#4dabf7,stroke:#1971c2,color:#fff
+
+    subgraph CLI
+        regres__regres_cli__main["main"]
+    end
+
+    subgraph Core
+        docs__DOCTOR__analyze_custom_metric["analyze_custom_metric"]
+        regres__import_error_toon_report__main["main"]
+        docs__README__generate_readme["generate_readme"]
+        project__map__toon__c["c"]
+        project__map__toon__sim["sim"]
+        project__map__toon__extract_python["extract_python"]
+        project__map__toon___extract_block_ts["_extract_block_ts"]
+        project__map__toon___lineno_at["_lineno_at"]
+        project__map__toon__extract_typescript["extract_typescript"]
+        project__map__toon__extract_go["extract_go"]
+        project__map__toon__extract_rust["extract_rust"]
+        project__map__toon__extract_file["extract_file"]
+        project__map__toon__load_gitignore["load_gitignore"]
+        project__map__toon___path_ignored_by_gitignore["_path_ignored_by_gitignore"]
+        project__map__toon__scan["scan"]
+        ...["+417 more"]
+    end
+
+    class docs__DOCTOR__analyze_custom_metric,regres__import_error_toon_report__main,regres__regres_cli__main,docs__README__generate_readme,project__map__toon__c,project__map__toon__sim,project__map__toon__extract_python,project__map__toon___extract_block_ts,project__map__toon___lineno_at,project__map__toon__extract_typescript entry

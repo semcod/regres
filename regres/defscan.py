@@ -916,7 +916,8 @@ def render_json(groups: list[tuple[str, list[Definition], list[dict]]],
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
+def _build_argument_parser() -> argparse.ArgumentParser:
+    """Build and return the argument parser for defscan."""
     parser = argparse.ArgumentParser(
         description='defscan — skaner duplikatów klas, funkcji i modeli danych',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -959,166 +960,148 @@ def main():
                         help='Liczba najlepszych dopasowań pokazywanych per seed (domyślnie: 10)')
     parser.add_argument('--seed-skip-same-name', action='store_true',
                         help='W trybie SEED ignoruj dopasowania o tej samej nazwie (zostawia tylko ukryte duplikaty)')
-    args = parser.parse_args()
+    return parser
 
-    global USE_COLOR
-    if args.no_color or args.json or args.md:
-        USE_COLOR = False
 
-    root = Path(args.path).resolve()
-    if not root.exists():
-        print(f"Błąd: katalog nie istnieje: {root}", file=sys.stderr)
+def _run_seed_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set):
+    """Execute SEED mode: global similarity comparison."""
+    seed_path = Path(args.seed).resolve()
+    if not seed_path.exists():
+        print(f"Błąd: seed nie istnieje: {seed_path}", file=sys.stderr)
         sys.exit(1)
 
-    root_str = str(root)
-    gitignore_patterns = load_gitignore(root)
-    ext_set = set(args.ext) if args.ext else None
+    scope_path = Path(args.scope).resolve() if args.scope else root
+    min_sim = args.min_sim if args.min_sim > 0 else 60.0
 
-    # ------------------------------------------------------------------
-    # Tryb SEED: similarity globalna
-    # ------------------------------------------------------------------
-    if args.seed:
-        seed_path = Path(args.seed).resolve()
-        if not seed_path.exists():
-            print(f"Błąd: seed nie istnieje: {seed_path}", file=sys.stderr)
-            sys.exit(1)
+    print(f"Tryb SEED similarity globalna", file=sys.stderr)
+    print(f"  Seed:    {seed_path}", file=sys.stderr)
+    print(f"  Zakres:  {scope_path}", file=sys.stderr)
+    print(f"  min-sim: {min_sim}%  (z --min-sim, domyślnie 60%)", file=sys.stderr)
 
-        scope_path = Path(args.scope).resolve() if args.scope else root
-        min_sim = args.min_sim if args.min_sim > 0 else 60.0
+    full_index = scan(scope_path,
+                      name_filter=args.name or None,
+                      kind_filter=args.kind or None,
+                      gitignore_patterns=gitignore_patterns,
+                      gitignore_root=root,
+                      ext_filter=ext_set)
+    all_defs = [d for defs in full_index.values() for d in defs]
 
-        print(f"Tryb SEED similarity globalna", file=sys.stderr)
-        print(f"  Seed:    {seed_path}", file=sys.stderr)
-        print(f"  Zakres:  {scope_path}", file=sys.stderr)
-        print(f"  min-sim: {min_sim}%  (z --min-sim, domyślnie 60%)", file=sys.stderr)
+    seed_index = scan(scope_path,
+                      name_filter=args.name or None,
+                      kind_filter=args.kind or None,
+                      only_within=seed_path,
+                      gitignore_patterns=gitignore_patterns,
+                      gitignore_root=root,
+                      ext_filter=ext_set)
+    seed_defs = [d for defs in seed_index.values() for d in defs]
 
-        full_index = scan(scope_path,
-                          name_filter=args.name or None,
-                          kind_filter=args.kind or None,
-                          gitignore_patterns=gitignore_patterns,
-                          gitignore_root=root,
-                          ext_filter=ext_set)
-        all_defs = [d for defs in full_index.values() for d in defs]
+    print(f"  Seed defs: {len(seed_defs)}, all defs: {len(all_defs)}",
+          file=sys.stderr)
 
-        seed_index = scan(scope_path,
-                          name_filter=args.name or None,
-                          kind_filter=args.kind or None,
-                          only_within=seed_path,
-                          gitignore_patterns=gitignore_patterns,
-                          gitignore_root=root,
-                          ext_filter=ext_set)
-        seed_defs = [d for defs in seed_index.values() for d in defs]
+    results = compare_seed_to_all(
+        seed_defs, all_defs, min_sim,
+        skip_same_name=args.seed_skip_same_name,
+    )
 
-        print(f"  Seed defs: {len(seed_defs)}, all defs: {len(all_defs)}",
-              file=sys.stderr)
+    if args.top:
+        results = results[:args.top]
 
-        results = compare_seed_to_all(
-            seed_defs, all_defs, min_sim,
-            skip_same_name=args.seed_skip_same_name,
-        )
-
-        if args.top:
-            results = results[:args.top]
-
-        if not results:
-            print("Brak dopasowań spełniających kryteria.", file=sys.stderr)
-            return
-
-        if args.json:
-            print(render_seed_json(results, root_str))
-        elif args.md:
-            print(render_seed_markdown(results, root_str,
-                                       top_per_seed=args.seed_top))
-        else:
-            print(render_seed_text(results, root_str,
-                                   top_per_seed=args.seed_top,
-                                   show_body_lines=args.preview))
-
-        # Podsumowanie
-        n_total = sum(len(m) for _, m in results)
-        print(f"\nPodsumowanie SEED:", file=sys.stderr)
-        print(f"  Seedów z dopasowaniami: {len(results)}", file=sys.stderr)
-        print(f"  Łączna liczba dopasowań: {n_total}", file=sys.stderr)
+    if not results:
+        print("Brak dopasowań spełniających kryteria.", file=sys.stderr)
         return
 
-    # ------------------------------------------------------------------
-    # Tryb FOCUS: folder vs reszta (po nazwie)
-    # ------------------------------------------------------------------
-    if args.focus:
-        focus_path = Path(args.focus).resolve()
-        if not focus_path.exists():
-            print(f"Błąd: focus nie istnieje: {focus_path}", file=sys.stderr)
-            sys.exit(1)
+    if args.json:
+        print(render_seed_json(results, root_str))
+    elif args.md:
+        print(render_seed_markdown(results, root_str,
+                                   top_per_seed=args.seed_top))
+    else:
+        print(render_seed_text(results, root_str,
+                               top_per_seed=args.seed_top,
+                               show_body_lines=args.preview))
 
-        scope_path = Path(args.scope).resolve() if args.scope else root
-        print(f"Tryb FOCUS", file=sys.stderr)
-        print(f"  Focus: {focus_path}", file=sys.stderr)
-        print(f"  Scope: {scope_path}", file=sys.stderr)
+    n_total = sum(len(m) for _, m in results)
+    print(f"\nPodsumowanie SEED:", file=sys.stderr)
+    print(f"  Seedów z dopasowaniami: {len(results)}", file=sys.stderr)
+    print(f"  Łączna liczba dopasowań: {n_total}", file=sys.stderr)
 
-        focus_index = scan(scope_path,
-                           name_filter=args.name or None,
-                           kind_filter=args.kind or None,
-                           only_within=focus_path,
-                           gitignore_patterns=gitignore_patterns,
-                           gitignore_root=root,
-                           ext_filter=ext_set)
-        full_index = scan(scope_path,
-                          name_filter=args.name or None,
-                          kind_filter=args.kind or None,
-                          gitignore_patterns=gitignore_patterns,
-                          gitignore_root=root,
-                          ext_filter=ext_set)
 
-        groups_raw = []
-        for name, focus_defs in focus_index.items():
-            other_defs_all = full_index.get(name, [])
-            if not other_defs_all:
-                continue
-            focus_keys = {_def_key(d) for d in focus_defs}
-            other_defs = [d for d in other_defs_all
-                          if _def_key(d) not in focus_keys]
-            if not other_defs:
-                continue
-            combined = focus_defs + other_defs
-            if len(combined) < args.min_count:
-                continue
-            groups_raw.append((name, combined))
+def _run_focus_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set):
+    """Execute FOCUS mode: compare folder vs rest of project by name."""
+    focus_path = Path(args.focus).resolve()
+    if not focus_path.exists():
+        print(f"Błąd: focus nie istnieje: {focus_path}", file=sys.stderr)
+        sys.exit(1)
 
-        groups_analysed = []
-        for name, defs in groups_raw:
-            pairs = analyse_group(defs)
-            groups_analysed.append((name, defs, pairs))
+    scope_path = Path(args.scope).resolve() if args.scope else root
+    print(f"Tryb FOCUS", file=sys.stderr)
+    print(f"  Focus: {focus_path}", file=sys.stderr)
+    print(f"  Scope: {scope_path}", file=sys.stderr)
 
-        groups_analysed.sort(
-            key=lambda x: (len(x[1]),
-                           max((p['similarity'] for p in x[2]), default=0)),
-            reverse=True,
-        )
+    focus_index = scan(scope_path,
+                       name_filter=args.name or None,
+                       kind_filter=args.kind or None,
+                       only_within=focus_path,
+                       gitignore_patterns=gitignore_patterns,
+                       gitignore_root=root,
+                       ext_filter=ext_set)
+    full_index = scan(scope_path,
+                      name_filter=args.name or None,
+                      kind_filter=args.kind or None,
+                      gitignore_patterns=gitignore_patterns,
+                      gitignore_root=root,
+                      ext_filter=ext_set)
 
-        if args.top:
-            groups_analysed = groups_analysed[:args.top]
+    groups_raw = []
+    for name, focus_defs in focus_index.items():
+        other_defs_all = full_index.get(name, [])
+        if not other_defs_all:
+            continue
+        focus_keys = {_def_key(d) for d in focus_defs}
+        other_defs = [d for d in other_defs_all
+                      if _def_key(d) not in focus_keys]
+        if not other_defs:
+            continue
+        combined = focus_defs + other_defs
+        if len(combined) < args.min_count:
+            continue
+        groups_raw.append((name, combined))
 
-        if not groups_analysed:
-            print("Nie znaleziono grup spełniających kryteria (FOCUS).",
-                  file=sys.stderr)
-            return
+    groups_analysed = []
+    for name, defs in groups_raw:
+        pairs = analyse_group(defs)
+        groups_analysed.append((name, defs, pairs))
 
-        print(f"Znaleziono {len(groups_analysed)} grup focus↔reszta.",
+    groups_analysed.sort(
+        key=lambda x: (len(x[1]),
+                       max((p['similarity'] for p in x[2]), default=0)),
+        reverse=True,
+    )
+
+    if args.top:
+        groups_analysed = groups_analysed[:args.top]
+
+    if not groups_analysed:
+        print("Nie znaleziono grup spełniających kryteria (FOCUS).",
               file=sys.stderr)
-
-        if args.json:
-            print(render_json(groups_analysed, root_str))
-        elif args.md:
-            print(render_markdown(groups_analysed, root_str,
-                                  min_sim=args.min_sim))
-        else:
-            print(render_text(groups_analysed, root_str,
-                              min_sim=args.min_sim,
-                              show_body_lines=args.preview))
         return
 
-    # ------------------------------------------------------------------
-    # Tryb domyślny: duplikaty po nazwie w całym projekcie
-    # ------------------------------------------------------------------
+    print(f"Znaleziono {len(groups_analysed)} grup focus↔reszta.",
+          file=sys.stderr)
+
+    if args.json:
+        print(render_json(groups_analysed, root_str))
+    elif args.md:
+        print(render_markdown(groups_analysed, root_str,
+                              min_sim=args.min_sim))
+    else:
+        print(render_text(groups_analysed, root_str,
+                          min_sim=args.min_sim,
+                          show_body_lines=args.preview))
+
+
+def _run_default_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set):
+    """Execute default mode: find duplicates by name in entire project."""
     print(f"Skanowanie: {root}", file=sys.stderr)
     index = scan(root,
                  name_filter=args.name or None,
@@ -1129,19 +1112,15 @@ def main():
     print(f"Znaleziono {sum(len(v) for v in index.values())} definicji "
           f"w {len(index)} unikalnych nazwach.", file=sys.stderr)
 
-    # Filtruj grupy z min. liczbą duplikatów
     groups_raw = [(name, defs)
                   for name, defs in index.items()
                   if len(defs) >= args.min_count]
 
-    # Oblicz podobieństwo i sortuj
     groups_analysed = []
     for name, defs in groups_raw:
         pairs = analyse_group(defs)
-        # Filtruj pary wg min_sim (ale zachowaj grupę nawet jeśli żadna para nie spełnia)
         groups_analysed.append((name, defs, pairs))
 
-    # Sortuj: najpierw po liczbie definicji, potem po max. podobieństwie
     groups_analysed.sort(
         key=lambda x: (len(x[1]), max((p['similarity'] for p in x[2]), default=0)),
         reverse=True,
@@ -1163,7 +1142,6 @@ def main():
                           min_sim=args.min_sim,
                           show_body_lines=args.preview))
 
-    # Podsumowanie na stderr
     total_identyczne = 0
     total_kopie = 0
     total_podobne = 0
@@ -1180,6 +1158,31 @@ def main():
     print(f"  Identyczne (≥95%):   {total_identyczne}", file=sys.stderr)
     print(f"  Prawie kopie (≥75%): {total_kopie}", file=sys.stderr)
     print(f"  Podobne (≥50%):      {total_podobne}", file=sys.stderr)
+
+
+def main():
+    parser = _build_argument_parser()
+    args = parser.parse_args()
+
+    global USE_COLOR
+    if args.no_color or args.json or args.md:
+        USE_COLOR = False
+
+    root = Path(args.path).resolve()
+    if not root.exists():
+        print(f"Błąd: katalog nie istnieje: {root}", file=sys.stderr)
+        sys.exit(1)
+
+    root_str = str(root)
+    gitignore_patterns = load_gitignore(root)
+    ext_set = set(args.ext) if args.ext else None
+
+    if args.seed:
+        _run_seed_mode(args, root, root_str, gitignore_patterns, ext_set)
+    elif args.focus:
+        _run_focus_mode(args, root, root_str, gitignore_patterns, ext_set)
+    else:
+        _run_default_mode(args, root, root_str, gitignore_patterns, ext_set)
 
 
 if __name__ == '__main__':

@@ -1182,10 +1182,15 @@ class DoctorOrchestrator:
             'echo "[regres-patch] Wrote $(wc -l < "$TARGET") lines to $TARGET"',
             "",
             "# ---------- Rewrite relative imports for new location ----------",
-            "# When restoring content from a historical path with a different directory",
-            "# depth, relative imports (../foo) become invalid. Rewrite them using a",
-            "# python helper that resolves each import against the historical anchor",
-            "# and emits a new path relative to the new target location.",
+            "# When restoring content from a historical path, relative imports may",
+            "# become invalid in two ways:",
+            "#   A) the new directory has a different depth than the historical one",
+            "#   B) the new file lives in a mirrored module root (e.g. connect-config/",
+            "#      frontend/src/...) — imports must be resolved within the new tree,",
+            "#      not against the original repo-root layout.",
+            "# We detect the closest 'src/' (or 'frontend/src/') boundary above the",
+            "# target file and remap each import suffix into that mirror tree before",
+            "# computing the new relative path.",
             f'SOURCE_DIR="$(dirname "${{SOURCE_PATH}}")"',
             f'TARGET_DIR="$(dirname "${{TARGET}}")"',
             'if [ "$SOURCE_DIR" != "$TARGET_DIR" ]; then',
@@ -1195,21 +1200,50 @@ class DoctorOrchestrator:
             "target, source_dir, target_dir = sys.argv[1], sys.argv[2], sys.argv[3]",
             "with open(target, 'r', encoding='utf-8') as f:",
             "    text = f.read()",
-            "import_re = re.compile(r'(from\\s+|import\\s+)(\")(\\.{1,2}/[^\"]+)(\")')",
-            "import_re2 = re.compile(r'(from\\s+|import\\s+)(\\')(\\.{1,2}/[^\\']+)(\\')')",
+            "",
+            "def detect_src_root(d):",
+            "    parts = d.replace(os.sep, '/').split('/')",
+            "    # Prefer the closest 'src' segment to the file. If preceded by",
+            "    # 'frontend', use 'frontend/src' as the boundary.",
+            "    for i in range(len(parts) - 1, -1, -1):",
+            "        if parts[i] == 'src':",
+            "            if i > 0 and parts[i - 1] == 'frontend':",
+            "                return '/'.join(parts[:i + 1]), 'frontend/src'",
+            "            return '/'.join(parts[:i + 1]), 'src'",
+            "    return None, None",
+            "",
+            "src_source, marker_source = detect_src_root(source_dir)",
+            "src_target, marker_target = detect_src_root(target_dir)",
+            "",
+            "import_re_dq = re.compile(r'(from\\s+|import\\s+)(\")(\\.{1,2}/[^\"]+)(\")')",
+            "import_re_sq = re.compile(r'(from\\s+|import\\s+)(\\')(\\.{1,2}/[^\\']+)(\\')')",
+            "rewritten_count = 0",
+            "",
             "def rewrite(m):",
+            "    global rewritten_count",
             "    prefix, q1, path, q2 = m.group(1), m.group(2), m.group(3), m.group(4)",
+            "    # Step 1: resolve historical absolute (repo-root-relative) using source_dir.",
             "    abs_resolved = os.path.normpath(os.path.join(source_dir, path))",
+            "    # Step 2: if both source and target sit inside a 'src' tree, remap by",
+            "    # swapping the source 'src/' root prefix for the target 'src/' root prefix.",
+            "    if src_source and src_target and abs_resolved.startswith(src_source + '/'):",
+            "        suffix = abs_resolved[len(src_source) + 1:]",
+            "        abs_resolved = src_target + '/' + suffix",
+            "    # Step 3: compute new relative from target_dir.",
             "    new_rel = os.path.relpath(abs_resolved, start=target_dir)",
             "    if not new_rel.startswith('.'):",
             "        new_rel = './' + new_rel",
+            "    new_rel = new_rel.replace(os.sep, '/')",
+            "    rewritten_count += 1",
             "    return f'{prefix}{q1}{new_rel}{q2}'",
-            "text2 = import_re.sub(rewrite, text)",
-            "text2 = import_re2.sub(rewrite, text2)",
+            "",
+            "text2 = import_re_dq.sub(rewrite, text)",
+            "text2 = import_re_sq.sub(rewrite, text2)",
             "if text2 != text:",
             "    with open(target, 'w', encoding='utf-8') as f:",
             "        f.write(text2)",
-            "    print(f'[regres-patch] Rewrote {len(import_re.findall(text)) + len(import_re2.findall(text))} relative imports.')",
+            "    print(f'[regres-patch] Rewrote {rewritten_count} relative imports.')",
+            "    print(f'[regres-patch]   src boundary: {marker_source} → {marker_target}')",
             "else:",
             "    print('[regres-patch] No relative imports needed rewriting.')",
             "PYEOF",
@@ -1748,14 +1782,15 @@ class DoctorOrchestrator:
             f"Pliki, które zostałyby zmienione przez sugestie regres ({len(affected)} unikalnych):"
         )
         lines.append("")
+        patch_index = self._build_candidate_patch_index(report)
         for entry in affected:
             actions = entry.get("actions", []) or []
             diag_summary = "; ".join(entry.get("diagnoses", []) or [])
-            lines.append(f"### `{entry['path']}`")
+            target_path = entry["path"]
+            lines.append(f"### `{target_path}`")
             if diag_summary:
                 lines.append(f"_Diagnozy:_ {diag_summary}")
             lines.append("")
-            # Group: direct modifies vs git-history candidates.
             direct = [a for a in actions if not (a.get("target") or "").startswith("git:")]
             git_cands = [a for a in actions if (a.get("target") or "").startswith("git:")]
             if direct:
@@ -1766,17 +1801,69 @@ class DoctorOrchestrator:
                 lines.append("")
             if git_cands:
                 lines.append(f"**Kandydaci z historii git ({len(git_cands)}, od najnowszego):**")
-                for a in git_cands:
-                    target = a.get("target", "")
-                    # target = "git:<hash>:<source_path>"
-                    parts = target.split(":", 2)
-                    if len(parts) == 3:
-                        _, h, src = parts
-                        lines.append(f"- `{h}` ← `{src}` — {a.get('reason', '')}")
-                    else:
-                        lines.append(f"- `{target}` — {a.get('reason', '')}")
                 lines.append("")
+                for a in git_cands:
+                    target_spec = a.get("target", "")
+                    parts = target_spec.split(":", 2)
+                    if len(parts) != 3:
+                        lines.append(f"- `{target_spec}` — {a.get('reason', '')}")
+                        continue
+                    _, h, src = parts
+                    patch_path = patch_index.get((target_path, h))
+                    lines.append(f"#### Kandydat `{h}` ← `{src}`")
+                    lines.append(f"_{a.get('reason', '')}_")
+                    lines.append("")
+                    lines.append("**Sprawdź zanim zastosujesz:**")
+                    lines.append("```bash")
+                    lines.append(f"# 1) Podgląd zdalnej zawartości (60 linii) i diff vs current:")
+                    if patch_path:
+                        lines.append(f"bash {patch_path} --preview")
+                    else:
+                        lines.append(
+                            f'git show {h}:{src} | sed -n "1,60p"\n'
+                            f'diff -u <(git show {h}:{src}) {target_path}'
+                        )
+                    lines.append("")
+                    lines.append(f"# 2) Pełen unified diff:")
+                    if patch_path:
+                        lines.append(f"bash {patch_path} --diff")
+                    else:
+                        lines.append(f"diff -u <(git show {h}:{src}) {target_path}")
+                    lines.append("")
+                    lines.append(f"# 3) Zastosuj (backup + restore + auto-rewrite import paths):")
+                    if patch_path:
+                        lines.append(f"bash {patch_path}")
+                    else:
+                        lines.append(f"git show {h}:{src} > {target_path}")
+                    lines.append("```")
+                    lines.append("")
         return lines
+
+    def _build_candidate_patch_index(
+        self, report: Dict[str, Any],
+    ) -> Dict[tuple, str]:
+        """Map (target_path, git_hash) → patch script path for cross-reference."""
+        index: Dict[tuple, str] = {}
+        patches = report.get("generated_patches", []) or []
+        # Need pair (target, hash). target_path comes from diag's primary modify
+        # action; we re-derive that from `self.diagnoses` since the report dict
+        # is the merged view. patches list has 'candidate'=hash and 'diagnosis'.
+        diag_target_map: Dict[str, str] = {}
+        for diag in self.diagnoses:
+            primary = next(
+                (a.path for a in diag.file_actions
+                 if a.action == "modify" and not (a.target or "").startswith("git:")),
+                "",
+            )
+            diag_target_map[diag.summary] = primary
+        for p in patches:
+            if p.get("kind") != "git_history_restore":
+                continue
+            target = diag_target_map.get(p.get("diagnosis", ""), "")
+            cand = p.get("candidate", "")
+            if target and cand:
+                index[(target, cand)] = p.get("path", "")
+        return index
 
     def _render_structure_snapshot(self, report: Dict[str, Any]) -> List[str]:
         lines = ["## Project Structure Snapshot", ""]

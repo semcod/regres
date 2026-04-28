@@ -6,29 +6,29 @@
 - **Primary Language**: md
 - **Languages**: md: 14, python: 12, yaml: 9, shell: 2, txt: 1
 - **Analysis Mode**: static
-- **Total Functions**: 1322
+- **Total Functions**: 1395
 - **Total Classes**: 19
 - **Modules**: 40
-- **Entry Points**: 1151
+- **Entry Points**: 1224
 
 ## Architecture by Module
 
 ### SUMD
-- **Functions**: 626
+- **Functions**: 662
 - **Classes**: 5
 - **File**: `SUMD.md`
 
 ### project.map.toon
-- **Functions**: 409
+- **Functions**: 430
 - **File**: `map.toon.yaml`
 
 ### SUMR
-- **Functions**: 217
+- **Functions**: 232
 - **Classes**: 5
 - **File**: `SUMR.md`
 
 ### regres.doctor_orchestrator
-- **Functions**: 66
+- **Functions**: 67
 - **Classes**: 1
 - **File**: `doctor_orchestrator.py`
 
@@ -55,13 +55,13 @@
 - **Functions**: 10
 - **File**: `version_check.py`
 
-### regres.regres_cli
-- **Functions**: 9
-- **File**: `regres_cli.py`
-
 ### regres.doctor_cli
 - **Functions**: 9
 - **File**: `doctor_cli.py`
+
+### regres.regres_cli
+- **Functions**: 9
+- **File**: `regres_cli.py`
 
 ### docs.DOCTOR
 - **Functions**: 1
@@ -84,6 +84,9 @@
 ## Key Entry Points
 
 Main execution flows into the system:
+
+### regres.doctor_orchestrator.DoctorOrchestrator._render_affected_files
+- **Calls**: lines.append, lines.append, self._build_candidate_patch_index, report.get, lines.append, lines.append, None.join, lines.append
 
 ### regres.regres_cli.main
 - **Calls**: regres.version_check.check_version, argparse.ArgumentParser, parser.add_subparsers, subparsers.add_parser, regres_parser.add_argument, regres_parser.add_argument, regres_parser.add_argument, regres_parser.add_argument
@@ -116,9 +119,6 @@ Strategia:
 1. Wyszukaj wszystkie commity dotyczące plików `*<token>.page.ts`
    w całym repozytori
 - **Calls**: set, res.stdout.splitlines, candidates.sort, set, None.exists, subprocess.run, line.strip, None.replace
-
-### regres.doctor_orchestrator.DoctorOrchestrator._render_affected_files
-- **Calls**: lines.append, lines.append, report.get, lines.append, lines.append, None.join, lines.append, lines.append
 
 ### regres.doctor_orchestrator.DoctorOrchestrator.generate_patch_scripts
 > Tworzy `.sh` patche dla każdej opcji w diagnozach.
@@ -212,7 +212,12 @@ Heurystyki: krótkie + sys.path + dynamic import + barrel export + sygnatury tek
 
 Key execution flows identified:
 
-### Flow 1: main
+### Flow 1: _render_affected_files
+```
+_render_affected_files [regres.doctor_orchestrator.DoctorOrchestrator]
+```
+
+### Flow 2: main
 ```
 main [regres.regres_cli]
   └─ →> check_version
@@ -221,42 +226,37 @@ main [regres.regres_cli]
           └─> _read_env
 ```
 
-### Flow 2: cmd_hotmap
+### Flow 3: cmd_hotmap
 ```
 cmd_hotmap [regres.refactor]
   └─> iter_files
 ```
 
-### Flow 3: _diagnose_page_stub
+### Flow 4: _diagnose_page_stub
 ```
 _diagnose_page_stub [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
-### Flow 4: render_markdown
+### Flow 5: render_markdown
 ```
 render_markdown [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
-### Flow 5: _render_decision_workflow
+### Flow 6: _render_decision_workflow
 ```
 _render_decision_workflow [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
-### Flow 6: cmd_diff
+### Flow 7: cmd_diff
 ```
 cmd_diff [regres.refactor]
   └─> read_text
   └─> read_text
 ```
 
-### Flow 7: _collect_page_history_candidates
+### Flow 8: _collect_page_history_candidates
 ```
 _collect_page_history_candidates [regres.doctor_orchestrator.DoctorOrchestrator]
-```
-
-### Flow 8: _render_affected_files
-```
-_render_affected_files [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
 ### Flow 9: generate_patch_scripts
@@ -275,7 +275,7 @@ cmd_dead [regres.refactor]
 
 ### regres.doctor_orchestrator.DoctorOrchestrator
 > Orchestrator analizy i generator akcji.
-- **Methods**: 66
+- **Methods**: 67
 - **Key Methods**: regres.doctor_orchestrator.DoctorOrchestrator.__init__, regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url, regres.doctor_orchestrator.DoctorOrchestrator.analyze_page_implementations, regres.doctor_orchestrator.DoctorOrchestrator._extract_page_token, regres.doctor_orchestrator.DoctorOrchestrator._find_page_files, regres.doctor_orchestrator.DoctorOrchestrator._diagnose_page_stub, regres.doctor_orchestrator.DoctorOrchestrator._collect_page_history_candidates, regres.doctor_orchestrator.DoctorOrchestrator._fingerprint_page_content, regres.doctor_orchestrator.DoctorOrchestrator._find_backup_page_implementation, regres.doctor_orchestrator.DoctorOrchestrator._build_missing_page_diagnosis
 
 ### regres.defscan.Definition
@@ -307,10 +307,10 @@ cmd_dead [regres.refactor]
 ### regres.import_error_toon_report.ReportData
 - **Methods**: 0
 
-### SUMR.GitCommit
+### SUMR.DoctorOrchestrator
 - **Methods**: 0
 
-### SUMR.DoctorOrchestrator
+### SUMR.GitCommit
 - **Methods**: 0
 
 ### SUMR.Definition
@@ -322,10 +322,10 @@ cmd_dead [regres.refactor]
 ### SUMR.ReportData
 - **Methods**: 0
 
-### SUMD.GitCommit
+### SUMD.DoctorOrchestrator
 - **Methods**: 0
 
-### SUMD.DoctorOrchestrator
+### SUMD.GitCommit
 - **Methods**: 0
 
 ### SUMD.Definition
@@ -346,6 +346,10 @@ Key functions that process and transform data:
 
 ### regres.version_check._parse_version
 - **Output to**: tuple, int, v.split, x.isdigit
+
+### regres.doctor_cli._build_parser
+> Build the argument parser for doctor CLI.
+- **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
 ### regres.refactor._format_imports
 > Format imports list for toon output.
@@ -368,6 +372,26 @@ Key functions that process and transform data:
 > Build and return the argument parser for defscan.
 - **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
+### SUMR._parse_ts_errors
+
+### SUMR._validate_errors
+
+### SUMR._render_validate_step
+
+### SUMR.parse_numstat_block
+
+### SUMR._format_imports
+
+### SUMR._format_preview
+
+### SUMR.build_parser
+
+### SUMR._build_argument_parser
+
+### SUMR.parse_args
+
+### SUMR.parse_ts_errors
+
 ### project.map.toon._build_argument_parser
 
 ### project.map.toon._build_parser
@@ -379,28 +403,6 @@ Key functions that process and transform data:
 ### project.map.toon._format_imports
 
 ### project.map.toon._format_preview
-
-### project.map.toon.build_parser
-
-### project.map.toon.parse_numstat_block
-
-### project.map.toon._parse_version
-
-### project.map.toon.test_build_parser
-
-### project.map.toon.test_parser_scan_root
-
-### project.map.toon.test_parser_all
-
-### project.map.toon.test_parser_url
-
-### project.map.toon.test_parser_llm
-
-### project.map.toon.test_parser_import_log
-
-### project.map.toon.test_parser_defscan_report
-
-### project.map.toon.test_parser_apply
 
 ## Behavioral Patterns
 
@@ -460,6 +462,9 @@ How components interact:
 
 ```mermaid
 graph TD
+    _render_affected_fil --> append
+    _render_affected_fil --> _build_candidate_pat
+    _render_affected_fil --> get
     main --> check_version
     main --> ArgumentParser
     main --> add_subparsers
@@ -485,11 +490,8 @@ graph TD
     _collect_page_histor --> splitlines
     _collect_page_histor --> sort
     _collect_page_histor --> exists
-    _render_affected_fil --> append
-    _render_affected_fil --> get
     generate_patch_scrip --> mkdir
     generate_patch_scrip --> enumerate
-    generate_patch_scrip --> append
 ```
 
 ## Reverse Engineering Guidelines

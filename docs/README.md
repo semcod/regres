@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1378-green)
-> **1378** functions | **19** classes | **43** files | CC̄ = 5.9
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1465-green)
+> **1465** functions | **19** classes | **43** files | CC̄ = 6.0
 
 > Auto-generated project documentation from source code analysis.
 
@@ -71,7 +71,6 @@ regres/
 ├── goal
 ├── Makefile
 ├── SUMD
-├── pyproject
 ├── tree
 ├── TODO
 ├── CHANGELOG
@@ -98,13 +97,14 @@ regres/
     ├── regres_cli
     ├── defscan
     ├── doctor_orchestrator
-        ├── toon
+├── pyproject
     ├── prompt
-        ├── toon
-        ├── toon
-        ├── toon
     ├── context
+        ├── toon
+        ├── toon
+        ├── toon
     ├── README
+        ├── toon
     ├── calls
         ├── toon
 ```
@@ -113,13 +113,13 @@ regres/
 
 ### Classes
 
-- **`GitCommit`** — —
 - **`DoctorOrchestrator`** — —
+- **`GitCommit`** — —
 - **`Definition`** — —
 - **`TsError`** — —
 - **`ReportData`** — —
-- **`GitCommit`** — —
 - **`DoctorOrchestrator`** — —
+- **`GitCommit`** — —
 - **`Definition`** — —
 - **`TsError`** — —
 - **`ReportData`** — —
@@ -135,6 +135,25 @@ regres/
 
 ### Functions
 
+- `analyze_from_url()` — —
+- `analyze_page_implementations()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `render_markdown()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `update_last_plan_step()` — —
+- `set_analysis_context()` — —
+- `summarize_affected_files()` — —
+- `generate_patch_scripts()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
 - `run_git()` — —
 - `find_repo_root()` — —
 - `resolve_target_file()` — —
@@ -167,7 +186,6 @@ regres/
 - `analyze_evolution()` — —
 - `find_last_good_version()` — —
 - `llm_context_packet()` — —
-- `render_markdown()` — —
 - `analyze_file()` — —
 - `main()` — —
 - `iter_files()` — —
@@ -197,20 +215,6 @@ regres/
 - `to_json_toon()` — —
 - `cmd_report()` — —
 - `build_parser()` — —
-- `analyze_from_url()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
-- `reset_analysis_plan()` — —
-- `add_plan_step()` — —
-- `set_analysis_context()` — —
-- `collect_structure_snapshot()` — —
-- `collect_preliminary_refactor_proposals()` — —
 - `c()` — —
 - `sim()` — —
 - `extract_python()` — —
@@ -394,6 +398,26 @@ regres/
 - `test_handle_import_errors_without_frontend()` — —
 - `test_handle_defscan_refactor_subprocess_mock()` — —
 - `test_full_workflow_with_all_mocks()` — —
+- `run_doctor_command()` — —
+- `test_doctor_cli_help()` — —
+- `test_doctor_cli_version()` — —
+- `test_url_mode_module_not_found()` — —
+- `test_url_mode_with_existing_module()` — —
+- `test_url_mode_with_markdown_output()` — —
+- `test_url_mode_both_outputs()` — —
+- `test_import_error_with_log_file()` — —
+- `test_import_error_with_nonexistent_log()` — —
+- `test_defscan_with_report_file()` — —
+- `test_all_mode_basic()` — —
+- `test_all_mode_with_markdown()` — —
+- `test_patch_generation_with_dir()` — —
+- `test_no_patches_flag()` — —
+- `test_invalid_scan_root()` — —
+- `test_concurrent_runs()` — —
+- `test_real_world_scenario_missing_imports()` — —
+- `test_real_world_scenario_module_analysis()` — —
+- `test_analysis_plan_structure()` — —
+- `test_diagnosis_structure()` — —
 - `test_file_action_all_action_types()` — —
 - `test_file_action_empty_path()` — —
 - `test_file_action_none_path()` — —
@@ -549,6 +573,7 @@ regres/
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
 - `analyze_from_url()` — —
+- `analyze_page_implementations()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
 - `analyze_git_history()` — —
@@ -559,7 +584,10 @@ regres/
 - `generate_report()` — —
 - `reset_analysis_plan()` — —
 - `add_plan_step()` — —
+- `update_last_plan_step()` — —
 - `set_analysis_context()` — —
+- `summarize_affected_files()` — —
+- `generate_patch_scripts()` — —
 - `collect_structure_snapshot()` — —
 - `collect_preliminary_refactor_proposals()` — —
 - `loc()` — —
@@ -758,6 +786,25 @@ regres/
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
+- `analyze_from_url()` — —
+- `analyze_page_implementations()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `update_last_plan_step()` — —
+- `set_analysis_context()` — —
+- `summarize_affected_files()` — —
+- `generate_patch_scripts()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
+- `loc()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -821,6 +868,26 @@ regres/
 - `test_handle_import_errors_without_frontend()` — —
 - `test_handle_defscan_refactor_subprocess_mock()` — —
 - `test_full_workflow_with_all_mocks()` — —
+- `run_doctor_command()` — —
+- `test_doctor_cli_help()` — —
+- `test_doctor_cli_version()` — —
+- `test_url_mode_module_not_found()` — —
+- `test_url_mode_with_existing_module()` — —
+- `test_url_mode_with_markdown_output()` — —
+- `test_url_mode_both_outputs()` — —
+- `test_import_error_with_log_file()` — —
+- `test_import_error_with_nonexistent_log()` — —
+- `test_defscan_with_report_file()` — —
+- `test_all_mode_basic()` — —
+- `test_all_mode_with_markdown()` — —
+- `test_patch_generation_with_dir()` — —
+- `test_no_patches_flag()` — —
+- `test_invalid_scan_root()` — —
+- `test_concurrent_runs()` — —
+- `test_real_world_scenario_missing_imports()` — —
+- `test_real_world_scenario_module_analysis()` — —
+- `test_analysis_plan_structure()` — —
+- `test_diagnosis_structure()` — —
 - `test_file_action_all_action_types()` — —
 - `test_file_action_empty_path()` — —
 - `test_file_action_none_path()` — —
@@ -975,21 +1042,6 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
-- `analyze_from_url()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
-- `reset_analysis_plan()` — —
-- `add_plan_step()` — —
-- `set_analysis_context()` — —
-- `collect_structure_snapshot()` — —
-- `collect_preliminary_refactor_proposals()` — —
-- `loc()` — —
 
 
 ## Project Structure
@@ -998,8 +1050,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (626 functions, 5 classes)
-📄 `SUMR` (217 functions, 5 classes)
+📄 `SUMD` (662 functions, 5 classes)
+📄 `SUMR` (232 functions, 5 classes)
 📄 `TODO`
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
@@ -1016,7 +1068,7 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1446 functions)
+📄 `project.map.toon` (1518 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
@@ -1025,7 +1077,7 @@ regres/
 📄 `regres.doctor`
 📄 `regres.doctor_cli` (9 functions)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (66 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (67 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (52 functions)
 📄 `regres.regres` (55 functions, 1 classes)

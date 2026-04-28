@@ -13,6 +13,6 @@ flowchart TD
     regres__version_check ==>|6| docs__DEFSCAN
     regres__import_error_toon_report -->|3| docs__DEFSCAN
     regres__regres -->|1| docs__DEFSCAN
+    regres__doctor_cli -->|1| regres__version_check
     regres__import_error_toon_report -->|1| regres__version_check
     regres__regres_cli -->|1| regres__version_check
-    regres__doctor_cli -->|1| regres__version_check

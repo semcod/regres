@@ -1,6 +1,6 @@
 # code2llm call graph | /home/tom/github/semcod/regres
 # nodes: 172 | edges: 234 | modules: 8
-# CC̄=1.2
+# CC̄=1.1
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -39,10 +39,10 @@ HUBS[20]:
     CC=12  in:1  out:26  total:27
   regres.doctor_cli._save_report
     CC=20  in:2  out:25  total:27
-  regres.regres.analyze_file
-    CC=4  in:1  out:25  total:26
   regres.refactor.cmd_similar
     CC=14  in:0  out:26  total:26
+  regres.regres.analyze_file
+    CC=4  in:1  out:25  total:26
 
 MODULES:
   docs.DEFSCAN  [1 funcs]

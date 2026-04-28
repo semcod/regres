@@ -48,6 +48,7 @@ flowchart TD
         SUMD___handle_defscan_refactor["_handle_defscan_refactor"]
         SUMD___handle_auto_decision_flow["_handle_auto_decision_flow"]
         SUMD___save_report["_save_report"]
+        SUMD___render_patches_section["_render_patches_section"]
         SUMD___refresh_import_error_log["_refresh_import_error_log"]
         SUMD___build_parser["_build_parser"]
         SUMD__toon_quote["toon_quote"]
@@ -59,69 +60,68 @@ flowchart TD
         SUMD__grouped_errors["grouped_errors"]
         SUMD__metrics["metrics"]
         SUMD__to_toon_block_legacy["to_toon_block_legacy"]
-        SUMD__to_toon_global_payload["to_toon_global_payload"]
     end
     subgraph SUMR
-        SUMR__run_git["run_git"]
-        SUMR__find_repo_root["find_repo_root"]
-        SUMR___dedupe_paths["_dedupe_paths"]
-        SUMR___check_absolute_path["_check_absolute_path"]
-        SUMR___check_relative_paths["_check_relative_paths"]
-        SUMR___search_by_name_suffix["_search_by_name_suffix"]
-        SUMR___resolve_single_or_error["_resolve_single_or_error"]
-        SUMR__resolve_target_file["resolve_target_file"]
-        SUMR__to_rel["to_rel"]
-        SUMR__safe_read_text["safe_read_text"]
-        SUMR__sha256_of_file["sha256_of_file"]
-        SUMR__content_metrics["content_metrics"]
-        SUMR__resolve_local_import["resolve_local_import"]
-        SUMR__extract_local_imports["extract_local_imports"]
-        SUMR__resolve_import_at_commit["resolve_import_at_commit"]
-        SUMR__check_imports_at_commit["check_imports_at_commit"]
-        SUMR__find_last_working_commit["find_last_working_commit"]
-        SUMR__search_missing_in_history["search_missing_in_history"]
-        SUMR__analyze_regression["analyze_regression"]
-        SUMR__extract_symbols["extract_symbols"]
-        SUMR__track_filename_history["track_filename_history"]
-        SUMR__find_current_locations["find_current_locations"]
-        SUMR___classify_import_problem["_classify_import_problem"]
-        SUMR___analyze_import_problems["_analyze_import_problems"]
-        SUMR___analyze_evolution["_analyze_evolution"]
-        SUMR___determine_primary_type["_determine_primary_type"]
-        SUMR__classify_problem["classify_problem"]
-        SUMR__dependency_tree["dependency_tree"]
-        SUMR__reverse_references["reverse_references"]
-        SUMR__exact_and_near_duplicates["exact_and_near_duplicates"]
-        SUMR__trace_name_and_hash_candidates["trace_name_and_hash_candidates"]
-        SUMR__parse_numstat_block["parse_numstat_block"]
-        SUMR__file_lineage["file_lineage"]
-        SUMR__changed_files_for_commit["changed_files_for_commit"]
-        SUMR__references_in_recent_commits["references_in_recent_commits"]
-        SUMR__file_content_at_commit["file_content_at_commit"]
-        SUMR__resolve_import_historical["resolve_import_historical"]
-        SUMR__historical_dependency_tree["historical_dependency_tree"]
-        SUMR__analyze_evolution["analyze_evolution"]
-        SUMR___collect_tree_paths["_collect_tree_paths"]
-        SUMR__find_last_good_version["find_last_good_version"]
-        SUMR__llm_context_packet["llm_context_packet"]
-        SUMR___render_classification_section["_render_classification_section"]
-        SUMR___render_name_hash_section["_render_name_hash_section"]
-        SUMR___render_metrics_section["_render_metrics_section"]
-        SUMR___render_references_section["_render_references_section"]
-        SUMR___render_duplicates_section["_render_duplicates_section"]
-        SUMR___render_lineage_section["_render_lineage_section"]
-        SUMR___render_evolution_section["_render_evolution_section"]
-        SUMR___render_last_good_section["_render_last_good_section"]
-        SUMR___render_regression_section["_render_regression_section"]
+        SUMR____init__["__init__"]
+        SUMR__analyze_from_url["analyze_from_url"]
+        SUMR__analyze_page_implementations["analyze_page_implementations"]
+        SUMR___extract_page_token["_extract_page_token"]
+        SUMR___find_page_files["_find_page_files"]
+        SUMR___diagnose_page_stub["_diagnose_page_stub"]
+        SUMR___collect_page_history_candidates["_collect_page_history_candidates"]
+        SUMR___fingerprint_page_content["_fingerprint_page_content"]
+        SUMR___find_backup_page_implementation["_find_backup_page_implementation"]
+        SUMR___build_missing_page_diagnosis["_build_missing_page_diagnosis"]
+        SUMR___filter_actionable_diagnoses["_filter_actionable_diagnoses"]
+        SUMR___build_url_fallback_diagnosis["_build_url_fallback_diagnosis"]
+        SUMR__analyze_import_errors["analyze_import_errors"]
+        SUMR__analyze_duplicates["analyze_duplicates"]
+        SUMR__analyze_git_history["analyze_git_history"]
+        SUMR__analyze_with_defscan["analyze_with_defscan"]
+        SUMR__analyze_with_refactor["analyze_with_refactor"]
+        SUMR__apply_fixes["apply_fixes"]
+        SUMR__generate_llm_diagnosis["generate_llm_diagnosis"]
+        SUMR__generate_report["generate_report"]
         SUMR__render_markdown["render_markdown"]
-        SUMR__analyze_file["analyze_file"]
-        SUMR___resolve_output_path["_resolve_output_path"]
-        SUMR__main["main"]
-        SUMR__iter_files["iter_files"]
-        SUMR__read_text["read_text"]
-        SUMR__md5_file["md5_file"]
-        SUMR__count_word["count_word"]
-        SUMR__line_count["line_count"]
+        SUMR__reset_analysis_plan["reset_analysis_plan"]
+        SUMR__add_plan_step["add_plan_step"]
+        SUMR__update_last_plan_step["update_last_plan_step"]
+        SUMR__set_analysis_context["set_analysis_context"]
+        SUMR__summarize_affected_files["summarize_affected_files"]
+        SUMR__generate_patch_scripts["generate_patch_scripts"]
+        SUMR___render_patch_script["_render_patch_script"]
+        SUMR___render_generic_patch_script["_render_generic_patch_script"]
+        SUMR___extract_module_name["_extract_module_name"]
+        SUMR___resolve_module_path["_resolve_module_path"]
+        SUMR___import_exists_in_source["_import_exists_in_source"]
+        SUMR___resolve_alias_target["_resolve_alias_target"]
+        SUMR___parse_ts_errors["_parse_ts_errors"]
+        SUMR___validate_errors["_validate_errors"]
+        SUMR___extract_missing_modules["_extract_missing_modules"]
+        SUMR___diagnose_import_issue["_diagnose_import_issue"]
+        SUMR___diagnose_duplicate["_diagnose_duplicate"]
+        SUMR___find_main_location["_find_main_location"]
+        SUMR___analyze_history_patterns["_analyze_history_patterns"]
+        SUMR___apply_file_action["_apply_file_action"]
+        SUMR___apply_shell_command["_apply_shell_command"]
+        SUMR___build_header["_build_header"]
+        SUMR___build_section["_build_section"]
+        SUMR___build_nlp_diagnosis["_build_nlp_diagnosis"]
+        SUMR___build_proposed_fixes["_build_proposed_fixes"]
+        SUMR___build_shell_commands["_build_shell_commands"]
+        SUMR___build_playbook["_build_playbook"]
+        SUMR___build_summary["_build_summary"]
+        SUMR___collect_all_diagnoses["_collect_all_diagnoses"]
+        SUMR___normalize_diagnoses["_normalize_diagnoses"]
+        SUMR___render_decision_workflow["_render_decision_workflow"]
+        SUMR___fmt_plan_value["_fmt_plan_value"]
+        SUMR___render_affected_files["_render_affected_files"]
+        SUMR___render_structure_snapshot["_render_structure_snapshot"]
+        SUMR___render_preliminary_refactor_proposals["_render_preliminary_refactor_propos"]
+        SUMR__collect_structure_snapshot["collect_structure_snapshot"]
+        SUMR__collect_preliminary_refactor_proposals["collect_preliminary_refactor_propos"]
+        SUMR___render_step_by_step_playbook["_render_step_by_step_playbook"]
+        SUMR___render_analyze_step["_render_analyze_step"]
     end
     subgraph docs__DEFSCAN
         docs__DEFSCAN__print["print"]
@@ -181,6 +181,7 @@ flowchart TD
         project__map__toon___handle_defscan_refactor["_handle_defscan_refactor"]
         project__map__toon___handle_auto_decision_flow["_handle_auto_decision_flow"]
         project__map__toon___save_report["_save_report"]
+        project__map__toon___render_patches_section["_render_patches_section"]
         project__map__toon___refresh_import_error_log["_refresh_import_error_log"]
         project__map__toon___build_parser["_build_parser"]
         project__map__toon__toon_quote["toon_quote"]
@@ -192,7 +193,6 @@ flowchart TD
         project__map__toon__grouped_errors["grouped_errors"]
         project__map__toon__metrics["metrics"]
         project__map__toon__to_toon_block_legacy["to_toon_block_legacy"]
-        project__map__toon__to_toon_global_payload["to_toon_global_payload"]
     end
     subgraph regres__defscan
         regres__defscan__c["c"]
@@ -306,13 +306,13 @@ flowchart TD
         regres__doctor_orchestrator__DoctorOrchestrator___normalize_diagnoses["_normalize_diagnoses"]
         regres__doctor_orchestrator__DoctorOrchestrator___render_decision_workflow("_render_decision_workflow CC=12")
         regres__doctor_orchestrator__DoctorOrchestrator___fmt_plan_value["_fmt_plan_value"]
-        regres__doctor_orchestrator__DoctorOrchestrator___render_affected_files{{_render_affected_files CC=19}}
+        regres__doctor_orchestrator__DoctorOrchestrator___render_affected_files{{_render_affected_files CC=22}}
+        regres__doctor_orchestrator__DoctorOrchestrator___build_candidate_patch_index("_build_candidate_patch_index CC=11")
         regres__doctor_orchestrator__DoctorOrchestrator___render_structure_snapshot["_render_structure_snapshot"]
         regres__doctor_orchestrator__DoctorOrchestrator___render_preliminary_refactor_proposals["_render_preliminary_refactor_propos"]
         regres__doctor_orchestrator__DoctorOrchestrator__collect_structure_snapshot["collect_structure_snapshot"]
         regres__doctor_orchestrator__DoctorOrchestrator__collect_preliminary_refactor_proposals["collect_preliminary_refactor_propos"]
         regres__doctor_orchestrator__DoctorOrchestrator___render_step_by_step_playbook("_render_step_by_step_playbook CC=8")
-        regres__doctor_orchestrator__DoctorOrchestrator___render_analyze_step("_render_analyze_step CC=8")
     end
     subgraph regres__import_error_toon_report
         regres__import_error_toon_report__toon_quote["toon_quote"]
@@ -550,6 +550,13 @@ flowchart TD
     regres__version_check__check_version --> regres__version_check___should_check
     regres__version_check__check_version --> docs__DEFSCAN__print
     regres__version_check__check_version --> regres__version_check___save_skip_preference
+    regres__doctor_cli___save_report --> docs__DEFSCAN__print
+    regres__doctor_cli___refresh_import_error_log --> docs__DEFSCAN__print
+    regres__doctor_cli__main --> regres__version_check__check_version
+    regres__doctor_cli__main --> regres__doctor_cli___build_parser
+    regres__doctor_cli__main --> regres__doctor_cli___handle_auto_decision_flow
+    regres__doctor_cli__main --> regres__doctor_cli___save_report
+    regres__doctor_cli__main --> regres__doctor_cli___handle_url_mode
     regres__refactor__get_symbols --> regres__refactor__extract_symbols_regex
     regres__refactor__get_symbols --> regres__refactor__extract_symbols_ast
     regres__refactor__cmd_find --> regres__refactor__iter_files
@@ -731,15 +738,8 @@ flowchart TD
     regres__defscan__main --> regres__defscan___run_seed_mode
     regres__defscan__main --> regres__defscan___run_focus_mode
     regres__defscan__main --> regres__defscan___run_default_mode
-    regres__doctor_cli___save_report --> docs__DEFSCAN__print
-    regres__doctor_cli___refresh_import_error_log --> docs__DEFSCAN__print
-    regres__doctor_cli__main --> regres__version_check__check_version
-    regres__doctor_cli__main --> regres__doctor_cli___build_parser
-    regres__doctor_cli__main --> regres__doctor_cli___handle_auto_decision_flow
-    regres__doctor_cli__main --> regres__doctor_cli___save_report
-    regres__doctor_cli__main --> regres__doctor_cli___handle_url_mode
 
     classDef highCC fill:#ff6b6b,stroke:#c92a2a,color:#fff
     classDef medCC fill:#ffd43b,stroke:#f08c00,color:#000
-    class regres__regres___render_classification_section,regres__refactor__iter_files,regres__refactor__wrapper_score,regres__refactor__cmd_hotmap,regres__defscan___run_seed_mode,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_page_stub,regres__doctor_orchestrator__DoctorOrchestrator___collect_page_history_candidates,regres__doctor_orchestrator__DoctorOrchestrator__generate_patch_scripts,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue,regres__doctor_orchestrator__DoctorOrchestrator___render_affected_files,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_auto_decision_flow,regres__doctor_cli___save_report highCC
-    class regres__regres___search_by_name_suffix,regres__regres__resolve_target_file,regres__regres__resolve_local_import,regres__regres__check_imports_at_commit,regres__regres__find_last_working_commit,regres__regres__analyze_regression,regres__regres__track_filename_history,regres__regres___analyze_evolution,regres__regres__reverse_references,regres__regres__exact_and_near_duplicates,regres__regres__trace_name_and_hash_candidates,regres__regres__file_lineage,regres__regres__analyze_evolution,regres__regres__llm_context_packet,regres__regres___render_regression_section,regres__refactor__extract_symbols_ast,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor___render_file_symbols,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_cluster,regres__import_error_toon_report__suggestions_for_error,regres__import_error_toon_report__to_toon_global_payload,regres__defscan___extract_block_ts,regres__defscan__extract_typescript,regres__defscan___should_skip_file,regres__defscan__scan,regres__defscan__compare_seed_to_all medCC
+    class regres__regres___render_classification_section,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_auto_decision_flow,regres__doctor_cli___save_report,regres__refactor__iter_files,regres__refactor__wrapper_score,regres__refactor__cmd_hotmap,regres__defscan___run_seed_mode,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_page_stub,regres__doctor_orchestrator__DoctorOrchestrator___collect_page_history_candidates,regres__doctor_orchestrator__DoctorOrchestrator__generate_patch_scripts,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue,regres__doctor_orchestrator__DoctorOrchestrator___render_affected_files highCC
+    class regres__regres___search_by_name_suffix,regres__regres__resolve_target_file,regres__regres__resolve_local_import,regres__regres__check_imports_at_commit,regres__regres__find_last_working_commit,regres__regres__analyze_regression,regres__regres__track_filename_history,regres__regres___analyze_evolution,regres__regres__reverse_references,regres__regres__exact_and_near_duplicates,regres__regres__trace_name_and_hash_candidates,regres__regres__file_lineage,regres__regres__analyze_evolution,regres__regres__llm_context_packet,regres__regres___render_regression_section,regres__doctor_cli___handle_import_errors,regres__doctor_cli___render_patches_section,regres__refactor__extract_symbols_ast,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor___render_file_symbols,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_cluster,regres__import_error_toon_report__suggestions_for_error,regres__import_error_toon_report__to_toon_global_payload,regres__defscan___extract_block_ts,regres__defscan__extract_typescript,regres__defscan___should_skip_file medCC

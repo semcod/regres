@@ -1,9 +1,9 @@
-# code2llm/evolution | 1322 func | 14f | 2026-04-28
+# code2llm/evolution | 1395 func | 14f | 2026-04-28
 
 NEXT[10] (ranked by impact):
   [1] !! SPLIT           regres/doctor_orchestrator.py
-      WHY: 1934L, 1 classes, max CC=31
-      EFFORT: ~4h  IMPACT: 59954
+      WHY: 2089L, 1 classes, max CC=31
+      EFFORT: ~4h  IMPACT: 64759
 
   [2] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
@@ -43,12 +43,12 @@ NEXT[10] (ranked by impact):
 
 
 RISKS[3]:
-  ⚠ Splitting regres/doctor_orchestrator.py may break 66 import paths
+  ⚠ Splitting regres/doctor_orchestrator.py may break 67 import paths
   ⚠ Splitting regres/regres.py may break 55 import paths
   ⚠ Splitting regres/defscan.py may break 45 import paths
 
 METRICS-TARGET:
-  CC̄:          1.2 → ≤0.8
+  CC̄:          1.1 → ≤0.8
   max-CC:      31 → ≤15
   god-modules: 5 → 0
   high-CC(≥15): 13 → ≤6
@@ -79,4 +79,4 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.0 → now CC̄=1.2
+  prev CC̄=1.2 → now CC̄=1.1

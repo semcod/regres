@@ -1,9 +1,9 @@
-# redup/duplication | 0 groups | 12f 7285L | 2026-04-28
+# redup/duplication | 0 groups | 12f 7440L | 2026-04-28
 
 SUMMARY:
   files_scanned: 12
-  total_lines:   7285
+  total_lines:   7440
   dup_groups:    0
   dup_fragments: 0
   saved_lines:   0
-  scan_ms:       3652
+  scan_ms:       3751

@@ -16,7 +16,7 @@ SUMD - Structured Unified Markdown Descriptor for AI-aware project refactorizati
 ## Metadata
 
 - **name**: `regres`
-- **version**: `0.1.26`
+- **version**: `0.1.29`
 - **python_requires**: `>=3.11`
 - **license**: Apache-2.0
 - **ai_model**: `openrouter/qwen/qwen3-coder-next`
@@ -36,7 +36,7 @@ SUMD (description) → DOQL/source (code) → taskfile (automation) → testql (
 
 app {
   name: regres;
-  version: 0.1.26;
+  version: 0.1.29;
 }
 
 interface[type="cli"] {
@@ -223,7 +223,8 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def _normalize_diagnoses(diagnoses)  # CC=1
     def _render_decision_workflow(report)  # CC=12 ⚠
     def _fmt_plan_value(value)  # CC=7
-    def _render_affected_files(report)  # CC=19 ⚠
+    def _render_affected_files(report)  # CC=22 ⚠
+    def _build_candidate_patch_index(report)  # CC=11 ⚠
     def _render_structure_snapshot(report)  # CC=2
     def _render_preliminary_refactor_proposals(report)  # CC=3
     def collect_structure_snapshot(max_entries)  # CC=7
@@ -430,7 +431,7 @@ class ReportData:
 
 ## Call Graph
 
-*172 nodes · 234 edges · 8 modules · CC̄=1.2*
+*172 nodes · 234 edges · 8 modules · CC̄=1.1*
 
 ### Hubs (by degree)
 
@@ -448,7 +449,7 @@ class ReportData:
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
 # nodes: 172 | edges: 234 | modules: 8
-# CC̄=1.2
+# CC̄=1.1
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -487,10 +488,10 @@ HUBS[20]:
     CC=12  in:1  out:26  total:27
   regres.doctor_cli._save_report
     CC=20  in:2  out:25  total:27
-  regres.regres.analyze_file
-    CC=4  in:1  out:25  total:26
   regres.refactor.cmd_similar
     CC=14  in:0  out:26  total:26
+  regres.regres.analyze_file
+    CC=4  in:1  out:25  total:26
 
 MODULES:
   docs.DEFSCAN  [1 funcs]
@@ -635,7 +636,7 @@ EDGES:
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
 # nodes: 172 | edges: 234 | modules: 8
-# CC̄=1.2
+# CC̄=1.1
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -674,10 +675,10 @@ HUBS[20]:
     CC=12  in:1  out:26  total:27
   regres.doctor_cli._save_report
     CC=20  in:2  out:25  total:27
-  regres.regres.analyze_file
-    CC=4  in:1  out:25  total:26
   regres.refactor.cmd_similar
     CC=14  in:0  out:26  total:26
+  regres.regres.analyze_file
+    CC=4  in:1  out:25  total:26
 
 MODULES:
   docs.DEFSCAN  [1 funcs]
@@ -808,13 +809,16 @@ EDGES:
 ### Code Analysis (`project/analysis.toon.yaml`)
 
 ```toon markpact:analysis path=project/analysis.toon.yaml
-# code2llm | 40f 17854L | md:14,python:12,yaml:9,shell:2,txt:1,toml:1 | 2026-04-28
-# CC̄=1.2 | critical:13/1322 | dups:0 | cycles:0
+# code2llm | 40f 18148L | md:14,python:12,yaml:9,shell:2,txt:1,toml:1 | 2026-04-28
+# CC̄=1.1 | critical:13/1395 | dups:0 | cycles:0
 
 HEALTH[15]:
-  🔴 GOD   SUMR.md = 997L, 5 classes, 210m, max CC=0.0
-  🔴 GOD   SUMD.md = 1191L, 5 classes, 451m, max CC=0.0
+  🔴 GOD   SUMR.md = 1022L, 5 classes, 225m, max CC=0.0
+  🔴 GOD   SUMD.md = 1230L, 5 classes, 487m, max CC=0.0
   🟡 CC    _render_classification_section CC=15 (limit:15)
+  🟡 CC    _handle_url_mode CC=26 (limit:15)
+  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
+  🟡 CC    _save_report CC=20 (limit:15)
   🟡 CC    iter_files CC=15 (limit:15)
   🟡 CC    wrapper_score CC=15 (limit:15)
   🟡 CC    cmd_hotmap CC=16 (limit:15)
@@ -823,31 +827,28 @@ HEALTH[15]:
   🟡 CC    _collect_page_history_candidates CC=23 (limit:15)
   🟡 CC    generate_patch_scripts CC=26 (limit:15)
   🟡 CC    _diagnose_import_issue CC=15 (limit:15)
-  🟡 CC    _render_affected_files CC=19 (limit:15)
-  🟡 CC    _handle_url_mode CC=26 (limit:15)
-  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
-  🟡 CC    _save_report CC=20 (limit:15)
+  🟡 CC    _render_affected_files CC=22 (limit:15)
 
 REFACTOR[3]:
   1. split SUMR.md  (god module)
   2. split SUMD.md  (god module)
   3. split 13 high-CC methods  (CC>15)
 
-PIPELINES[83]:
+PIPELINES[84]:
   [1] Src [_resolve_single_or_error]: _resolve_single_or_error
       PURITY: 100% pure
   [2] Src [main]: main → find_repo_root
       PURITY: 100% pure
-  [3] Src [cmd_find]: cmd_find → iter_files
+  [3] Src [_handle_import_errors]: _handle_import_errors
       PURITY: 100% pure
-  [4] Src [cmd_duplicates]: cmd_duplicates → iter_files
+  [4] Src [_handle_defscan_refactor]: _handle_defscan_refactor
       PURITY: 100% pure
-  [5] Src [cmd_similar]: cmd_similar → iter_files
+  [5] Src [_refresh_import_error_log]: _refresh_import_error_log → print
       PURITY: 100% pure
 
 LAYERS:
-  regres/                         CC̄=5.9    ←in:0  →out:131  !! split
-  │ !! doctor_orchestrator       1934L  1C   66m  CC=31     ←0
+  regres/                         CC̄=6.0    ←in:0  →out:131  !! split
+  │ !! doctor_orchestrator       2089L  1C   67m  CC=31     ←0
   │ !! regres                    1495L  1C   55m  CC=15     ←1
   │ !! defscan                   1261L  1C   45m  CC=17     ←2
   │ !! refactor                  1237L  0C   52m  CC=16     ←2
@@ -860,36 +861,36 @@ LAYERS:
   │ doctor                       6L  0C    0m  CC=0.0    ←0
   │
   docs/                           CC̄=0.0    ←in:131  →out:0
-  │ !! README.md                 1063L  0C    1m  CC=0.0    ←0
+  │ !! README.md                 1065L  0C    1m  CC=0.0    ←0
   │ REGRES.md                  220L  0C    0m  CC=0.0    ←0
   │ DOCTOR.md                  198L  1C    1m  CC=0.0    ←0
   │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←6
   │ REFACTOR.md                 87L  0C    0m  CC=0.0    ←0
   │ import-error-toon-report.md    76L  0C    0m  CC=0.0    ←0
   │
-  project/                        CC̄=0.0    ←in:0  →out:0
-  │ !! calls.yaml                3232L  0C    0m  CC=0.0    ←0
-  │ !! context.md                 507L  0C    0m  CC=0.0    ←0
-  │ map.toon.yaml              488L  0C  399m  CC=0.0    ←0
-  │ README.md                  339L  0C    0m  CC=0.0    ←0
-  │ calls.toon.yaml            170L  0C    0m  CC=0.0    ←0
-  │ analysis.toon.yaml         100L  0C    0m  CC=0.0    ←0
-  │ evolution.toon.yaml         78L  0C    0m  CC=0.0    ←0
-  │ project.toon.yaml           52L  0C    0m  CC=0.0    ←0
-  │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
-  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
-  │
   ./                              CC̄=0.0    ←in:0  →out:0
-  │ !! SUMD.md                   1191L  5C  451m  CC=0.0    ←0
-  │ !! SUMR.md                    997L  5C  210m  CC=0.0    ←0
+  │ !! SUMD.md                   1230L  5C  487m  CC=0.0    ←0
+  │ !! SUMR.md                   1022L  5C  225m  CC=0.0    ←0
   │ !! goal.yaml                  512L  0C    0m  CC=0.0    ←0
-  │ CHANGELOG.md               308L  0C    0m  CC=0.0    ←0
+  │ CHANGELOG.md               331L  0C    0m  CC=0.0    ←0
   │ README.md                   66L  0C    0m  CC=0.0    ←0
   │ pyproject.toml              52L  0C    0m  CC=0.0    ←0
   │ project.sh                  41L  0C    0m  CC=0.0    ←0
   │ TODO.md                      2L  0C    0m  CC=0.0    ←0
   │ tree.sh                      1L  0C    0m  CC=0.0    ←0
   │ Makefile                     0L  0C    0m  CC=0.0    ←0
+  │
+  project/                        CC̄=0.0    ←in:0  →out:0
+  │ !! calls.yaml                3247L  0C    0m  CC=0.0    ←0
+  │ !! map.toon.yaml              512L  0C  420m  CC=0.0    ←0
+  │ !! context.md                 505L  0C    0m  CC=0.0    ←0
+  │ README.md                  339L  0C    0m  CC=0.0    ←0
+  │ calls.toon.yaml            170L  0C    0m  CC=0.0    ←0
+  │ analysis.toon.yaml         106L  0C    0m  CC=0.0    ←0
+  │ evolution.toon.yaml         82L  0C    0m  CC=0.0    ←0
+  │ project.toon.yaml           55L  0C    0m  CC=0.0    ←0
+  │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
+  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
   │
   .regres/                        CC̄=0.0    ←in:0  →out:0
   │ !! import-error-toon-report.md   549L  0C    0m  CC=0.0    ←0
@@ -919,26 +920,26 @@ EXTERNAL:
 ### Duplication (`project/duplication.toon.yaml`)
 
 ```toon markpact:analysis path=project/duplication.toon.yaml
-# redup/duplication | 0 groups | 12f 7285L | 2026-04-28
+# redup/duplication | 0 groups | 12f 7440L | 2026-04-28
 
 SUMMARY:
   files_scanned: 12
-  total_lines:   7285
+  total_lines:   7440
   dup_groups:    0
   dup_fragments: 0
   saved_lines:   0
-  scan_ms:       3652
+  scan_ms:       3751
 ```
 
 ### Evolution / Churn (`project/evolution.toon.yaml`)
 
 ```toon markpact:analysis path=project/evolution.toon.yaml
-# code2llm/evolution | 1322 func | 14f | 2026-04-28
+# code2llm/evolution | 1395 func | 14f | 2026-04-28
 
 NEXT[10] (ranked by impact):
   [1] !! SPLIT           regres/doctor_orchestrator.py
-      WHY: 1934L, 1 classes, max CC=31
-      EFFORT: ~4h  IMPACT: 59954
+      WHY: 2089L, 1 classes, max CC=31
+      EFFORT: ~4h  IMPACT: 64759
 
   [2] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
@@ -978,12 +979,12 @@ NEXT[10] (ranked by impact):
 
 
 RISKS[3]:
-  ⚠ Splitting regres/doctor_orchestrator.py may break 66 import paths
+  ⚠ Splitting regres/doctor_orchestrator.py may break 67 import paths
   ⚠ Splitting regres/regres.py may break 55 import paths
   ⚠ Splitting regres/defscan.py may break 45 import paths
 
 METRICS-TARGET:
-  CC̄:          1.2 → ≤0.8
+  CC̄:          1.1 → ≤0.8
   max-CC:      31 → ≤15
   god-modules: 5 → 0
   high-CC(≥15): 13 → ≤6
@@ -1014,7 +1015,7 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.0 → now CC̄=1.2
+  prev CC̄=1.2 → now CC̄=1.1
 ```
 
 ## Intent

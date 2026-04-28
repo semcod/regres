@@ -25,11 +25,11 @@ import argparse
 import sys
 from pathlib import Path
 
-from regres import regres
-from regres import refactor
-from regres import defscan
-from regres import doctor
-from regres.import_error_toon_report import main as import_error_toon_report_main
+from . import regres
+from . import refactor
+from . import defscan
+from . import doctor
+from .import_error_toon_report import main as import_error_toon_report_main
 
 
 def main() -> int:
@@ -74,6 +74,13 @@ def main() -> int:
     doctor_parser.add_argument("--defscan-report", help="Ścieżka do raportu defscan (JSON)")
     doctor_parser.add_argument("--regres-report", help="Ścieżka do raportu regres (JSON)")
     doctor_parser.add_argument("--all", action="store_true", help="Uruchom wszystkie analizy")
+    doctor_parser.add_argument("--url", help="Analizuj moduł na podstawie URL (np. http://localhost:8100/connect-scenario)")
+    doctor_parser.add_argument("--apply", action="store_true", help="Wykonaj akcje naprawcze")
+    doctor_parser.add_argument("--dry-run", action="store_true", help="Dry-run dla akcji naprawczych (domyślne)")
+    doctor_parser.add_argument("--llm", action="store_true", help="Generuj szczegółowy raport LLM markdown z kontekstem")
+    doctor_parser.add_argument("--git-history", action="store_true", help="Analizuj historię git plików z błędami")
+    doctor_parser.add_argument("--defscan-scan", help="Uruchom defscan na konkretnym katalogu")
+    doctor_parser.add_argument("--refactor-scan", help="Uruchom refactor wrappers na konkretnym katalogu")
     doctor_parser.add_argument("--out-md", help="Ścieżka do raportu Markdown")
     doctor_parser.add_argument("--out-json", help="Ścieżka do raportu JSON")
 
@@ -141,6 +148,20 @@ def main() -> int:
             sys.argv.extend(["--regres-report", args.regres_report])
         if args.all:
             sys.argv.append("--all")
+        if args.url:
+            sys.argv.extend(["--url", args.url])
+        if args.apply:
+            sys.argv.append("--apply")
+        if args.dry_run:
+            sys.argv.append("--dry-run")
+        if args.llm:
+            sys.argv.append("--llm")
+        if args.git_history:
+            sys.argv.append("--git-history")
+        if args.defscan_scan:
+            sys.argv.extend(["--defscan-scan", args.defscan_scan])
+        if args.refactor_scan:
+            sys.argv.extend(["--refactor-scan", args.refactor_scan])
         if args.out_md:
             sys.argv.extend(["--out-md", args.out_md])
         if args.out_json:

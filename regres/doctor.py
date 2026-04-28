@@ -18,6 +18,7 @@ UŻYCIE:
 import argparse
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -59,6 +60,89 @@ class DoctorOrchestrator:
     def __init__(self, scan_root: Path):
         self.scan_root = scan_root.resolve()
         self.diagnoses: List[Diagnosis] = []
+
+    # Mapowanie URL paths do katalogów modułów
+    MODULE_PATH_MAP = {
+        "connect-test": "connect-test/frontend/src/modules/connect-test",
+        "connect-test-protocol": "connect-test-protocol/frontend/src/modules/connect-test-protocol",
+        "connect-test-device": "connect-test-device/frontend/src/modules/connect-test-device",
+        "connect-test-full": "connect-test-full/frontend/src/modules/connect-test-full",
+        "connect-scenario": "connect-scenario/frontend/src/modules/connect-scenario",
+        "connect-manager": "connect-manager/frontend/src/modules/connect-manager",
+        "connect-reports": "connect-reports/frontend/src/modules/connect-reports",
+        "connect-config": "connect-config/frontend/src/modules/connect-config",
+        "connect-data": "connect-data/backend",
+        "connect-id": "connect-id/frontend/src/modules/connect-id",
+        "connect-template": "connect-template/frontend/src/modules/connect-template",
+        "connect-workshop": "connect-workshop/frontend/src/modules/connect-workshop",
+    }
+
+    def analyze_from_url(self, url: str) -> List[Diagnosis]:
+        """Analizuje moduł na podstawie URL."""
+        # Parsuj URL aby wyodrębnić ścieżkę
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(url)
+            path = parsed.path.strip('/')
+        except:
+            path = url.strip('/')
+
+        # Wyodrębnij nazwę modułu z ścieżki
+        module_name = None
+        for possible_module in self.MODULE_PATH_MAP.keys():
+            if path.startswith(possible_module):
+                module_name = possible_module
+                break
+
+        if not module_name:
+            # Spróbuj dopasować pierwszą część ścieżki
+            parts = path.split('/')
+            if parts:
+                module_name = parts[0]
+
+        if not module_name:
+            return []
+
+        # Znajdź katalog modułu
+        module_path = self.MODULE_PATH_MAP.get(module_name)
+        if not module_path:
+            # Spróbuj znaleźć katalog automatycznie
+            for possible_path in [
+                f"{module_name}/frontend/src/modules/{module_name}",
+                f"{module_name}/frontend/src",
+                f"{module_name}/backend",
+                f"frontend/src/modules/{module_name}",
+            ]:
+                full_path = self.scan_root / possible_path
+                if full_path.exists():
+                    module_path = possible_path
+                    break
+
+        if not module_path:
+            return []
+
+        full_module_path = self.scan_root / module_path
+        if not full_module_path.exists():
+            return []
+
+        # Uruchom wszystkie analizy na tym module
+        diagnoses = []
+
+        # Defscan
+        defscan_diags = self.analyze_with_defscan(full_module_path)
+        diagnoses.extend(defscan_diags)
+
+        # Refactor
+        refactor_diags = self.analyze_with_refactor(full_module_path)
+        diagnoses.extend(refactor_diags)
+
+        # Git history dla plików w module
+        for file_path in full_module_path.rglob("*.ts"):
+            relative_path = str(file_path.relative_to(self.scan_root))
+            git_diags = self.analyze_git_history(relative_path)
+            diagnoses.extend(git_diags)
+
+        return diagnoses
 
     def analyze_import_errors(self, log_path: Path) -> List[Diagnosis]:
         """Analizuje błędy importów z logu TS."""
@@ -230,6 +314,456 @@ class DoctorOrchestrator:
         # Zwróć pierwszą lokalizację
         return locations[0] if locations else ""
 
+    def analyze_git_history(self, file_path: str) -> List[Diagnosis]:
+        """Analizuje historię git pliku aby wykryć wzorce scope."""
+        if not (self.scan_root / ".git").exists():
+            return []
+
+        diagnoses = []
+        try:
+            # Pobierz historię pliku
+            cmd = ["git", "log", "--oneline", "--follow", "--", file_path]
+            result = subprocess.run(
+                cmd,
+                cwd=str(self.scan_root),
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0 and result.stdout.strip():
+                lines = result.stdout.strip().split('\n')
+                if len(lines) > 1:
+                    # Analiza wzorców w historii
+                    diag = self._analyze_history_patterns(file_path, lines)
+                    if diag:
+                        diagnoses.append(diag)
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+
+        return diagnoses
+
+    def _analyze_history_patterns(self, file_path: str, history_lines: List[str]) -> Optional[Diagnosis]:
+        """Analizuje wzorce w historii git."""
+        # Sprawdź czy plik był często przenoszony
+        move_keywords = ['move', 'rename', 'refactor', 'extract', 'migrate']
+        move_count = sum(1 for line in history_lines if any(kw in line.lower() for kw in move_keywords))
+
+        if move_count >= 2:
+            actions = []
+            commands = []
+
+            # Sugeruj sprawdzenie czy plik jest w odpowiednim module
+            if 'connect-test' in file_path and 'connect-protocol' in str(history_lines):
+                actions.append(FileAction(
+                    path=file_path,
+                    action="review",
+                    reason=f"Plik był przenoszony {move_count} razy - sprawdź czy jest w odpowiednim module"
+                ))
+                commands.append(ShellCommand(
+                    command=f"git log --follow --oneline -- {file_path}",
+                    description="Sprawdź historię pliku"
+                ))
+
+            return Diagnosis(
+                summary=f"Plik {file_path} ma bogatą historię zmian ({move_count} przeniesień)",
+                problem_type="scope_drift",
+                severity="medium",
+                nlp_description=f"Plik {file_path} był wielokrotnie przenoszony ({move_count} razy). Należy sprawdzić czy jest w odpowiednim module scope czy wymaga konsolidacji.",
+                file_actions=actions,
+                shell_commands=commands,
+                confidence=0.7
+            )
+
+        return None
+
+    def analyze_with_defscan(self, path: Path) -> List[Diagnosis]:
+        """Używa defscan do analizy duplikatów w konkretnym katalogu."""
+        diagnoses = []
+
+        try:
+            cmd = [sys.executable, "-m", "regres.defscan", "--path", str(path), "--json"]
+            result = subprocess.run(
+                cmd,
+                cwd=str(self.scan_root),
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            if result.returncode == 0 and result.stdout.strip():
+                data = json.loads(result.stdout)
+                for item in data.get("duplicates", []):
+                    if item.get("count", 0) > 1:
+                        diag = self._diagnose_duplicate(item)
+                        diagnoses.append(diag)
+        except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
+            pass
+
+        return diagnoses
+
+    def analyze_with_refactor(self, path: Path) -> List[Diagnosis]:
+        """Używa refactor do analizy kodu w konkretnym katalogu."""
+        diagnoses = []
+
+        try:
+            # Sprawdź wrappery
+            cmd = [sys.executable, "-m", "regres.refactor", "wrappers", "--path", str(path)]
+            result = subprocess.run(
+                cmd,
+                cwd=str(self.scan_root),
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+
+            if result.returncode == 0 and result.stdout.strip():
+                # Parsuj wynik refactor wrappers
+                lines = result.stdout.strip().split('\n')
+                wrapper_count = len([l for l in lines if 'wrapper' in l.lower()])
+
+                if wrapper_count > 0:
+                    actions = []
+                    commands = []
+
+                    actions.append(FileAction(
+                        path=str(path),
+                        action="review",
+                        reason=f"Wykryto {wrapper_count} wrapperów - sprawdź czy są potrzebne"
+                    ))
+                    commands.append(ShellCommand(
+                        command=f"regres refactor wrappers --path {path}",
+                        description="Przejrzyj wrappery w katalogu"
+                    ))
+
+                    diagnoses.append(Diagnosis(
+                        summary=f"Wykryto {wrapper_count} wrapperów w {path}",
+                        problem_type="wrapper_analysis",
+                        severity="low",
+                        nlp_description=f"W katalogu {path} wykryto {wrapper_count} plików-wrapper. Należy przejrzeć czy wszystkie są potrzebne czy można je usunąć.",
+                        file_actions=actions,
+                        shell_commands=commands,
+                        confidence=0.6
+                    ))
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+
+        return diagnoses
+
+    def apply_fixes(self, diagnoses: List[Diagnosis], dry_run: bool = True) -> Dict[str, Any]:
+        """Wykonuje akcje naprawcze z diagnoz."""
+        results = {
+            "dry_run": dry_run,
+            "actions_performed": [],
+            "errors": []
+        }
+
+        for diag in diagnoses:
+            # Wykonaj FileActions
+            for action in diag.file_actions:
+                try:
+                    if action.action == "modify":
+                        if not dry_run:
+                            # Modyfikacja pliku - placeholder dla implementacji
+                            results["actions_performed"].append({
+                                "action": action.action,
+                                "path": action.path,
+                                "reason": action.reason
+                            })
+                        else:
+                            results["actions_performed"].append({
+                                "action": action.action,
+                                "path": action.path,
+                                "reason": action.reason,
+                                "dry_run": True
+                            })
+                    elif action.action == "delete":
+                        if not dry_run:
+                            file_path = self.scan_root / action.path
+                            if file_path.exists():
+                                file_path.unlink()
+                                results["actions_performed"].append({
+                                    "action": action.action,
+                                    "path": action.path,
+                                    "reason": action.reason
+                                })
+                        else:
+                            results["actions_performed"].append({
+                                "action": action.action,
+                                "path": action.path,
+                                "reason": action.reason,
+                                "dry_run": True
+                            })
+                    elif action.action == "move":
+                        if not dry_run:
+                            src = self.scan_root / action.path
+                            dst = self.scan_root / action.target if action.target else None
+                            if src.exists() and dst:
+                                dst.parent.mkdir(parents=True, exist_ok=True)
+                                src.rename(dst)
+                                results["actions_performed"].append({
+                                    "action": action.action,
+                                    "path": action.path,
+                                    "target": action.target,
+                                    "reason": action.reason
+                                })
+                        else:
+                            results["actions_performed"].append({
+                                "action": action.action,
+                                "path": action.path,
+                                "target": action.target,
+                                "reason": action.reason,
+                                "dry_run": True
+                            })
+                except Exception as e:
+                    results["errors"].append({
+                        "action": action.action,
+                        "path": action.path,
+                        "error": str(e)
+                    })
+
+            # Wykonaj ShellCommands
+            for cmd in diag.shell_commands:
+                try:
+                    if not dry_run:
+                        result = subprocess.run(
+                            cmd.command,
+                            shell=True,
+                            cwd=cmd.cwd or str(self.scan_root),
+                            capture_output=True,
+                            text=True,
+                            timeout=30
+                        )
+                        results["actions_performed"].append({
+                            "action": "shell_command",
+                            "command": cmd.command,
+                            "description": cmd.description,
+                            "cwd": cmd.cwd,
+                            "returncode": result.returncode
+                        })
+                    else:
+                        results["actions_performed"].append({
+                            "action": "shell_command",
+                            "command": cmd.command,
+                            "description": cmd.description,
+                            "cwd": cmd.cwd,
+                            "dry_run": True
+                        })
+                except Exception as e:
+                    results["errors"].append({
+                        "command": cmd.command,
+                        "error": str(e)
+                    })
+
+        return results
+
+    def generate_llm_diagnosis(self, url: str, module_path: Path) -> str:
+        """Generuje szczegółowy raport markdown z kontekstem historycznym i strukturalnym."""
+        lines = []
+        
+        # Header
+        lines.append("# LLM-Based Diagnosis Report")
+        lines.append(f"**URL:** {url}")
+        lines.append(f"**Module Path:** {module_path}")
+        lines.append(f"**Scan Root:** {self.scan_root}")
+        lines.append("")
+        
+        # Kontekst historii git
+        lines.append("## Git History Context")
+        lines.append("")
+        git_context = self._collect_git_context(module_path)
+        lines.append(git_context)
+        lines.append("")
+        
+        # Analiza struktury kodu
+        lines.append("## Code Structure Analysis")
+        lines.append("")
+        structure_context = self._collect_structure_context(module_path)
+        lines.append(structure_context)
+        lines.append("")
+        
+        # Duplikaty (defscan)
+        lines.append("## Duplicate Analysis (defscan)")
+        lines.append("")
+        defscan_context = self._collect_defscan_context(module_path)
+        lines.append(defscan_context)
+        lines.append("")
+        
+        # Wrapper analysis (refactor)
+        lines.append("## Wrapper Analysis (refactor)")
+        lines.append("")
+        refactor_context = self._collect_refactor_context(module_path)
+        lines.append(refactor_context)
+        lines.append("")
+        
+        # NLP Diagnosis
+        lines.append("## NLP Diagnosis & Recommendations")
+        lines.append("")
+        lines.append("### Problem Summary")
+        lines.append("Based on the analysis above, the following issues were detected:")
+        lines.append("")
+        
+        # Zbierz wszystkie diagnozy
+        all_diagnoses = []
+        all_diagnoses.extend(self.analyze_with_defscan(module_path))
+        all_diagnoses.extend(self.analyze_with_refactor(module_path))
+        for file_path in module_path.rglob("*.ts"):
+            relative_path = str(file_path.relative_to(self.scan_root))
+            all_diagnoses.extend(self.analyze_git_history(relative_path))
+        
+        if all_diagnoses:
+            for i, diag in enumerate(all_diagnoses, 1):
+                lines.append(f"{i}. **{diag.summary}**")
+                lines.append(f"   - Type: {diag.problem_type}")
+                lines.append(f"   - Severity: {diag.severity}")
+                lines.append(f"   - Confidence: {diag.confidence:.0%}")
+                lines.append(f"   - {diag.nlp_description}")
+                lines.append("")
+        else:
+            lines.append("No issues detected in this module.")
+            lines.append("")
+        
+        # Codeblocks z propozycjami napraw
+        lines.append("## Proposed Fixes")
+        lines.append("")
+        for diag in all_diagnoses:
+            if diag.file_actions:
+                lines.append(f"### Fix for: {diag.summary}")
+                lines.append("")
+                lines.append("```typescript")
+                lines.append("// Proposed code changes:")
+                for action in diag.file_actions:
+                    if action.action == "modify":
+                        lines.append(f"// Modify: {action.path}")
+                        lines.append(f"// Reason: {action.reason}")
+                lines.append("```")
+                lines.append("")
+        
+        # Shell commands
+        lines.append("## Shell Commands to Execute")
+        lines.append("")
+        lines.append("```bash")
+        for diag in all_diagnoses:
+            for cmd in diag.shell_commands:
+                lines.append(f"# {cmd.description}")
+                lines.append(cmd.command)
+                if cmd.cwd:
+                    lines.append(f"# cwd: {cmd.cwd}")
+                lines.append("")
+        lines.append("```")
+        lines.append("")
+        
+        # Summary
+        lines.append("## Summary")
+        lines.append("")
+        lines.append(f"- Total issues detected: {len(all_diagnoses)}")
+        lines.append(f"- Files analyzed: {len(list(module_path.rglob('*.ts')))}")
+        lines.append(f"- Confidence score: {(sum(d.confidence for d in all_diagnoses) / len(all_diagnoses) if all_diagnoses else 0):.0%}")
+        lines.append("")
+        
+        return "\n".join(lines)
+    
+    def _collect_git_context(self, module_path: Path) -> str:
+        """Zbiera kontekst historii git dla modułu."""
+        lines = []
+        lines.append("```bash")
+        lines.append("# Recent commits affecting this module")
+        try:
+            cmd = ["git", "log", "--oneline", "-10", "--", str(module_path)]
+            result = subprocess.run(
+                cmd,
+                cwd=str(self.scan_root),
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            if result.returncode == 0:
+                lines.append(result.stdout.strip())
+            else:
+                lines.append("# Git history not available")
+        except:
+            lines.append("# Git history not available")
+        lines.append("```")
+        return "\n".join(lines)
+    
+    def _collect_structure_context(self, module_path: Path) -> str:
+        """Zbiera kontekst struktury kodu."""
+        lines = []
+        lines.append("```")
+        lines.append("# Directory structure")
+        for item in sorted(module_path.rglob("*")):
+            if item.is_file() and item.suffix == ".ts":
+                rel = item.relative_to(module_path)
+                lines.append(f"  {rel}")
+        lines.append("```")
+        return "\n".join(lines)
+    
+    def _collect_defscan_context(self, module_path: Path) -> str:
+        """Zbiera kontekst duplikatów z defscan."""
+        lines = []
+        try:
+            from regres import defscan
+            import io
+            import sys
+            
+            # Przechwyć stdout
+            old_stdout = sys.stdout
+            sys.stdout = io.StringIO()
+            
+            try:
+                # Wywołaj defscan bezpośrednio
+                sys.argv = ["defscan", "--path", str(module_path), "--json"]
+                defscan.main()
+                output = sys.stdout.getvalue()
+            finally:
+                sys.stdout = old_stdout
+            
+            if output.strip():
+                data = json.loads(output)
+                duplicates = data if isinstance(data, list) else data.get("duplicates", [])
+                if duplicates:
+                    lines.append(f"Found {len(duplicates)} duplicate definitions")
+                    for dup in duplicates[:5]:  # Limit to 5
+                        if isinstance(dup, dict):
+                            lines.append(f"- {dup.get('name', 'unknown')}: {dup.get('count', 0)} occurrences")
+                        else:
+                            lines.append(f"- {dup}")
+                else:
+                    lines.append("No duplicates found")
+            else:
+                lines.append("No duplicates found")
+        except Exception as e:
+            lines.append(f"Defscan analysis error: {str(e)}")
+        return "\n".join(lines)
+    
+    def _collect_refactor_context(self, module_path: Path) -> str:
+        """Zbiera kontekst wrapperów z refactor."""
+        lines = []
+        try:
+            from regres import refactor
+            import io
+            import sys
+            
+            # Przechwyć stdout
+            old_stdout = sys.stdout
+            sys.stdout = io.StringIO()
+            
+            try:
+                # Wywołaj refactor bezpośrednio --path jest globalnym argumentem
+                sys.argv = ["refactor", "--path", str(module_path), "wrappers"]
+                refactor.main()
+                output = sys.stdout.getvalue()
+            finally:
+                sys.stdout = old_stdout
+            
+            if output.strip():
+                lines.append(output.strip())
+            else:
+                lines.append("No wrappers found")
+        except Exception as e:
+            lines.append(f"Refactor analysis error: {str(e)}")
+        return "\n".join(lines)
+
     def generate_report(self) -> Dict[str, Any]:
         """Generuje kompletny raport diagnoz."""
         return {
@@ -286,11 +820,11 @@ class DoctorOrchestrator:
                 lines.append("### File Actions")
                 lines.append("```")
                 for action in diag['file_actions']:
-                    lines.append(f"{action.action}: {action.path}")
-                    if action.target:
-                        lines.append(f"  -> {action.target}")
-                    if action.reason:
-                        lines.append(f"  ({action.reason})")
+                    lines.append(f"{action['action']}: {action['path']}")
+                    if action.get('target'):
+                        lines.append(f"  -> {action['target']}")
+                    if action.get('reason'):
+                        lines.append(f"  ({action['reason']})")
                 lines.append("```\n")
 
             if diag['shell_commands']:
@@ -318,6 +852,13 @@ def main():
     parser.add_argument('--defscan-report', help='Ścieżka do raportu defscan (JSON)')
     parser.add_argument('--regres-report', help='Ścieżka do raportu regres (JSON)')
     parser.add_argument('--all', action='store_true', help='Uruchom wszystkie analizy')
+    parser.add_argument('--url', help='Analizuj moduł na podstawie URL (np. http://localhost:8100/connect-scenario)')
+    parser.add_argument('--apply', action='store_true', help='Wykonaj akcje naprawcze')
+    parser.add_argument('--dry-run', action='store_true', help='Dry-run dla akcji naprawczych (domyślne)')
+    parser.add_argument('--llm', action='store_true', help='Generuj szczegółowy raport LLM markdown z kontekstem')
+    parser.add_argument('--git-history', action='store_true', help='Analizuj historię git plików z błędami')
+    parser.add_argument('--defscan-scan', help='Uruchom defscan na konkretnym katalogu')
+    parser.add_argument('--refactor-scan', help='Uruchom refactor wrappers na konkretnym katalogu')
     parser.add_argument('--out-md', help='Ścieżka do raportu Markdown')
     parser.add_argument('--out-json', help='Ścieżka do raportu JSON')
     args = parser.parse_args()
@@ -325,15 +866,94 @@ def main():
     scan_root = Path(args.scan_root).resolve()
     doctor = DoctorOrchestrator(scan_root)
 
+    # URL-based discovery
+    if args.url:
+        # Znajdź ścieżkę modułu
+        from urllib.parse import urlparse
+        parsed = urlparse(args.url)
+        path = parsed.path.strip('/')
+        module_name = None
+        for possible_module in doctor.MODULE_PATH_MAP.keys():
+            if path.startswith(possible_module):
+                module_name = possible_module
+                break
+        if not module_name:
+            parts = path.split('/')
+            if parts:
+                module_name = parts[0]
+        
+        module_path_str = doctor.MODULE_PATH_MAP.get(module_name)
+        if module_path_str:
+            module_path = scan_root / module_path_str
+            
+            # LLM diagnosis
+            if args.llm:
+                llm_report = doctor.generate_llm_diagnosis(args.url, module_path)
+                if args.out_md:
+                    out_md = Path(args.out_md)
+                    out_md.write_text(llm_report, encoding="utf-8")
+                    print(f"LLM diagnosis saved to {out_md}")
+                else:
+                    print(llm_report)
+                return
+        
+        diagnoses = doctor.analyze_from_url(args.url)
+        doctor.diagnoses.extend(diagnoses)
+        
+        # Wykonaj akcje naprawcze jeśli --apply
+        if args.apply:
+            dry_run = not args.dry_run if args.dry_run else True  # domyślnie dry_run
+            fix_results = doctor.apply_fixes(diagnoses, dry_run=dry_run)
+            print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
+            if fix_results['errors']:
+                print("Errors:")
+                for err in fix_results['errors']:
+                    print(f"  - {err}")
+        
+        # Generowanie raportu
+        report = doctor.generate_report()
+        if args.out_json:
+            out_json = Path(args.out_json)
+            out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+            print(f"Report saved to {out_json}")
+        if args.out_md:
+            out_md = Path(args.out_md)
+            md_text = doctor.render_markdown(report)
+            out_md.write_text(md_text, encoding="utf-8")
+            print(f"Markdown report saved to {out_md}")
+        # Domyślnie wyświetl Markdown na stdout
+        if not args.out_json and not args.out_md:
+            print(doctor.render_markdown(report))
+        return
+
     # Analiza błędów importów
     if args.import_log or args.all:
         import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
         diagnoses = doctor.analyze_import_errors(import_log)
         doctor.diagnoses.extend(diagnoses)
 
-    # Analiza duplikatów
+        # Jeśli --git-history, analizuj historię plików z błędami
+        if args.git_history and args.all:
+            for diag in diagnoses:
+                if diag.problem_type == "import_error":
+                    for action in diag.file_actions:
+                        if action.path:
+                            git_diagnoses = doctor.analyze_git_history(action.path)
+                            doctor.diagnoses.extend(git_diagnoses)
+
+    # Analiza duplikatów z raportu
     if args.defscan_report:
         diagnoses = doctor.analyze_duplicates(Path(args.defscan_report))
+        doctor.diagnoses.extend(diagnoses)
+
+    # Dynamiczna analiza defscan
+    if args.defscan_scan:
+        diagnoses = doctor.analyze_with_defscan(Path(args.defscan_scan))
+        doctor.diagnoses.extend(diagnoses)
+
+    # Dynamiczna analiza refactor
+    if args.refactor_scan:
+        diagnoses = doctor.analyze_with_refactor(Path(args.refactor_scan))
         doctor.diagnoses.extend(diagnoses)
 
     # Generowanie raportu

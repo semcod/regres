@@ -36,17 +36,29 @@ def test_import_import_error_toon_report():
 
 
 def test_regres_cli_module_exists():
-    """Verify regres_cli module exists."""
+    """Verify regres_cli module exists inside the package."""
     root = Path(__file__).parent.parent
-    cli_path = root / "regres_cli.py"
+    cli_path = root / "regres" / "regres_cli.py"
     assert cli_path.exists(), f"regres_cli.py not found at {cli_path}"
+
+
+def test_regres_cli_import():
+    """Verify regres CLI module can be imported."""
+    from regres.regres_cli import main
+    assert callable(main), "main should be callable"
+
+
+def test_import_error_toon_report_main_signature():
+    """Verify import_error_toon_report.main has correct signature."""
+    from regres.import_error_toon_report import main
+    assert callable(main), "main should be callable"
 
 
 def test_regres_cli_help():
     """Verify regres CLI help command works."""
     root = Path(__file__).parent.parent
     result = subprocess.run(
-        [sys.executable, "-m", "regres_cli", "--help"],
+        [sys.executable, "-m", "regres.regres_cli", "--help"],
         cwd=str(root),
         capture_output=True,
         text=True,
@@ -55,7 +67,14 @@ def test_regres_cli_help():
     assert "regres" in result.stdout, "CLI help should contain 'regres'"
 
 
-def test_import_error_toon_report_main_signature():
-    """Verify import_error_toon_report.main has correct signature."""
-    from regres.import_error_toon_report import main
-    assert callable(main), "main should be callable"
+def test_regres_cli_doctor_help():
+    """Verify regres CLI doctor help works."""
+    root = Path(__file__).parent.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "regres.regres_cli", "doctor", "--help"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"CLI doctor help failed: {result.stderr}"
+    assert "doctor" in result.stdout, "CLI doctor help should contain 'doctor'"

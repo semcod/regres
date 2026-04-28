@@ -235,6 +235,115 @@ class DoctorOrchestrator:
                 return cand, tried
         return None, tried
 
+    # c2004-maskservice-patch-v6: Vite runtime probing. Filesystem checks miss
+    # cases where (a) the file exists but a Vite alias/mount routes it to a
+    # different path, (b) a wrapper file `export *`s from a non-mounted path,
+    # or (c) a transitive import in the page-load chain fails. By GET-ing the
+    # served URL we get the dev-server's authoritative answer.
+    _VITE_FAILED_IMPORT_RE = re.compile(
+        r'Failed to resolve import\s+\\?["\']([^"\']+)\\?["\']\s+from\s+\\?["\']([^"\']+)\\?["\']'
+    )
+
+    def probe_vite_runtime(
+        self,
+        vite_base: str,
+        file_rel: str,
+        timeout: float = 5.0,
+    ) -> Dict[str, Any]:
+        """GET a single source file from the Vite dev server, parse 500 errors.
+
+        Args:
+          vite_base: e.g. "http://localhost:8100" (no trailing slash).
+          file_rel: repo-relative path to a file under `frontend/src/...`,
+            e.g. "frontend/src/modules/connect-manager/connect-manager.view.ts".
+            Will be remapped to the Vite-served URL `/src/...` form.
+          timeout: HTTP timeout in seconds.
+
+        Returns dict:
+          {
+            "url": str,
+            "status": int,                  # 0 if request failed
+            "ok": bool,                     # 200
+            "error_message": Optional[str],
+            "missing_import": Optional[str],
+            "missing_import_from": Optional[str],
+            "transport_error": Optional[str],
+          }
+
+        Heuristic: strip a leading `frontend/` from `file_rel` then prepend
+        `/src/`. For files under submodule mirrors (e.g. `connect-config/
+        frontend/src/modules/connect-config/...`), the mirror is mounted into
+        Vite at `/src/modules/connect-config/...`, so we strip the
+        `<submodule>/frontend/` prefix.
+        """
+        import urllib.request
+        import urllib.error
+        import json as _json
+
+        # Map repo-relative path to Vite-served URL.
+        normalized = file_rel.replace("\\", "/")
+        # Strip e.g. "connect-config/frontend/" or "frontend/" prefixes.
+        m = re.match(r'^(?:[^/]+/)?frontend/(.*)$', normalized)
+        if not m:
+            return {
+                "url": "",
+                "status": 0,
+                "ok": False,
+                "error_message": None,
+                "missing_import": None,
+                "missing_import_from": None,
+                "transport_error": "file_rel not under <module>/frontend/ — cannot derive Vite URL",
+            }
+        url_path = "/" + m.group(1)
+        url = vite_base.rstrip("/") + url_path
+
+        req = urllib.request.Request(url, headers={"Accept": "*/*"})
+        body = ""
+        status = 0
+        transport_error: Optional[str] = None
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                status = resp.status
+                body = resp.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:
+            status = e.code
+            try:
+                body = e.read().decode("utf-8", errors="replace")
+            except Exception:
+                body = ""
+        except (urllib.error.URLError, TimeoutError, OSError) as e:
+            transport_error = str(e)
+
+        ok = status == 200
+        missing_import: Optional[str] = None
+        missing_import_from: Optional[str] = None
+        error_message: Optional[str] = None
+        if status >= 400 and body:
+            # Vite serves a 500 HTML wrapper containing JSON describing the
+            # error. Try the embedded JSON first, then fall back to a regex on
+            # the raw body.
+            for candidate_match in re.finditer(r'const\s+error\s*=\s*(\{.*?\});', body, re.DOTALL):
+                try:
+                    err_obj = _json.loads(candidate_match.group(1))
+                    error_message = err_obj.get("message") or error_message
+                    break
+                except Exception:
+                    continue
+            mfail = self._VITE_FAILED_IMPORT_RE.search(body)
+            if mfail:
+                missing_import = mfail.group(1)
+                missing_import_from = mfail.group(2)
+
+        return {
+            "url": url,
+            "status": status,
+            "ok": ok,
+            "error_message": error_message,
+            "missing_import": missing_import,
+            "missing_import_from": missing_import_from,
+            "transport_error": transport_error,
+        }
+
     def analyze_page_implementations(
         self,
         route_path: str,

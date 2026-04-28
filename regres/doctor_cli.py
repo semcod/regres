@@ -691,6 +691,16 @@ def _build_parser() -> argparse.ArgumentParser:
         action='store_true',
         help='Nie generuj skryptów `.sh` (tylko raport JSON/MD).',
     )
+    parser.add_argument(
+        '--vite-base',
+        default=None,
+        help=(
+            'URL bazowy serwera Vite (np. http://localhost:8100). Gdy podany, '
+            'regres dla każdego pliku celu pobiera odpowiadający /src/<...> URL '
+            'i parsuje błąd 500 (Failed to resolve import) — to autorytatywny '
+            'sygnał runtime, niezależny od testu istnienia plików na dysku.'
+        ),
+    )
     return parser
 
 

@@ -464,9 +464,13 @@ def test_extract_module_name():
     assert d._extract_module_name("unknown/path") == "unknown"
     assert d._extract_module_name("") == ""
 
-def test_resolve_module_path():
-    d = DoctorOrchestrator(Path("/tmp"))
-    assert d._resolve_module_path("connect-test").endswith("connect-test")
+def test_resolve_module_path(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    # Create the expected directory structure
+    module_path = tmp_path / "connect-test" / "frontend" / "src" / "modules" / "connect-test"
+    module_path.mkdir(parents=True)
+    result = d._resolve_module_path("connect-test")
+    assert result is not None and result.endswith("connect-test")
     assert d._resolve_module_path("nonexistent") is None
 
 def test_import_exists_in_source(tmp_path: Path):

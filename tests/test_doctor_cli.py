@@ -129,17 +129,22 @@ def test_refresh_import_timeout(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 def test_handle_url_mode_without_llm(tmp_path: Path):
-    """Test URL mode without LLM flag."""
+    """Test URL mode without LLM flag - module not found case."""
     doctor = DoctorOrchestrator(tmp_path)
     args = Mock(url="http://localhost/connect-test", llm=False, apply=False, dry_run=True)
     
-    with patch.object(doctor, 'analyze_from_url', return_value=[]):
-        _handle_url_mode(args, doctor, tmp_path)
-        assert doctor.analyze_from_url.called
+    # When module path doesn't exist, a diagnosis is added
+    _handle_url_mode(args, doctor, tmp_path)
+    assert len(doctor.diagnoses) == 1
+    assert doctor.diagnoses[0].problem_type == "module_not_found"
+    assert len(doctor.analysis_plan) == 2  # url_parse + module_resolve warning
 
 def test_handle_url_mode_with_llm(tmp_path: Path):
-    """Test URL mode with LLM flag."""
+    """Test URL mode with LLM flag - creates directory structure."""
     doctor = DoctorOrchestrator(tmp_path)
+    # Create the module directory structure
+    module_path = tmp_path / "connect-test" / "frontend" / "src" / "modules" / "connect-test"
+    module_path.mkdir(parents=True)
     args = Mock(url="http://localhost/connect-test", llm=True, out_md=None)
     
     with patch.object(doctor, 'generate_llm_diagnosis', return_value="# LLM Report"):
@@ -147,8 +152,11 @@ def test_handle_url_mode_with_llm(tmp_path: Path):
         assert doctor.generate_llm_diagnosis.called
 
 def test_handle_url_mode_with_llm_saves_to_file(tmp_path: Path):
-    """Test URL mode with LLM flag saves to file."""
+    """Test URL mode with LLM flag saves to file - creates directory structure."""
     doctor = DoctorOrchestrator(tmp_path)
+    # Create the module directory structure
+    module_path = tmp_path / "connect-test" / "frontend" / "src" / "modules" / "connect-test"
+    module_path.mkdir(parents=True)
     out_md = tmp_path / "report.md"
     args = Mock(url="http://localhost/connect-test", llm=True, out_md=str(out_md))
     
@@ -312,3 +320,144 @@ def test_save_report_to_both_formats(tmp_path: Path):
     _save_report(doctor, args)
     assert out_json.exists()
     assert out_md.exists()
+
+# ---------------------------------------------------------------------------
+# Integration tests with mocked subprocess calls
+# ---------------------------------------------------------------------------
+
+def test_refresh_import_error_log_success(tmp_path: Path):
+    """Test _refresh_import_error_log with successful subprocess call."""
+    from regres.doctor_cli import _refresh_import_error_log
+    
+    frontend_dir = tmp_path / "frontend"
+    frontend_dir.mkdir()
+    log_path = tmp_path / "import-errors.log"
+    
+    with patch('regres.doctor_cli.subprocess.run') as mock_run:
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        result = _refresh_import_error_log(tmp_path, log_path)
+        assert result is True
+        assert mock_run.called
+
+def test_refresh_import_error_log_no_frontend(tmp_path: Path):
+    """Test _refresh_import_error_log when frontend directory doesn't exist."""
+    from regres.doctor_cli import _refresh_import_error_log
+    
+    log_path = tmp_path / "import-errors.log"
+    result = _refresh_import_error_log(tmp_path, log_path)
+    assert result is False
+
+def test_refresh_import_error_log_subprocess_failure(tmp_path: Path):
+    """Test _refresh_import_error_log with subprocess failure."""
+    from regres.doctor_cli import _refresh_import_error_log
+    
+    frontend_dir = tmp_path / "frontend"
+    frontend_dir.mkdir()
+    log_path = tmp_path / "import-errors.log"
+    
+    with patch('regres.doctor_cli.subprocess.run') as mock_run:
+        mock_run.return_value = MagicMock(returncode=1, stderr="Error occurred")
+        with patch('builtins.print') as mock_print:
+            result = _refresh_import_error_log(tmp_path, log_path)
+            assert result is False
+            assert mock_print.called
+
+def test_refresh_import_error_log_timeout(tmp_path: Path):
+    """Test _refresh_import_error_log with subprocess timeout."""
+    from regres.doctor_cli import _refresh_import_error_log
+    from subprocess import TimeoutExpired
+    
+    frontend_dir = tmp_path / "frontend"
+    frontend_dir.mkdir()
+    log_path = tmp_path / "import-errors.log"
+    
+    with patch('regres.doctor_cli.subprocess.run') as mock_run:
+        mock_run.side_effect = TimeoutExpired("cmd", 180)
+        result = _refresh_import_error_log(tmp_path, log_path)
+        assert result is False
+
+def test_refresh_import_error_log_file_not_found(tmp_path: Path):
+    """Test _refresh_import_error_log with FileNotFoundError."""
+    from regres.doctor_cli import _refresh_import_error_log
+    
+    frontend_dir = tmp_path / "frontend"
+    frontend_dir.mkdir()
+    log_path = tmp_path / "import-errors.log"
+    
+    with patch('regres.doctor_cli.subprocess.run') as mock_run:
+        mock_run.side_effect = FileNotFoundError("python not found")
+        result = _refresh_import_error_log(tmp_path, log_path)
+        assert result is False
+
+def test_handle_import_errors_with_subprocess_mock(tmp_path: Path):
+    """Test _handle_import_errors with mocked subprocess."""
+    from regres.doctor_cli import _handle_import_errors
+    
+    frontend_dir = tmp_path / "frontend"
+    frontend_dir.mkdir()
+    log_path = tmp_path / "import-errors.log"
+    
+    doctor = DoctorOrchestrator(tmp_path)
+    args = Mock(import_log=None, dry_run=True, all=True)  # all=True triggers refresh
+    
+    with patch('regres.doctor_cli._refresh_import_error_log') as mock_refresh:
+        mock_refresh.return_value = True
+        with patch.object(doctor, 'analyze_import_errors', return_value=[]):
+            _handle_import_errors(args, doctor, tmp_path, mock_refresh)
+            assert mock_refresh.called
+
+def test_handle_import_errors_without_frontend(tmp_path: Path):
+    """Test _handle_import_errors when frontend doesn't exist."""
+    from regres.doctor_cli import _handle_import_errors
+    
+    log_path = tmp_path / "import-errors.log"
+    
+    doctor = DoctorOrchestrator(tmp_path)
+    args = Mock(import_log=str(log_path), dry_run=True, all=False)  # all=False doesn't call refresh
+    
+    with patch('regres.doctor_cli._refresh_import_error_log') as mock_refresh:
+        mock_refresh.return_value = False
+        with patch.object(doctor, 'analyze_import_errors', return_value=[]):
+            _handle_import_errors(args, doctor, tmp_path, mock_refresh)
+            # refresh is not called when all=False
+            assert not mock_refresh.called
+
+def test_handle_defscan_refactor_subprocess_mock(tmp_path: Path):
+    """Test _handle_defscan_refactor with mocked subprocess calls."""
+    from regres.doctor_cli import _handle_defscan_refactor
+    
+    doctor = DoctorOrchestrator(tmp_path)
+    args = Mock(dry_run=True, defscan_report=None, defscan_scan=None, refactor_scan=None)
+    
+    with patch.object(doctor, 'analyze_with_defscan', return_value=[]):
+        with patch.object(doctor, 'analyze_with_refactor', return_value=[]):
+            _handle_defscan_refactor(args, doctor)
+            # Should not raise any errors
+
+def test_full_workflow_with_all_mocks(tmp_path: Path):
+    """Test full doctor workflow with all subprocess calls mocked."""
+    from regres.doctor_cli import _handle_url_mode, _handle_import_errors, _handle_defscan_refactor
+    
+    frontend_dir = tmp_path / "frontend"
+    frontend_dir.mkdir()
+    log_path = tmp_path / "import-errors.log"
+    
+    doctor = DoctorOrchestrator(tmp_path)
+    
+    # Mock all subprocess-dependent operations
+    with patch.object(doctor, 'analyze_from_url', return_value=[]):
+        with patch.object(doctor, 'analyze_with_defscan', return_value=[]):
+            with patch.object(doctor, 'analyze_with_refactor', return_value=[]):
+                with patch('regres.doctor_cli._refresh_import_error_log', return_value=True):
+                    with patch.object(doctor, 'analyze_import_errors', return_value=[]):
+                        # Test URL mode
+                        args = Mock(url="http://localhost/test", llm=False, apply=False, dry_run=True)
+                        _handle_url_mode(args, doctor, tmp_path)
+                        
+                        # Test import errors mode
+                        args = Mock(import_log=str(log_path), dry_run=True, all=False)
+                        _handle_import_errors(args, doctor, tmp_path, lambda x, y: True)
+                        
+                        # Test defscan/refactor mode
+                        args = Mock(dry_run=True, defscan_report=None, defscan_scan=None, refactor_scan=None)
+                        _handle_defscan_refactor(args, doctor)

@@ -38,6 +38,11 @@ class DoctorOrchestrator:
         "connect-workshop": "connect-workshop/frontend/src/modules/connect-workshop",
     }
 
+    URL_ROUTE_MODULE_HINTS = {
+        "connect-test/protocol-steps": "connect-test-protocol",
+        "connect-test/protocol": "connect-test-protocol",
+    }
+
     # ------------------------------------------------------------------
     # Public analysis API
     # ------------------------------------------------------------------
@@ -72,7 +77,78 @@ class DoctorOrchestrator:
             git_diags = self.analyze_git_history(relative_path)
             diagnoses.extend(git_diags)
 
-        return diagnoses
+        actionable = self._filter_actionable_diagnoses(diagnoses)
+        if actionable:
+            return actionable
+
+        fallback = self._build_url_fallback_diagnosis(path, full_module_path)
+        return [fallback] if fallback else []
+
+    @staticmethod
+    def _filter_actionable_diagnoses(diagnoses: List[Diagnosis]) -> List[Diagnosis]:
+        """Retain only diagnoses that can actually be acted on."""
+        actionable: List[Diagnosis] = []
+        for diag in diagnoses:
+            if diag.file_actions or diag.shell_commands:
+                actionable.append(diag)
+                continue
+            if diag.problem_type == "import_error":
+                actionable.append(diag)
+        return actionable
+
+    def _build_url_fallback_diagnosis(self, route_path: str, module_path: Path) -> Optional[Diagnosis]:
+        """Create a targeted guidance diagnosis when no actionable findings were generated."""
+        candidates: List[str] = []
+        token_candidates = [
+            route_path.split("/")[-1],
+            route_path.replace("/", "-"),
+        ]
+        for token in token_candidates:
+            token = token.strip()
+            if not token:
+                continue
+            for file_path in module_path.rglob("*.ts"):
+                name = file_path.name.lower()
+                if token.lower() in name:
+                    try:
+                        candidates.append(str(file_path.relative_to(self.scan_root)).replace("\\", "/"))
+                    except ValueError:
+                        continue
+        candidates = list(dict.fromkeys(candidates))[:5]
+
+        actions = [
+            FileAction(
+                path=p,
+                action="review",
+                reason="Sprawdź dynamiczne importy, eksporty strony i powiązanie z rejestrem page managera",
+            )
+            for p in candidates
+        ]
+
+        frontend_cwd = self.scan_root / "frontend"
+        commands = [
+            ShellCommand(
+                command=(
+                    f"python -m regres.regres_cli import-error-toon-report --frontend-cwd {frontend_cwd} "
+                    f"--scan-root {self.scan_root} --out-md {self.scan_root / '.regres' / 'import-error-toon-report.md'} "
+                    f"--out-raw-log {self.scan_root / '.regres' / 'import-error-toon-report.raw.log'}"
+                ),
+                description="Odśwież import diagnostics zanim zaproponujesz naprawę",
+            )
+        ]
+
+        return Diagnosis(
+            summary=f"Brak jednoznacznej automatycznej naprawy dla trasy '{route_path}'",
+            problem_type="url_targeted_review",
+            severity="low",
+            nlp_description=(
+                "Automatyczna analiza strukturalna nie wykryła bezpośredniej, pewnej naprawy. "
+                "Raport został zawężony do kroków diagnostycznych i plików najbardziej związanych z trasą URL."
+            ),
+            file_actions=actions,
+            shell_commands=commands,
+            confidence=0.6,
+        )
 
     def analyze_import_errors(self, log_path: Path) -> List[Diagnosis]:
         """Analizuje błędy importów z logu TS."""
@@ -344,6 +420,11 @@ class DoctorOrchestrator:
     # ------------------------------------------------------------------
 
     def _extract_module_name(self, path: str) -> Optional[str]:
+        normalized_path = path.strip('/')
+        for route_prefix, mapped_module in self.URL_ROUTE_MODULE_HINTS.items():
+            if normalized_path.startswith(route_prefix):
+                return mapped_module
+
         for possible_module in self.MODULE_PATH_MAP.keys():
             if path.startswith(possible_module):
                 return possible_module
@@ -352,13 +433,15 @@ class DoctorOrchestrator:
 
     def _resolve_module_path(self, module_name: str) -> Optional[str]:
         module_path = self.MODULE_PATH_MAP.get(module_name)
-        if module_path:
+        if module_path and (self.scan_root / module_path).exists():
             return module_path
         for possible_path in [
             f"{module_name}/frontend/src/modules/{module_name}",
             f"{module_name}/frontend/src",
             f"{module_name}/backend",
             f"frontend/src/modules/{module_name}",
+            module_name,
+            f"src/{module_name}",
         ]:
             full_path = self.scan_root / possible_path
             if full_path.exists():
@@ -566,7 +649,10 @@ class DoctorOrchestrator:
         if move_count >= 2:
             actions = []
             commands = []
-            if 'connect-test' in file_path and 'connect-protocol' in str(history_lines):
+            if (
+                ('connect-test' in file_path or 'connect-test-protocol' in file_path)
+                and ('protocol' in file_path or 'connect-protocol' in str(history_lines).lower())
+            ):
                 actions.append(FileAction(
                     path=file_path,
                     action="review",

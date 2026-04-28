@@ -23,23 +23,69 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
     """Handle URL-based discovery and analysis mode."""
     from urllib.parse import urlparse
 
+    doctor.reset_analysis_plan()
+
     parsed = urlparse(args.url)
     path = parsed.path.strip('/')
     module_name = None
+    route_hint = None
+    normalized_path = path.strip('/')
+    for hint, mapped_module in doctor.URL_ROUTE_MODULE_HINTS.items():
+        if normalized_path.startswith(hint):
+            route_hint = mapped_module
+            module_name = mapped_module
+            break
+
     for possible_module in doctor.MODULE_PATH_MAP.keys():
-        if path.startswith(possible_module):
+        if module_name:
+            break
+        if normalized_path.startswith(possible_module):
             module_name = possible_module
             break
     if not module_name:
-        parts = path.split('/')
+        parts = normalized_path.split('/')
         if parts:
             module_name = parts[0]
+
+    doctor.add_plan_step(
+        name="url discovery",
+        reason="Wyznaczenie modułu docelowego i zakresu analizy na podstawie URL.",
+        command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
+        status="done",
+        details=(
+            f"route hint matched: {route_hint}" if route_hint
+            else f"module inferred: {module_name or 'unknown'}"
+        ),
+    )
+    doctor.set_analysis_context("url_target", {
+        "url": args.url,
+        "path": normalized_path,
+        "module_name": module_name,
+        "route_hint": route_hint,
+    })
+
+    structure_snapshot = doctor.collect_structure_snapshot(max_entries=120)
+    if structure_snapshot:
+        doctor.set_analysis_context("structure_snapshot", structure_snapshot)
 
     module_path_str = doctor.MODULE_PATH_MAP.get(module_name)
     if module_path_str:
         module_path = scan_root / module_path_str
+        doctor.add_plan_step(
+            name="module scope resolution",
+            reason="Mapowanie modułu URL na ścieżkę w repozytorium.",
+            command=f"# resolved module path: {module_path}",
+            status="done" if module_path.exists() else "warning",
+            details=None if module_path.exists() else "resolved path does not exist",
+        )
 
         if args.llm:
+            doctor.add_plan_step(
+                name="llm report generation",
+                reason="Wygenerowanie raportu opisowego na podstawie kontekstu modułu.",
+                command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url} --llm",
+                status="done",
+            )
             llm_report = doctor.generate_llm_diagnosis(args.url, module_path)
             if args.out_md:
                 out_md = Path(args.out_md)
@@ -49,12 +95,47 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 print(llm_report)
             return
 
-    diagnoses = doctor.analyze_from_url(args.url)
-    doctor.diagnoses.extend(diagnoses)
+        if args.apply:
+            dry_run = not args.dry_run if args.dry_run else True
+            fix_results = doctor.apply_fixes(doctor.diagnoses, dry_run=dry_run)
+            print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
+            if fix_results['errors']:
+                print("Errors:")
+                for err in fix_results['errors']:
+                    print(f"  - {err}")
+
+        diagnoses = doctor.analyze_from_url(args.url)
+        doctor.diagnoses.extend(diagnoses)
+    else:
+        doctor.add_plan_step(
+            name="module scope resolution",
+            reason="Mapowanie modułu URL na ścieżkę w repozytorium.",
+            command="# no module mapping found",
+            status="warning",
+            details="Moduł nie istnieje w strukturze projektu.",
+        )
+        from .doctor_models import Diagnosis, FileAction, ShellCommand
+        doctor.diagnoses.append(Diagnosis(
+            summary=f"Nie znaleziono modułu '{module_name}' dla URL {args.url}",
+            problem_type="module_not_found",
+            severity="medium",
+            nlp_description=f"Nie udało się rozwiązać ścieżki modułu '{module_name}' z URL {args.url}. "
+                            f"Sprawdź czy moduł istnieje w projekcie lub czy mapowanie MODULE_PATH_MAP jest poprawne.",
+            file_actions=[FileAction(
+                path="doctor_orchestrator.py",
+                action="review",
+                reason=f"Brak mapowania lub ścieżki dla modułu '{module_name}'",
+            )],
+            shell_commands=[ShellCommand(
+                command=f"find {scan_root} -type d -name '{module_name}'",
+                description=f"Wyszukaj katalog modułu '{module_name}' w projekcie",
+            )],
+            confidence=0.9,
+        ))
 
     if args.apply:
         dry_run = not args.dry_run if args.dry_run else True
-        fix_results = doctor.apply_fixes(diagnoses, dry_run=dry_run)
+        fix_results = doctor.apply_fixes(doctor.diagnoses, dry_run=dry_run)
         print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
         if fix_results['errors']:
             print("Errors:")

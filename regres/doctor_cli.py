@@ -162,6 +162,61 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 ],
             )
 
+            # c2004-maskservice-patch-v5: dependency chain analysis. For each
+            # target file flagged by page diagnoses, walk its relative imports
+            # and report broken/stub links. This unlocks the multi-step repair
+            # workflow shown in the markdown report.
+            chain_targets: List[Path] = []
+            for diag in page_diagnoses:
+                for action in diag.file_actions:
+                    if action.action != "modify":
+                        continue
+                    if (action.target or "").startswith("git:"):
+                        continue
+                    candidate = scan_root / action.path
+                    if candidate.exists() and candidate not in chain_targets:
+                        chain_targets.append(candidate)
+
+            if chain_targets:
+                doctor.add_plan_step(
+                    name="dependency chain analysis",
+                    reason=(
+                        "Po wykryciu placeholder/regresji prześledź relatywne importy "
+                        "celu, aby znaleźć powiązane pliki wymagające naprawy."
+                    ),
+                    command=(
+                        f"python -m regres.regres_cli doctor --scan-root {scan_root} "
+                        f"--url {args.url} --all --git-history"
+                    ),
+                    status="done",
+                    inputs={
+                        "targets": [str(p.relative_to(scan_root)) for p in chain_targets],
+                        "max_depth": 1,
+                    },
+                    decision=(
+                        "Walk imports of każdego pliku celu (depth=1); zaznacz broken/stub. "
+                        "Każdy broken link → następny krok regres na nim."
+                    ),
+                )
+                chains_data: List[Dict[str, Any]] = []
+                broken_total = 0
+                stub_total = 0
+                for tgt in chain_targets:
+                    chain = doctor.analyze_dependency_chain(tgt, max_depth=1)
+                    try:
+                        target_rel = str(tgt.relative_to(scan_root)).replace("\\", "/")
+                    except ValueError:
+                        target_rel = str(tgt)
+                    chains_data.append({"target": target_rel, "chain": chain})
+                    broken_total += sum(1 for c in chain if not c.get("exists"))
+                    stub_total += sum(1 for c in chain if c.get("is_page_stub"))
+                doctor.set_analysis_context("dependency_chains", chains_data)
+                doctor.update_last_plan_step(outputs={
+                    "files_analyzed": len(chain_targets),
+                    "broken_imports": broken_total,
+                    "stub_imports": stub_total,
+                })
+
             if args.llm:
                 doctor.add_plan_step(
                     name="llm report generation",

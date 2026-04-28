@@ -103,6 +103,138 @@ class DoctorOrchestrator:
         "placeholder page",
     )
 
+    # c2004-maskservice-patch-v5: relative-import detection for dependency chain
+    # analysis. We use the same regex as the patch-script rewriter so behavior
+    # is consistent between detection and remediation.
+    _RELATIVE_IMPORT_DQ = re.compile(r'(?:from|import)\s+"(\.{1,2}/[^"]+)"')
+    _RELATIVE_IMPORT_SQ = re.compile(r"(?:from|import)\s+'(\.{1,2}/[^']+)'")
+
+    # File extensions tried when resolving an import without explicit suffix.
+    _IMPORT_RESOLUTION_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.tsx", "/index.js")
+
+    def analyze_dependency_chain(
+        self,
+        target_file: Path,
+        max_depth: int = 1,
+    ) -> List[Dict[str, Any]]:
+        """Walk relative imports of `target_file` and report resolution status.
+
+        For each import, returns:
+          {
+            "depth": int,
+            "from_file": str (relative to scan_root),
+            "import": str (raw import path),
+            "resolved_path": Optional[str] (relative; first existing match),
+            "exists": bool,
+            "is_page_stub": bool,            # True if resolved file is a placeholder page
+            "tried": List[str],              # full list of paths tried
+          }
+
+        The walk is breadth-first up to `max_depth`. Depth 1 = direct imports of
+        the target. We deliberately keep the depth shallow because each broken
+        import is itself a candidate for an independent regres analysis run; the
+        markdown report links them so the user can perform a chained repair.
+        """
+        results: List[Dict[str, Any]] = []
+        if not target_file.exists():
+            return results
+        visited: set = set()
+        queue: List[tuple] = [(target_file, 1)]
+        while queue:
+            current, depth = queue.pop(0)
+            if depth > max_depth:
+                continue
+            try:
+                key = str(current.resolve())
+            except OSError:
+                key = str(current)
+            if key in visited:
+                continue
+            visited.add(key)
+            try:
+                text = current.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            imports = self._extract_relative_imports(text)
+            try:
+                from_rel = str(current.relative_to(self.scan_root)).replace("\\", "/")
+            except ValueError:
+                from_rel = str(current)
+            for raw in imports:
+                resolved, tried = self._resolve_relative_import(current, raw)
+                exists = resolved is not None
+                is_page_stub = False
+                if exists and resolved is not None:
+                    if resolved.suffix in (".ts", ".tsx") and resolved.name.endswith(".page.ts"):
+                        try:
+                            sample = resolved.read_text(encoding="utf-8")
+                            lower = sample.lower()
+                            if any(p in lower for p in self.PLACEHOLDER_TEXT_PATTERNS):
+                                is_page_stub = True
+                        except (OSError, UnicodeDecodeError):
+                            pass
+                resolved_rel = None
+                if resolved is not None:
+                    try:
+                        resolved_rel = str(resolved.relative_to(self.scan_root)).replace("\\", "/")
+                    except ValueError:
+                        resolved_rel = str(resolved)
+                results.append({
+                    "depth": depth,
+                    "from_file": from_rel,
+                    "import": raw,
+                    "resolved_path": resolved_rel,
+                    "exists": exists,
+                    "is_page_stub": is_page_stub,
+                    "tried": tried,
+                })
+                if exists and resolved is not None and depth < max_depth:
+                    queue.append((resolved, depth + 1))
+        return results
+
+    def _extract_relative_imports(self, text: str) -> List[str]:
+        """Extract relative-only imports (./ or ../) from TS/JS source."""
+        seen: List[str] = []
+        for m in self._RELATIVE_IMPORT_DQ.finditer(text):
+            seen.append(m.group(1))
+        for m in self._RELATIVE_IMPORT_SQ.finditer(text):
+            seen.append(m.group(1))
+        # Stable de-dup, preserve order.
+        deduped: List[str] = []
+        seen_set: set = set()
+        for item in seen:
+            if item not in seen_set:
+                deduped.append(item)
+                seen_set.add(item)
+        return deduped
+
+    def _resolve_relative_import(
+        self,
+        from_file: Path,
+        raw_import: str,
+    ) -> tuple:
+        """Try to resolve a relative import to an existing file on disk.
+
+        Returns (resolved_path or None, tried_paths_list).
+        """
+        base = from_file.parent
+        candidates: List[Path] = []
+        if "." in raw_import.rsplit("/", 1)[-1]:
+            # Has explicit extension or .ext-like segment; try as-is first.
+            candidates.append((base / raw_import).resolve())
+        for suffix in self._IMPORT_RESOLUTION_SUFFIXES:
+            candidates.append((base / (raw_import + suffix)).resolve())
+        tried: List[str] = []
+        for cand in candidates:
+            try:
+                rel = str(cand.relative_to(self.scan_root)).replace("\\", "/")
+            except ValueError:
+                rel = str(cand)
+            tried.append(rel)
+            if cand.exists() and cand.is_file():
+                return cand, tried
+        return None, tried
+
     def analyze_page_implementations(
         self,
         route_path: str,
@@ -855,6 +987,7 @@ class DoctorOrchestrator:
 
         lines.extend(self._render_decision_workflow(report))
         lines.extend(self._render_affected_files(report))
+        lines.extend(self._render_dependency_chain(report))
         lines.extend(self._render_structure_snapshot(report))
         lines.extend(self._render_preliminary_refactor_proposals(report))
 
@@ -1864,6 +1997,101 @@ class DoctorOrchestrator:
             if target and cand:
                 index[(target, cand)] = p.get("path", "")
         return index
+
+    def _render_dependency_chain(self, report: Dict[str, Any]) -> List[str]:
+        """Render the per-target dependency chain results stored in context."""
+        chains = report.get("analysis_context", {}).get("dependency_chains", []) or []
+        lines: List[str] = ["## Dependency Chain", ""]
+        if not chains:
+            return []
+        lines.append(
+            "Po analizie strony URL, regres prześledził relatywne importy każdego "
+            "wykrytego pliku celu. Niespójne importy oznaczają, że po przywróceniu "
+            "treści historycznej trzeba wykonać dodatkowe kroki naprawy."
+        )
+        lines.append("")
+        for entry in chains:
+            target = entry.get("target", "")
+            chain = entry.get("chain", []) or []
+            lines.append(f"### `{target}`")
+            if not chain:
+                lines.append("Brak relatywnych importów (lub plik niedostępny).")
+                lines.append("")
+                continue
+            broken = [c for c in chain if not c.get("exists")]
+            stubs = [c for c in chain if c.get("is_page_stub")]
+            ok = [c for c in chain if c.get("exists") and not c.get("is_page_stub")]
+            lines.append(
+                f"_Imports total:_ {len(chain)} | "
+                f"_OK:_ {len(ok)} | "
+                f"_Broken:_ {len(broken)} | "
+                f"_Page stubs (transitive):_ {len(stubs)}"
+            )
+            lines.append("")
+            if broken:
+                lines.append("**Niezresolwowane importy (wymagają dalszej analizy):**")
+                lines.append("")
+                for c in broken:
+                    lines.append(f"- `{c['import']}` z `{c['from_file']}`")
+                    lines.append(f"  - Tried: {', '.join('`' + t + '`' for t in c.get('tried', [])[:4])}")
+                    suggested_url = self._suggest_url_for_path(c['import'])
+                    if suggested_url:
+                        lines.append(
+                            f"  - **Następny krok:** `regres doctor --scan-root {self.scan_root} "
+                            f"--url '{suggested_url}' --all --git-history --out-md "
+                            f".regres/{Path(c['import']).stem}-doctor.md`"
+                        )
+                lines.append("")
+            if stubs:
+                lines.append("**Importy wskazujące na placeholder pages (cascade repair):**")
+                lines.append("")
+                for c in stubs:
+                    resolved = c.get("resolved_path", "?")
+                    lines.append(f"- `{resolved}` ← imported as `{c['import']}` z `{c['from_file']}`")
+                    suggested_url = self._suggest_url_for_path(resolved)
+                    if suggested_url:
+                        lines.append(
+                            f"  - **Naprawa łańcuchowa:** `regres doctor --scan-root {self.scan_root} "
+                            f"--url '{suggested_url}' --all --git-history --out-md "
+                            f".regres/{Path(resolved).stem}-doctor.md`"
+                        )
+                lines.append("")
+            if ok and not broken and not stubs:
+                lines.append("Wszystkie importy są poprawne — łańcuch zależności jest spójny.")
+                lines.append("")
+        # Append a guidance block when there is at least one broken/stub link.
+        if any(
+            (not c.get("exists")) or c.get("is_page_stub")
+            for entry in chains for c in (entry.get("chain") or [])
+        ):
+            lines.append("### Multi-step repair plan")
+            lines.append("")
+            lines.append("Wieloetapowy plan naprawy łańcuchowej:")
+            lines.append("")
+            lines.append("1. **Napraw najpierw plik celu** (URL z błędem) używając jednego z patchy `.sh` powyżej.")
+            lines.append("2. **Zrefreshuj stronę**. Jeśli runtime nadal pokazuje błąd, zobacz Vite/console.")
+            lines.append("3. **Uruchom regres na każdym broken/stub imporcie** — komendy są podane wyżej.")
+            lines.append("4. **Powtórz krok 1-3** dla każdego pliku w łańcuchu, aż wszystkie importy są zresolwowane.")
+            lines.append("5. **Zweryfikuj** poprzez `curl -s -o /dev/null -w '%{http_code}' <vite_url>` — oczekiwany 200.")
+            lines.append("")
+        return lines
+
+    def _suggest_url_for_path(self, raw_or_path: str) -> Optional[str]:
+        """Best-effort guess: given a TS path, propose a URL/route to feed back into regres.
+
+        Heuristics:
+          - If the path contains `pages/<name>.page.ts`, propose `http://localhost:8100/<name>`.
+          - Otherwise, return None (caller will skip the suggestion).
+        """
+        token = raw_or_path.replace("\\", "/")
+        m = re.search(r"pages/([^/]+)\.page\.ts", token)
+        if m:
+            return f"http://localhost:8100/{m.group(1)}"
+        # Trailing path segment without .page suffix — at least propose a URL stub.
+        m2 = re.search(r"/([a-z0-9][a-z0-9\-]+)(?:\.ts|\.tsx)?$", token, re.IGNORECASE)
+        if m2:
+            return f"http://localhost:8100/{m2.group(1)}"
+        return None
 
     def _render_structure_snapshot(self, report: Dict[str, Any]) -> List[str]:
         lines = ["## Project Structure Snapshot", ""]

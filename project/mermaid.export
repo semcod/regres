@@ -3,6 +3,11 @@ flowchart TD
         SUMD__c["c"]
         SUMD___normalize["_normalize"]
         SUMD__sim["sim"]
+        SUMD___get_body["_get_body"]
+        SUMD___get_decorators["_get_decorators"]
+        SUMD___collect_class_method_ids["_collect_class_method_ids"]
+        SUMD___extract_class_definitions["_extract_class_definitions"]
+        SUMD___extract_function_definition["_extract_function_definition"]
         SUMD__extract_python["extract_python"]
         SUMD___extract_block_ts["_extract_block_ts"]
         SUMD___lineno_at["_lineno_at"]
@@ -11,7 +16,10 @@ flowchart TD
         SUMD__extract_rust["extract_rust"]
         SUMD__extract_file["extract_file"]
         SUMD__load_gitignore["load_gitignore"]
+        SUMD___match_anchored_pattern["_match_anchored_pattern"]
+        SUMD___match_unanchored_pattern["_match_unanchored_pattern"]
         SUMD___path_ignored_by_gitignore["_path_ignored_by_gitignore"]
+        SUMD___should_skip_file["_should_skip_file"]
         SUMD__scan["scan"]
         SUMD___def_key["_def_key"]
         SUMD__compare_seed_to_all["compare_seed_to_all"]
@@ -26,14 +34,20 @@ flowchart TD
         SUMD__render_json["render_json"]
         SUMD___build_argument_parser["_build_argument_parser"]
         SUMD___run_seed_mode["_run_seed_mode"]
+        SUMD___build_focus_groups["_build_focus_groups"]
+        SUMD___analyse_and_sort_groups["_analyse_and_sort_groups"]
         SUMD___run_focus_mode["_run_focus_mode"]
         SUMD___run_default_mode["_run_default_mode"]
+        SUMD___count_similarity_levels["_count_similarity_levels"]
+        SUMD___print_pair_summary["_print_pair_summary"]
         SUMD__main["main"]
         SUMD___handle_url_mode["_handle_url_mode"]
         SUMD___handle_import_errors["_handle_import_errors"]
         SUMD___handle_defscan_refactor["_handle_defscan_refactor"]
+        SUMD___handle_auto_decision_flow["_handle_auto_decision_flow"]
         SUMD___save_report["_save_report"]
         SUMD___refresh_import_error_log["_refresh_import_error_log"]
+        SUMD___build_parser["_build_parser"]
         SUMD__toon_quote["toon_quote"]
         SUMD__parse_args["parse_args"]
         SUMD__run_typecheck["run_typecheck"]
@@ -46,20 +60,6 @@ flowchart TD
         SUMD__to_toon_global_payload["to_toon_global_payload"]
         SUMD__to_toon_compact_per_file["to_toon_compact_per_file"]
         SUMD__iter_files["iter_files"]
-        SUMD__read_text["read_text"]
-        SUMD__md5_file["md5_file"]
-        SUMD__count_word["count_word"]
-        SUMD__line_count["line_count"]
-        SUMD__similarity_ratio["similarity_ratio"]
-        SUMD__normalize_code["normalize_code"]
-        SUMD__rel["rel"]
-        SUMD__name_prefix["name_prefix"]
-        SUMD__extract_imports["extract_imports"]
-        SUMD__extract_symbols_ast["extract_symbols_ast"]
-        SUMD__extract_symbols_regex["extract_symbols_regex"]
-        SUMD__get_symbols["get_symbols"]
-        SUMD__wrapper_score["wrapper_score"]
-        SUMD__cmd_find["cmd_find"]
     end
     subgraph SUMR
         SUMR__run_git["run_git"]
@@ -85,6 +85,8 @@ flowchart TD
         SUMR__track_filename_history["track_filename_history"]
         SUMR__find_current_locations["find_current_locations"]
         SUMR___classify_import_problem["_classify_import_problem"]
+        SUMR___analyze_import_problems["_analyze_import_problems"]
+        SUMR___analyze_evolution["_analyze_evolution"]
         SUMR___determine_primary_type["_determine_primary_type"]
         SUMR__classify_problem["classify_problem"]
         SUMR__dependency_tree["dependency_tree"]
@@ -115,13 +117,11 @@ flowchart TD
         SUMR__analyze_file["analyze_file"]
         SUMR___resolve_output_path["_resolve_output_path"]
         SUMR__main["main"]
-        SUMR____init__["__init__"]
-        SUMR__analyze_from_url["analyze_from_url"]
-        SUMR__analyze_import_errors["analyze_import_errors"]
-        SUMR__analyze_duplicates["analyze_duplicates"]
-        SUMR__analyze_git_history["analyze_git_history"]
-        SUMR__analyze_with_defscan["analyze_with_defscan"]
-        SUMR__analyze_with_refactor["analyze_with_refactor"]
+        SUMR__iter_files["iter_files"]
+        SUMR__read_text["read_text"]
+        SUMR__md5_file["md5_file"]
+        SUMR__count_word["count_word"]
+        SUMR__line_count["line_count"]
     end
     subgraph docs__DEFSCAN
         docs__DEFSCAN__print["print"]
@@ -136,6 +136,11 @@ flowchart TD
         project__map__toon__c["c"]
         project__map__toon___normalize["_normalize"]
         project__map__toon__sim["sim"]
+        project__map__toon___get_body["_get_body"]
+        project__map__toon___get_decorators["_get_decorators"]
+        project__map__toon___collect_class_method_ids["_collect_class_method_ids"]
+        project__map__toon___extract_class_definitions["_extract_class_definitions"]
+        project__map__toon___extract_function_definition["_extract_function_definition"]
         project__map__toon__extract_python["extract_python"]
         project__map__toon___extract_block_ts["_extract_block_ts"]
         project__map__toon___lineno_at["_lineno_at"]
@@ -144,7 +149,10 @@ flowchart TD
         project__map__toon__extract_rust["extract_rust"]
         project__map__toon__extract_file["extract_file"]
         project__map__toon__load_gitignore["load_gitignore"]
+        project__map__toon___match_anchored_pattern["_match_anchored_pattern"]
+        project__map__toon___match_unanchored_pattern["_match_unanchored_pattern"]
         project__map__toon___path_ignored_by_gitignore["_path_ignored_by_gitignore"]
+        project__map__toon___should_skip_file["_should_skip_file"]
         project__map__toon__scan["scan"]
         project__map__toon___def_key["_def_key"]
         project__map__toon__compare_seed_to_all["compare_seed_to_all"]
@@ -159,14 +167,20 @@ flowchart TD
         project__map__toon__render_json["render_json"]
         project__map__toon___build_argument_parser["_build_argument_parser"]
         project__map__toon___run_seed_mode["_run_seed_mode"]
+        project__map__toon___build_focus_groups["_build_focus_groups"]
+        project__map__toon___analyse_and_sort_groups["_analyse_and_sort_groups"]
         project__map__toon___run_focus_mode["_run_focus_mode"]
         project__map__toon___run_default_mode["_run_default_mode"]
+        project__map__toon___count_similarity_levels["_count_similarity_levels"]
+        project__map__toon___print_pair_summary["_print_pair_summary"]
         project__map__toon__main["main"]
         project__map__toon___handle_url_mode["_handle_url_mode"]
         project__map__toon___handle_import_errors["_handle_import_errors"]
         project__map__toon___handle_defscan_refactor["_handle_defscan_refactor"]
+        project__map__toon___handle_auto_decision_flow["_handle_auto_decision_flow"]
         project__map__toon___save_report["_save_report"]
         project__map__toon___refresh_import_error_log["_refresh_import_error_log"]
+        project__map__toon___build_parser["_build_parser"]
         project__map__toon__toon_quote["toon_quote"]
         project__map__toon__parse_args["parse_args"]
         project__map__toon__run_typecheck["run_typecheck"]
@@ -179,20 +193,6 @@ flowchart TD
         project__map__toon__to_toon_global_payload["to_toon_global_payload"]
         project__map__toon__to_toon_compact_per_file["to_toon_compact_per_file"]
         project__map__toon__iter_files["iter_files"]
-        project__map__toon__read_text["read_text"]
-        project__map__toon__md5_file["md5_file"]
-        project__map__toon__count_word["count_word"]
-        project__map__toon__line_count["line_count"]
-        project__map__toon__similarity_ratio["similarity_ratio"]
-        project__map__toon__normalize_code["normalize_code"]
-        project__map__toon__rel["rel"]
-        project__map__toon__name_prefix["name_prefix"]
-        project__map__toon__extract_imports["extract_imports"]
-        project__map__toon__extract_symbols_ast["extract_symbols_ast"]
-        project__map__toon__extract_symbols_regex["extract_symbols_regex"]
-        project__map__toon__get_symbols["get_symbols"]
-        project__map__toon__wrapper_score["wrapper_score"]
-        project__map__toon__cmd_find["cmd_find"]
     end
     subgraph regres__defscan
         regres__defscan__c["c"]
@@ -200,8 +200,15 @@ flowchart TD
         regres__defscan__Definition____repr__["__repr__"]
         regres__defscan___normalize["_normalize"]
         regres__defscan__sim["sim"]
-        regres__defscan__extract_python("extract_python CC=14")
-        regres__defscan___extract_block_ts{{_extract_block_ts CC=18}}
+        regres__defscan___get_body["_get_body"]
+        regres__defscan___get_decorators["_get_decorators"]
+        regres__defscan___collect_class_method_ids["_collect_class_method_ids"]
+        regres__defscan___extract_class_definitions["_extract_class_definitions"]
+        regres__defscan___extract_function_definition["_extract_function_definition"]
+        regres__defscan__extract_python["extract_python"]
+        regres__defscan___advance_past_string["_advance_past_string"]
+        regres__defscan___advance_past_comment["_advance_past_comment"]
+        regres__defscan___extract_block_ts("_extract_block_ts CC=12")
         regres__defscan___lineno_at["_lineno_at"]
         regres__defscan__extract_typescript("extract_typescript CC=11")
         regres__defscan__extract_go["extract_go"]
@@ -235,7 +242,7 @@ flowchart TD
         regres__defscan__main("main CC=8")
     end
     subgraph regres__doctor_cli
-        regres__doctor_cli___handle_url_mode("_handle_url_mode CC=12")
+        regres__doctor_cli___handle_url_mode{{_handle_url_mode CC=20}}
         regres__doctor_cli___handle_import_errors("_handle_import_errors CC=10")
         regres__doctor_cli___handle_defscan_refactor["_handle_defscan_refactor"]
         regres__doctor_cli___handle_auto_decision_flow{{_handle_auto_decision_flow CC=18}}
@@ -246,7 +253,9 @@ flowchart TD
     end
     subgraph regres__doctor_orchestrator
         regres__doctor_orchestrator__DoctorOrchestrator____init__["__init__"]
-        regres__doctor_orchestrator__DoctorOrchestrator__analyze_from_url["analyze_from_url"]
+        regres__doctor_orchestrator__DoctorOrchestrator__analyze_from_url("analyze_from_url CC=8")
+        regres__doctor_orchestrator__DoctorOrchestrator___filter_actionable_diagnoses["_filter_actionable_diagnoses"]
+        regres__doctor_orchestrator__DoctorOrchestrator___build_url_fallback_diagnosis["_build_url_fallback_diagnosis"]
         regres__doctor_orchestrator__DoctorOrchestrator__analyze_import_errors["analyze_import_errors"]
         regres__doctor_orchestrator__DoctorOrchestrator__analyze_duplicates["analyze_duplicates"]
         regres__doctor_orchestrator__DoctorOrchestrator__analyze_git_history["analyze_git_history"]
@@ -269,7 +278,7 @@ flowchart TD
         regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue{{_diagnose_import_issue CC=15}}
         regres__doctor_orchestrator__DoctorOrchestrator___diagnose_duplicate["_diagnose_duplicate"]
         regres__doctor_orchestrator__DoctorOrchestrator___find_main_location["_find_main_location"]
-        regres__doctor_orchestrator__DoctorOrchestrator___analyze_history_patterns["_analyze_history_patterns"]
+        regres__doctor_orchestrator__DoctorOrchestrator___analyze_history_patterns("_analyze_history_patterns CC=9")
         regres__doctor_orchestrator__DoctorOrchestrator___apply_file_action("_apply_file_action CC=14")
         regres__doctor_orchestrator__DoctorOrchestrator___apply_shell_command["_apply_shell_command"]
         regres__doctor_orchestrator__DoctorOrchestrator___build_header["_build_header"]
@@ -422,75 +431,101 @@ flowchart TD
         regres__regres__main["main"]
     end
     subgraph regres__regres_cli
-        regres__regres_cli__main{{main CC=42}}
+        regres__regres_cli__main["main"]
+        regres__regres_cli___build_regres_argv["_build_regres_argv"]
+        regres__regres_cli___build_refactor_argv["_build_refactor_argv"]
+        regres__regres_cli___build_defscan_argv["_build_defscan_argv"]
+        regres__regres_cli___build_doctor_argv["_build_doctor_argv"]
+        regres__regres_cli___build_ier_argv["_build_ier_argv"]
+        regres__regres_cli___extend_if_set["_extend_if_set"]
+        regres__regres_cli___append_if_true["_append_if_true"]
+        regres__regres_cli___dispatch_command["_dispatch_command"]
     end
-    regres__import_error_toon_report__parse_ts_errors --> regres__import_error_toon_report__normalize_file_rel
-    regres__import_error_toon_report__to_toon_block_legacy --> regres__import_error_toon_report__suggestions_for_error
-    regres__import_error_toon_report__to_toon_global_payload --> regres__import_error_toon_report__grouped_errors
-    regres__import_error_toon_report__to_toon_global_payload --> regres__import_error_toon_report__metrics
-    regres__import_error_toon_report__to_toon_compact_per_file --> regres__import_error_toon_report__toon_quote
-    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__grouped_errors
-    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__metrics
-    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__to_toon_global_payload
-    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__to_toon_compact_per_file
-    regres__import_error_toon_report__main --> regres__import_error_toon_report__parse_args
-    regres__import_error_toon_report__main --> regres__import_error_toon_report__parse_ts_errors
-    regres__import_error_toon_report__main --> regres__import_error_toon_report__render_markdown
-    regres__import_error_toon_report__main --> docs__DEFSCAN__print
-    regres__import_error_toon_report__main --> regres__import_error_toon_report__run_typecheck
-    regres__defscan__Definition____init__ --> SUMR___normalize
-    regres__defscan__extract_typescript --> regres__defscan___lineno_at
-    regres__defscan__extract_typescript --> regres__defscan___extract_block_ts
-    regres__defscan__extract_go --> regres__defscan___extract_block_ts
-    regres__defscan__extract_go --> regres__defscan___lineno_at
-    regres__defscan__extract_rust --> regres__defscan___extract_block_ts
-    regres__defscan__extract_rust --> regres__defscan___lineno_at
-    regres__defscan__extract_file --> regres__defscan__extract_python
-    regres__defscan__extract_file --> docs__DEFSCAN__print
-    regres__defscan__extract_file --> regres__defscan__extract_typescript
-    regres__defscan__extract_file --> regres__defscan__extract_go
-    regres__defscan__extract_file --> regres__defscan__extract_rust
-    regres__defscan___path_ignored_by_gitignore --> regres__defscan___match_anchored_pattern
-    regres__defscan___path_ignored_by_gitignore --> regres__defscan___match_unanchored_pattern
-    regres__defscan___should_skip_file --> regres__defscan___path_ignored_by_gitignore
-    regres__defscan__scan --> regres__defscan__load_gitignore
-    regres__defscan__scan --> regres__defscan___should_skip_file
-    regres__defscan__scan --> regres__defscan__extract_file
-    regres__defscan__compare_seed_to_all --> regres__defscan___def_key
-    regres__defscan__compare_seed_to_all --> regres__defscan__sim
-    regres__defscan__analyse_group --> regres__defscan__sim
-    regres__defscan__render_text --> regres__defscan__c
-    regres__defscan__render_markdown --> regres__defscan___short_path
-    regres__defscan__render_seed_text --> regres__defscan__c
-    regres__defscan__render_seed_text --> regres__defscan___short_path
-    regres__defscan__render_seed_markdown --> regres__defscan___short_path
-    regres__defscan__render_seed_markdown --> regres__defscan__classify_similarity
-    regres__defscan__render_seed_json --> regres__defscan___short_path
-    regres__defscan__render_seed_json --> regres__defscan__classify_similarity
-    regres__defscan__render_json --> regres__defscan__classify_similarity
-    regres__defscan__render_json --> regres__defscan___short_path
-    regres__defscan___run_seed_mode --> docs__DEFSCAN__print
-    regres__defscan___run_seed_mode --> regres__defscan__scan
-    regres__defscan___run_seed_mode --> regres__defscan__compare_seed_to_all
-    regres__defscan___build_focus_groups --> regres__defscan___def_key
-    regres__defscan___analyse_and_sort_groups --> regres__defscan__analyse_group
-    regres__defscan___run_focus_mode --> docs__DEFSCAN__print
-    regres__defscan___run_focus_mode --> regres__defscan__scan
-    regres__defscan___run_focus_mode --> regres__defscan___build_focus_groups
-    regres__defscan___run_focus_mode --> regres__defscan___analyse_and_sort_groups
-    regres__defscan___run_default_mode --> docs__DEFSCAN__print
-    regres__defscan___run_default_mode --> regres__defscan__scan
-    regres__defscan___run_default_mode --> regres__defscan___print_pair_summary
-    regres__defscan___run_default_mode --> regres__defscan__analyse_group
-    regres__defscan___run_default_mode --> regres__defscan__render_json
-    regres__defscan___print_pair_summary --> docs__DEFSCAN__print
-    regres__defscan___print_pair_summary --> regres__defscan___count_similarity_levels
-    regres__defscan__main --> regres__defscan___build_argument_parser
-    regres__defscan__main --> regres__defscan__load_gitignore
-    regres__defscan__main --> docs__DEFSCAN__print
-    regres__defscan__main --> regres__defscan___run_seed_mode
-    regres__defscan__main --> regres__defscan___run_focus_mode
-    regres__defscan__main --> regres__defscan___run_default_mode
+    subgraph regres__version_check
+        regres__version_check___find_env_path["_find_env_path"]
+        regres__version_check___read_env["_read_env"]
+        regres__version_check___write_env["_write_env"]
+        regres__version_check___get_pypi_version["_get_pypi_version"]
+        regres__version_check___parse_version["_parse_version"]
+        regres__version_check___is_newer["_is_newer"]
+        regres__version_check___should_check["_should_check"]
+        regres__version_check___save_last_check["_save_last_check"]
+        regres__version_check___save_skip_preference["_save_skip_preference"]
+        regres__version_check__check_version["check_version"]
+    end
+    regres__regres___check_relative_paths --> regres__regres___dedupe_paths
+    regres__regres___search_by_name_suffix --> regres__regres___dedupe_paths
+    regres__regres__resolve_target_file --> regres__regres___check_absolute_path
+    regres__regres__resolve_target_file --> regres__regres___check_relative_paths
+    regres__regres__resolve_target_file --> regres__regres___search_by_name_suffix
+    regres__regres__resolve_target_file --> regres__regres___dedupe_paths
+    regres__regres__content_metrics --> regres__regres__sha256_of_file
+    regres__regres__check_imports_at_commit --> regres__regres__extract_local_imports
+    regres__regres__check_imports_at_commit --> regres__regres__file_content_at_commit
+    regres__regres__check_imports_at_commit --> regres__regres__safe_read_text
+    regres__regres__check_imports_at_commit --> regres__regres__resolve_local_import
+    regres__regres__check_imports_at_commit --> regres__regres__resolve_import_at_commit
+    regres__regres__find_last_working_commit --> regres__regres__check_imports_at_commit
+    regres__regres__search_missing_in_history --> regres__regres__run_git
+    regres__regres__analyze_regression --> regres__regres__check_imports_at_commit
+    regres__regres__analyze_regression --> regres__regres__find_last_working_commit
+    regres__regres__analyze_regression --> regres__regres__search_missing_in_history
+    regres__regres__track_filename_history --> regres__regres__run_git
+    regres__regres___classify_import_problem --> regres__regres__find_current_locations
+    regres__regres___determine_primary_type --> regres__regres___analyze_evolution
+    regres__regres___determine_primary_type --> regres__regres___analyze_import_problems
+    regres__regres__classify_problem --> regres__regres__extract_symbols
+    regres__regres__classify_problem --> regres__regres___determine_primary_type
+    regres__regres__classify_problem --> regres__regres___classify_import_problem
+    regres__regres__classify_problem --> regres__regres__track_filename_history
+    regres__regres__dependency_tree --> regres__regres__to_rel
+    regres__regres__dependency_tree --> regres__regres__safe_read_text
+    regres__regres__dependency_tree --> regres__regres__resolve_local_import
+    regres__regres__reverse_references --> regres__regres__to_rel
+    regres__regres__reverse_references --> regres__regres__safe_read_text
+    regres__regres__reverse_references --> regres__regres__resolve_local_import
+    regres__regres__exact_and_near_duplicates --> regres__regres__sha256_of_file
+    regres__regres__exact_and_near_duplicates --> regres__regres__safe_read_text
+    regres__regres__exact_and_near_duplicates --> regres__regres__to_rel
+    regres__regres__trace_name_and_hash_candidates --> regres__regres__to_rel
+    regres__regres__trace_name_and_hash_candidates --> regres__regres__safe_read_text
+    regres__regres__trace_name_and_hash_candidates --> regres__regres__sha256_of_file
+    regres__regres__file_lineage --> regres__regres__run_git
+    regres__regres__file_lineage --> regres__regres__parse_numstat_block
+    regres__regres__changed_files_for_commit --> regres__regres__run_git
+    regres__regres__references_in_recent_commits --> regres__regres__changed_files_for_commit
+    regres__regres__file_content_at_commit --> regres__regres__run_git
+    regres__regres__historical_dependency_tree --> regres__regres__file_content_at_commit
+    regres__regres__historical_dependency_tree --> regres__regres__resolve_import_historical
+    regres__regres__analyze_evolution --> regres__regres__file_content_at_commit
+    regres__regres__analyze_evolution --> regres__regres__historical_dependency_tree
+    regres__regres__analyze_evolution --> regres__regres___collect_tree_paths
+    regres__regres__render_markdown --> regres__regres___render_classification_section
+    regres__regres__render_markdown --> regres__regres___render_name_hash_section
+    regres__regres__render_markdown --> regres__regres___render_metrics_section
+    regres__regres__render_markdown --> regres__regres___render_references_section
+    regres__regres__render_markdown --> regres__regres___render_duplicates_section
+    regres__regres__render_markdown --> regres__regres___render_lineage_section
+    regres__regres__render_markdown --> regres__regres___render_evolution_section
+    regres__regres__render_markdown --> regres__regres___render_last_good_section
+    regres__regres__render_markdown --> regres__regres___render_regression_section
+    regres__regres__analyze_file --> regres__regres__find_repo_root
+    regres__regres__analyze_file --> regres__regres__to_rel
+    regres__regres__analyze_file --> regres__regres__safe_read_text
+    regres__regres__analyze_file --> regres__regres__content_metrics
+    regres__regres__analyze_file --> regres__regres__dependency_tree
+    regres__regres__analyze_file --> regres__regres__reverse_references
+    regres__regres__analyze_file --> regres__regres__exact_and_near_duplicates
+    regres__regres__analyze_file --> regres__regres__trace_name_and_hash_candidates
+    regres__regres__analyze_file --> regres__regres__file_lineage
+    regres__regres__analyze_file --> regres__regres__references_in_recent_commits
+    regres__regres__analyze_file --> regres__regres__analyze_evolution
+    regres__regres__analyze_file --> regres__regres__find_last_good_version
+    regres__regres__analyze_file --> regres__regres__analyze_regression
+    regres__regres__analyze_file --> regres__regres__classify_problem
+    regres__regres__main --> regres__regres__find_repo_root
+    regres__regres__main --> regres__regres__resolve_target_file
+    regres__regres__main --> regres__regres__analyze_file
     regres__refactor__get_symbols --> regres__refactor__extract_symbols_regex
     regres__refactor__get_symbols --> regres__refactor__extract_symbols_ast
     regres__refactor__cmd_find --> regres__refactor__iter_files
@@ -586,88 +621,115 @@ flowchart TD
     regres__refactor__cmd_report --> regres__refactor___save_report
     regres__refactor__main --> regres__refactor__build_parser
     regres__refactor__main --> docs__DEFSCAN__print
-    regres__doctor_cli___handle_url_mode --> docs__DEFSCAN__print
+    regres__regres_cli__main --> regres__version_check__check_version
+    regres__regres_cli___build_defscan_argv --> regres__regres_cli___extend_if_set
+    regres__regres_cli___build_defscan_argv --> regres__regres_cli___append_if_true
+    regres__regres_cli___build_doctor_argv --> regres__regres_cli___extend_if_set
+    regres__regres_cli___build_doctor_argv --> regres__regres_cli___append_if_true
+    regres__regres_cli___build_ier_argv --> regres__regres_cli___extend_if_set
+    regres__regres_cli___dispatch_command --> regres__regres_cli___build_regres_argv
+    regres__regres_cli___dispatch_command --> regres__regres_cli___build_refactor_argv
+    regres__regres_cli___dispatch_command --> regres__regres_cli___build_defscan_argv
+    regres__regres_cli___dispatch_command --> regres__regres_cli___build_doctor_argv
+    regres__version_check___read_env --> regres__version_check___find_env_path
+    regres__version_check___write_env --> regres__version_check___find_env_path
+    regres__version_check___is_newer --> regres__version_check___parse_version
+    regres__version_check___should_check --> regres__version_check___read_env
+    regres__version_check___save_last_check --> regres__version_check___read_env
+    regres__version_check___save_last_check --> regres__version_check___write_env
+    regres__version_check___save_skip_preference --> regres__version_check___read_env
+    regres__version_check___save_skip_preference --> regres__version_check___write_env
+    regres__version_check__check_version --> regres__version_check___get_pypi_version
+    regres__version_check__check_version --> regres__version_check___save_last_check
+    regres__version_check__check_version --> regres__version_check___is_newer
+    regres__version_check__check_version --> regres__version_check___should_check
+    regres__version_check__check_version --> docs__DEFSCAN__print
+    regres__version_check__check_version --> regres__version_check___save_skip_preference
+    regres__defscan__Definition____init__ --> SUMR___normalize
+    regres__defscan___extract_class_definitions --> regres__defscan___get_body
+    regres__defscan___extract_class_definitions --> regres__defscan___get_decorators
+    regres__defscan___extract_function_definition --> regres__defscan___get_body
+    regres__defscan___extract_function_definition --> regres__defscan___get_decorators
+    regres__defscan__extract_python --> regres__defscan___collect_class_method_ids
+    regres__defscan__extract_python --> regres__defscan___extract_class_definitions
+    regres__defscan__extract_python --> regres__defscan___extract_function_definition
+    regres__defscan___extract_block_ts --> regres__defscan___advance_past_string
+    regres__defscan___extract_block_ts --> regres__defscan___advance_past_comment
+    regres__defscan__extract_typescript --> regres__defscan___lineno_at
+    regres__defscan__extract_typescript --> regres__defscan___extract_block_ts
+    regres__defscan__extract_go --> regres__defscan___extract_block_ts
+    regres__defscan__extract_go --> regres__defscan___lineno_at
+    regres__defscan__extract_rust --> regres__defscan___extract_block_ts
+    regres__defscan__extract_rust --> regres__defscan___lineno_at
+    regres__defscan__extract_file --> regres__defscan__extract_python
+    regres__defscan__extract_file --> docs__DEFSCAN__print
+    regres__defscan__extract_file --> regres__defscan__extract_typescript
+    regres__defscan__extract_file --> regres__defscan__extract_go
+    regres__defscan__extract_file --> regres__defscan__extract_rust
+    regres__defscan___path_ignored_by_gitignore --> regres__defscan___match_anchored_pattern
+    regres__defscan___path_ignored_by_gitignore --> regres__defscan___match_unanchored_pattern
+    regres__defscan___should_skip_file --> regres__defscan___path_ignored_by_gitignore
+    regres__defscan__scan --> regres__defscan__load_gitignore
+    regres__defscan__scan --> regres__defscan___should_skip_file
+    regres__defscan__scan --> regres__defscan__extract_file
+    regres__defscan__compare_seed_to_all --> regres__defscan___def_key
+    regres__defscan__compare_seed_to_all --> regres__defscan__sim
+    regres__defscan__analyse_group --> regres__defscan__sim
+    regres__defscan__render_text --> regres__defscan__c
+    regres__defscan__render_markdown --> regres__defscan___short_path
+    regres__defscan__render_seed_text --> regres__defscan__c
+    regres__defscan__render_seed_text --> regres__defscan___short_path
+    regres__defscan__render_seed_markdown --> regres__defscan___short_path
+    regres__defscan__render_seed_markdown --> regres__defscan__classify_similarity
+    regres__defscan__render_seed_json --> regres__defscan___short_path
+    regres__defscan__render_seed_json --> regres__defscan__classify_similarity
+    regres__defscan__render_json --> regres__defscan__classify_similarity
+    regres__defscan__render_json --> regres__defscan___short_path
+    regres__defscan___run_seed_mode --> docs__DEFSCAN__print
+    regres__defscan___run_seed_mode --> regres__defscan__scan
+    regres__defscan___run_seed_mode --> regres__defscan__compare_seed_to_all
+    regres__defscan___build_focus_groups --> regres__defscan___def_key
+    regres__defscan___analyse_and_sort_groups --> regres__defscan__analyse_group
+    regres__defscan___run_focus_mode --> docs__DEFSCAN__print
+    regres__defscan___run_focus_mode --> regres__defscan__scan
+    regres__defscan___run_focus_mode --> regres__defscan___build_focus_groups
+    regres__defscan___run_focus_mode --> regres__defscan___analyse_and_sort_groups
+    regres__defscan___run_default_mode --> docs__DEFSCAN__print
+    regres__defscan___run_default_mode --> regres__defscan__scan
+    regres__defscan___run_default_mode --> regres__defscan___print_pair_summary
+    regres__defscan___run_default_mode --> regres__defscan__analyse_group
+    regres__defscan___run_default_mode --> regres__defscan__render_json
+    regres__defscan___print_pair_summary --> docs__DEFSCAN__print
+    regres__defscan___print_pair_summary --> regres__defscan___count_similarity_levels
+    regres__defscan__main --> regres__defscan___build_argument_parser
+    regres__defscan__main --> regres__defscan__load_gitignore
+    regres__defscan__main --> docs__DEFSCAN__print
+    regres__defscan__main --> regres__defscan___run_seed_mode
+    regres__defscan__main --> regres__defscan___run_focus_mode
+    regres__defscan__main --> regres__defscan___run_default_mode
     regres__doctor_cli___save_report --> docs__DEFSCAN__print
     regres__doctor_cli___refresh_import_error_log --> docs__DEFSCAN__print
+    regres__doctor_cli__main --> regres__version_check__check_version
     regres__doctor_cli__main --> regres__doctor_cli___build_parser
     regres__doctor_cli__main --> regres__doctor_cli___handle_auto_decision_flow
     regres__doctor_cli__main --> regres__doctor_cli___save_report
     regres__doctor_cli__main --> regres__doctor_cli___handle_url_mode
-    regres__regres___check_relative_paths --> regres__regres___dedupe_paths
-    regres__regres___search_by_name_suffix --> regres__regres___dedupe_paths
-    regres__regres__resolve_target_file --> regres__regres___check_absolute_path
-    regres__regres__resolve_target_file --> regres__regres___check_relative_paths
-    regres__regres__resolve_target_file --> regres__regres___search_by_name_suffix
-    regres__regres__resolve_target_file --> regres__regres___dedupe_paths
-    regres__regres__content_metrics --> regres__regres__sha256_of_file
-    regres__regres__check_imports_at_commit --> regres__regres__extract_local_imports
-    regres__regres__check_imports_at_commit --> regres__regres__file_content_at_commit
-    regres__regres__check_imports_at_commit --> regres__regres__safe_read_text
-    regres__regres__check_imports_at_commit --> regres__regres__resolve_local_import
-    regres__regres__check_imports_at_commit --> regres__regres__resolve_import_at_commit
-    regres__regres__find_last_working_commit --> regres__regres__check_imports_at_commit
-    regres__regres__search_missing_in_history --> regres__regres__run_git
-    regres__regres__analyze_regression --> regres__regres__check_imports_at_commit
-    regres__regres__analyze_regression --> regres__regres__find_last_working_commit
-    regres__regres__analyze_regression --> regres__regres__search_missing_in_history
-    regres__regres__track_filename_history --> regres__regres__run_git
-    regres__regres___classify_import_problem --> regres__regres__find_current_locations
-    regres__regres___determine_primary_type --> regres__regres___analyze_evolution
-    regres__regres___determine_primary_type --> regres__regres___analyze_import_problems
-    regres__regres__classify_problem --> regres__regres__extract_symbols
-    regres__regres__classify_problem --> regres__regres___determine_primary_type
-    regres__regres__classify_problem --> regres__regres___classify_import_problem
-    regres__regres__classify_problem --> regres__regres__track_filename_history
-    regres__regres__dependency_tree --> regres__regres__to_rel
-    regres__regres__dependency_tree --> regres__regres__safe_read_text
-    regres__regres__dependency_tree --> regres__regres__resolve_local_import
-    regres__regres__reverse_references --> regres__regres__to_rel
-    regres__regres__reverse_references --> regres__regres__safe_read_text
-    regres__regres__reverse_references --> regres__regres__resolve_local_import
-    regres__regres__exact_and_near_duplicates --> regres__regres__sha256_of_file
-    regres__regres__exact_and_near_duplicates --> regres__regres__safe_read_text
-    regres__regres__exact_and_near_duplicates --> regres__regres__to_rel
-    regres__regres__trace_name_and_hash_candidates --> regres__regres__to_rel
-    regres__regres__trace_name_and_hash_candidates --> regres__regres__safe_read_text
-    regres__regres__trace_name_and_hash_candidates --> regres__regres__sha256_of_file
-    regres__regres__file_lineage --> regres__regres__run_git
-    regres__regres__file_lineage --> regres__regres__parse_numstat_block
-    regres__regres__changed_files_for_commit --> regres__regres__run_git
-    regres__regres__references_in_recent_commits --> regres__regres__changed_files_for_commit
-    regres__regres__file_content_at_commit --> regres__regres__run_git
-    regres__regres__historical_dependency_tree --> regres__regres__file_content_at_commit
-    regres__regres__historical_dependency_tree --> regres__regres__resolve_import_historical
-    regres__regres__analyze_evolution --> regres__regres__file_content_at_commit
-    regres__regres__analyze_evolution --> regres__regres__historical_dependency_tree
-    regres__regres__analyze_evolution --> regres__regres___collect_tree_paths
-    regres__regres__render_markdown --> regres__regres___render_classification_section
-    regres__regres__render_markdown --> regres__regres___render_name_hash_section
-    regres__regres__render_markdown --> regres__regres___render_metrics_section
-    regres__regres__render_markdown --> regres__regres___render_references_section
-    regres__regres__render_markdown --> regres__regres___render_duplicates_section
-    regres__regres__render_markdown --> regres__regres___render_lineage_section
-    regres__regres__render_markdown --> regres__regres___render_evolution_section
-    regres__regres__render_markdown --> regres__regres___render_last_good_section
-    regres__regres__render_markdown --> regres__regres___render_regression_section
-    regres__regres__analyze_file --> regres__regres__find_repo_root
-    regres__regres__analyze_file --> regres__regres__to_rel
-    regres__regres__analyze_file --> regres__regres__safe_read_text
-    regres__regres__analyze_file --> regres__regres__content_metrics
-    regres__regres__analyze_file --> regres__regres__dependency_tree
-    regres__regres__analyze_file --> regres__regres__reverse_references
-    regres__regres__analyze_file --> regres__regres__exact_and_near_duplicates
-    regres__regres__analyze_file --> regres__regres__trace_name_and_hash_candidates
-    regres__regres__analyze_file --> regres__regres__file_lineage
-    regres__regres__analyze_file --> regres__regres__references_in_recent_commits
-    regres__regres__analyze_file --> regres__regres__analyze_evolution
-    regres__regres__analyze_file --> regres__regres__find_last_good_version
-    regres__regres__analyze_file --> regres__regres__analyze_regression
-    regres__regres__analyze_file --> regres__regres__classify_problem
-    regres__regres__main --> regres__regres__find_repo_root
-    regres__regres__main --> regres__regres__resolve_target_file
-    regres__regres__main --> regres__regres__analyze_file
+    regres__import_error_toon_report__parse_ts_errors --> regres__import_error_toon_report__normalize_file_rel
+    regres__import_error_toon_report__to_toon_block_legacy --> regres__import_error_toon_report__suggestions_for_error
+    regres__import_error_toon_report__to_toon_global_payload --> regres__import_error_toon_report__grouped_errors
+    regres__import_error_toon_report__to_toon_global_payload --> regres__import_error_toon_report__metrics
+    regres__import_error_toon_report__to_toon_compact_per_file --> regres__import_error_toon_report__toon_quote
+    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__grouped_errors
+    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__metrics
+    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__to_toon_global_payload
+    regres__import_error_toon_report__render_markdown --> regres__import_error_toon_report__to_toon_compact_per_file
+    regres__import_error_toon_report__main --> regres__version_check__check_version
+    regres__import_error_toon_report__main --> regres__import_error_toon_report__parse_args
+    regres__import_error_toon_report__main --> regres__import_error_toon_report__parse_ts_errors
+    regres__import_error_toon_report__main --> regres__import_error_toon_report__render_markdown
+    regres__import_error_toon_report__main --> docs__DEFSCAN__print
 
     classDef highCC fill:#ff6b6b,stroke:#c92a2a,color:#fff
     classDef medCC fill:#ffd43b,stroke:#f08c00,color:#000
-    class regres__regres_cli__main,regres__defscan___extract_block_ts,regres__defscan___run_seed_mode,regres__refactor__iter_files,regres__refactor__wrapper_score,regres__refactor__cmd_hotmap,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue,regres__doctor_cli___handle_auto_decision_flow,regres__regres___render_classification_section highCC
-    class regres__import_error_toon_report__suggestions_for_error,regres__import_error_toon_report__to_toon_global_payload,regres__defscan__extract_python,regres__defscan__extract_typescript,regres__defscan___should_skip_file,regres__defscan__scan,regres__defscan__compare_seed_to_all,regres__defscan__render_text,regres__defscan__render_markdown,regres__defscan__render_seed_text,regres__defscan___build_focus_groups,regres__defscan___run_focus_mode,regres__defscan___run_default_mode,regres__defscan__main,regres__refactor__extract_symbols_ast,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor___render_file_symbols,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_cluster,regres__doctor_orchestrator__DoctorOrchestrator__render_markdown,regres__doctor_orchestrator__DoctorOrchestrator___import_exists_in_source,regres__doctor_orchestrator__DoctorOrchestrator___apply_file_action,regres__doctor_orchestrator__DoctorOrchestrator___render_step_by_step_playbook,regres__doctor_orchestrator__DoctorOrchestrator___render_analyze_step,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_import_errors,regres__regres___search_by_name_suffix medCC
+    class regres__regres___render_classification_section,regres__refactor__iter_files,regres__refactor__wrapper_score,regres__refactor__cmd_hotmap,regres__defscan___run_seed_mode,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_auto_decision_flow,regres__doctor_orchestrator__DoctorOrchestrator___diagnose_import_issue highCC
+    class regres__regres___search_by_name_suffix,regres__regres__resolve_target_file,regres__regres__resolve_local_import,regres__regres__check_imports_at_commit,regres__regres__find_last_working_commit,regres__regres__analyze_regression,regres__regres__track_filename_history,regres__regres___analyze_evolution,regres__regres__reverse_references,regres__regres__exact_and_near_duplicates,regres__regres__trace_name_and_hash_candidates,regres__regres__file_lineage,regres__regres__analyze_evolution,regres__regres__llm_context_packet,regres__regres___render_regression_section,regres__refactor__extract_symbols_ast,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor___render_file_symbols,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_cluster,regres__defscan___extract_block_ts,regres__defscan__extract_typescript,regres__defscan___should_skip_file,regres__defscan__scan,regres__defscan__compare_seed_to_all,regres__defscan__render_text,regres__defscan__render_markdown medCC

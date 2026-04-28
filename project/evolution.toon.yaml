@@ -1,21 +1,21 @@
-# code2llm/evolution | 879 func | 13f | 2026-04-28
+# code2llm/evolution | 1242 func | 14f | 2026-04-28
 
 NEXT[9] (ranked by impact):
-  [1] !! SPLIT           regres/defscan.py
-      WHY: 1252L, 1 classes, max CC=18
-      EFFORT: ~4h  IMPACT: 22536
-
-  [2] !! SPLIT           regres/regres.py
+  [1] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
       EFFORT: ~4h  IMPACT: 22425
+
+  [2] !! SPLIT           regres/defscan.py
+      WHY: 1261L, 1 classes, max CC=17
+      EFFORT: ~4h  IMPACT: 21437
 
   [3] !! SPLIT           regres/refactor.py
       WHY: 1237L, 0 classes, max CC=16
       EFFORT: ~4h  IMPACT: 19792
 
-  [4] !! SPLIT-FUNC      main  CC=42  fan=18
-      WHY: CC=42 exceeds 15
-      EFFORT: ~1h  IMPACT: 756
+  [4] !  SPLIT-FUNC      _handle_url_mode  CC=20  fan=24
+      WHY: CC=20 exceeds 15
+      EFFORT: ~1h  IMPACT: 480
 
   [5] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
       WHY: CC=16 exceeds 15
@@ -40,14 +40,14 @@ NEXT[9] (ranked by impact):
 
 RISKS[3]:
   ⚠ Splitting regres/regres.py may break 55 import paths
-  ⚠ Splitting regres/defscan.py may break 38 import paths
+  ⚠ Splitting regres/defscan.py may break 45 import paths
   ⚠ Splitting regres/refactor.py may break 52 import paths
 
 METRICS-TARGET:
-  CC̄:          1.5 → ≤1.0
-  max-CC:      42 → ≤20
+  CC̄:          1.1 → ≤0.8
+  max-CC:      20 → ≤10
   god-modules: 4 → 0
-  high-CC(≥15): 9 → ≤4
+  high-CC(≥15): 8 → ≤4
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -75,4 +75,4 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.6 → now CC̄=1.5
+  prev CC̄=1.5 → now CC̄=1.1

@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-951-green)
-> **951** functions | **21** classes | **41** files | CC̄ = 5.8
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1315-green)
+> **1315** functions | **19** classes | **42** files | CC̄ = 5.5
 
 > Auto-generated project documentation from source code analysis.
 
@@ -89,22 +89,23 @@ regres/
     ├── regres
     ├── doctor_models
     ├── doctor
+    ├── version_check
     ├── doctor_cli
 ├── regres/
     ├── refactor
     ├── import_error_toon_report
     ├── regres_cli
+    ├── defscan
     ├── doctor_orchestrator
-    ├── context
-        ├── toon
-        ├── toon
-    ├── README
-        ├── toon
     ├── prompt
         ├── toon
+        ├── toon
+        ├── toon
+    ├── context
+        ├── toon
+    ├── README
     ├── calls
         ├── toon
-    ├── defscan
 ```
 
 ## API Overview
@@ -114,15 +115,13 @@ regres/
 - **`GitCommit`** — —
 - **`DoctorOrchestrator`** — —
 - **`Definition`** — —
-- **`FileAction`** — —
-- **`ShellCommand`** — —
-- **`Diagnosis`** — —
+- **`TsError`** — —
+- **`ReportData`** — —
 - **`GitCommit`** — —
 - **`DoctorOrchestrator`** — —
 - **`Definition`** — —
-- **`FileAction`** — —
-- **`ShellCommand`** — —
-- **`Diagnosis`** — —
+- **`TsError`** — —
+- **`ReportData`** — —
 - **`DoctorOrchestrator`** — —
 - **`GitCommit`** — —
 - **`FileAction`** — Akcja na pliku.
@@ -130,8 +129,8 @@ regres/
 - **`Diagnosis`** — Diagnoza problemu i plan naprawy.
 - **`TsError`** — —
 - **`ReportData`** — —
-- **`DoctorOrchestrator`** — Orchestrator analizy i generator akcji.
 - **`Definition`** — Pojedyncza definicja (klasa / funkcja / enum / interface / mixin).
+- **`DoctorOrchestrator`** — Orchestrator analizy i generator akcji.
 
 ### Functions
 
@@ -170,15 +169,6 @@ regres/
 - `render_markdown()` — —
 - `analyze_file()` — —
 - `main()` — —
-- `analyze_from_url()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
 - `iter_files()` — —
 - `read_text()` — —
 - `md5_file()` — —
@@ -206,6 +196,20 @@ regres/
 - `to_json_toon()` — —
 - `cmd_report()` — —
 - `build_parser()` — —
+- `analyze_from_url()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `set_analysis_context()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
 - `c()` — —
 - `sim()` — —
 - `extract_python()` — —
@@ -224,6 +228,17 @@ regres/
 - `render_seed_json()` — —
 - `render_json()` — —
 - `loc()` — —
+- `toon_quote()` — —
+- `parse_args()` — —
+- `run_typecheck()` — —
+- `normalize_file_rel()` — —
+- `parse_ts_errors()` — —
+- `suggestions_for_error()` — —
+- `grouped_errors()` — —
+- `metrics()` — —
+- `to_toon_block_legacy()` — —
+- `to_toon_global_payload()` — —
+- `to_toon_compact_per_file()` — —
 - `c()` — —
 - `sim()` — —
 - `extract_python()` — —
@@ -335,6 +350,123 @@ regres/
 - `test_diagnosis()` — —
 - `test_import_doctor()` — —
 - `test_import_doctor_main()` — —
+- `test_build_parser()` — —
+- `test_parser_scan_root()` — —
+- `test_parser_all()` — —
+- `test_parser_url()` — —
+- `test_parser_llm()` — —
+- `test_parser_import_log()` — —
+- `test_parser_defscan_report()` — —
+- `test_parser_apply()` — —
+- `test_parser_dry_run()` — —
+- `test_parser_git_history()` — —
+- `test_parser_out_md()` — —
+- `test_parser_out_json()` — —
+- `test_parser_defscan_scan()` — —
+- `test_parser_refactor_scan()` — —
+- `test_parser_multiple_args()` — —
+- `test_refresh_import_no_frontend()` — —
+- `test_refresh_import_with_frontend_subprocess_failure()` — —
+- `test_refresh_import_timeout()` — —
+- `test_handle_url_mode_without_llm()` — —
+- `test_handle_url_mode_with_llm()` — —
+- `test_handle_url_mode_with_llm_saves_to_file()` — —
+- `test_handle_url_mode_with_apply()` — —
+- `test_handle_import_errors_with_log()` — —
+- `test_handle_import_errors_without_log_all_flag()` — —
+- `test_handle_import_errors_with_git_history()` — —
+- `test_handle_defscan_refactor_with_report()` — —
+- `test_handle_defscan_refactor_with_scan()` — —
+- `test_handle_defscan_refactor_with_refactor_scan()` — —
+- `test_handle_defscan_refactor_none()` — —
+- `test_save_report_to_stdout()` — —
+- `test_save_report_to_json()` — —
+- `test_save_report_to_md()` — —
+- `test_save_report_to_both_formats()` — —
+- `test_file_action_all_action_types()` — —
+- `test_file_action_empty_path()` — —
+- `test_file_action_none_path()` — —
+- `test_file_action_with_special_characters()` — —
+- `test_file_action_target_without_reason()` — —
+- `test_file_action_reason_without_target()` — —
+- `test_file_action_equality()` — —
+- `test_shell_command()` — —
+- `test_shell_command_with_cwd()` — —
+- `test_shell_command_empty_command()` — —
+- `test_shell_command_empty_description()` — —
+- `test_shell_command_none_description()` — —
+- `test_shell_command_multiline()` — —
+- `test_shell_command_with_special_chars()` — —
+- `test_shell_command_with_quotes()` — —
+- `test_diagnosis_defaults()` — —
+- `test_diagnosis_with_actions()` — —
+- `test_diagnosis_with_shell_commands()` — —
+- `test_diagnosis_with_both_actions_and_commands()` — —
+- `test_diagnosis_confidence_bounds()` — —
+- `test_diagnosis_severity_levels()` — —
+- `test_diagnosis_problem_types()` — —
+- `test_diagnosis_empty_summary()` — —
+- `test_diagnosis_empty_nlp_description()` — —
+- `test_diagnosis_multiple_file_actions()` — —
+- `test_diagnosis_multiple_shell_commands()` — —
+- `test_diagnosis_unicode_in_fields()` — —
+- `test_diagnosis_long_description()` — —
+- `test_diagnosis_confidence_out_of_bounds()` — —
+- `test_diagnosis_immutability_of_lists()` — —
+- `test_diagnosis_with_none_confidence()` — —
+- `test_init_sets_scan_root()` — —
+- `test_module_path_map_non_empty()` — —
+- `test_module_path_map_contains_all_modules()` — —
+- `test_reset_analysis_plan()` — —
+- `test_add_plan_step_basic()` — —
+- `test_add_plan_step_with_status()` — —
+- `test_add_plan_step_with_details()` — —
+- `test_set_analysis_context()` — —
+- `test_analyze_from_url_valid_module()` — —
+- `test_analyze_from_url_invalid_url()` — —
+- `test_analyze_from_url_module_not_exists()` — —
+- `test_analyze_import_errors_missing_log()` — —
+- `test_analyze_import_errors_with_valid_log()` — —
+- `test_analyze_import_errors_empty_log()` — —
+- `test_analyze_duplicates_missing_report()` — —
+- `test_analyze_duplicates_valid_report()` — —
+- `test_analyze_duplicates_invalid_json()` — —
+- `test_analyze_git_history_no_git()` — —
+- `test_analyze_git_history_with_git()` — —
+- `test_analyze_git_history_timeout()` — —
+- `test_analyze_with_defscan_subprocess_failure()` — —
+- `test_analyze_with_defscan_timeout()` — —
+- `test_analyze_with_refactor_subprocess_failure()` — —
+- `test_analyze_with_refactor_with_wrappers()` — —
+- `test_apply_fixes_empty()` — —
+- `test_apply_fixes_with_modify_action()` — —
+- `test_apply_fixes_with_delete_action()` — —
+- `test_apply_fixes_with_shell_command()` — —
+- `test_apply_fixes_error_handling()` — —
+- `test_generate_report_empty()` — —
+- `test_generate_report_with_diagnoses()` — —
+- `test_generate_report_with_analysis_plan()` — —
+- `test_generate_report_with_analysis_context()` — —
+- `test_render_markdown_empty()` — —
+- `test_render_markdown_with_diagnoses()` — —
+- `test_render_markdown_with_file_actions()` — —
+- `test_render_markdown_with_shell_commands()` — —
+- `test_render_markdown_severity_emojis()` — —
+- `test_render_markdown_with_decision_workflow()` — —
+- `test_generate_llm_diagnosis()` — —
+- `test_generate_llm_diagnosis_sections()` — —
+- `test_extract_module_name()` — —
+- `test_resolve_module_path()` — —
+- `test_import_exists_in_source()` — —
+- `test_import_exists_in_source_commented()` — —
+- `test_resolve_alias_target()` — —
+- `test_parse_ts_errors()` — —
+- `test_validate_errors()` — —
+- `test_extract_missing_modules()` — —
+- `test_find_main_location()` — —
+- `test_find_main_location_no_shared()` — —
+- `test_analyze_history_patterns()` — —
+- `test_analyze_history_patterns_no_moves()` — —
 - `test_ts_error_re_matches()` — —
 - `test_ts_error_re_no_match_for_plain_text()` — —
 - `test_missing_module_re()` — —
@@ -414,6 +546,11 @@ regres/
 - `apply_fixes()` — —
 - `generate_llm_diagnosis()` — —
 - `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `set_analysis_context()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
 - `loc()` — —
 - `analyze_custom_metric()` — —
 - `print()` — —
@@ -453,6 +590,7 @@ regres/
 - `render_markdown(report)` — —
 - `analyze_file(target_file, scan_root, max_commits, tree_depth)` — —
 - `main()` — —
+- `check_version(local_version)` — Check PyPI for a newer version and prompt the user to update.
 - `main()` — Main entry point for doctor CLI.
 - `iter_files(root, extensions, word_filter, case_sensitive)` — —
 - `read_text(p)` — —
@@ -496,6 +634,25 @@ regres/
 - `render_markdown(report, scan_root, max_files, max_errors_per_file)` — —
 - `main()` — —
 - `main()` — —
+- `c(text, code)` — —
+- `sim(a, b)` — Podobieństwo ciał (0–100%).
+- `extract_python(path)` — Używa modułu ast — precyzyjne wyodrębnienie z zachowaniem linii.
+- `extract_typescript(path)` — —
+- `extract_go(path)` — —
+- `extract_rust(path)` — —
+- `extract_file(path)` — —
+- `load_gitignore(root)` — Wczytuje wzorce z ``root/.gitignore``. Zwraca listę (pattern, is_negation).
+- `scan(root, name_filter, kind_filter, only_within)` — Zwraca słownik: base_name → [Definition, ...]
+- `compare_seed_to_all(seed_defs, all_defs, min_sim, skip_same_name)` — Dla każdej definicji z seed znajduje wszystkie definicje w all_defs
+- `analyse_group(defs)` — Dla listy definicji o tej samej nazwie oblicza macierz podobieństwa
+- `classify_similarity(pct)` — Zwraca (etykieta, kolor_ANSI).
+- `render_text(groups, root, min_sim, show_body_lines)` — —
+- `render_markdown(groups, root, min_sim)` — —
+- `render_seed_text(results, root, top_per_seed, show_body_lines)` — —
+- `render_seed_markdown(results, root, top_per_seed)` — —
+- `render_seed_json(results, root)` — —
+- `render_json(groups, root)` — —
+- `main()` — —
 - `main()` — —
 - `c()` — —
 - `sim()` — —
@@ -586,9 +743,9 @@ regres/
 - `to_toon_block_legacy()` — —
 - `to_toon_global_payload()` — —
 - `to_toon_compact_per_file()` — —
-- `print()` — —
+- `check_version()` — —
 - `analyze_custom_metric()` — —
-- `generate_readme()` — —
+- `print()` — —
 - `analyze_from_url()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -598,7 +755,13 @@ regres/
 - `apply_fixes()` — —
 - `generate_llm_diagnosis()` — —
 - `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `set_analysis_context()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
 - `loc()` — —
+- `generate_readme()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -620,6 +783,123 @@ regres/
 - `test_diagnosis()` — —
 - `test_import_doctor()` — —
 - `test_import_doctor_main()` — —
+- `test_build_parser()` — —
+- `test_parser_scan_root()` — —
+- `test_parser_all()` — —
+- `test_parser_url()` — —
+- `test_parser_llm()` — —
+- `test_parser_import_log()` — —
+- `test_parser_defscan_report()` — —
+- `test_parser_apply()` — —
+- `test_parser_dry_run()` — —
+- `test_parser_git_history()` — —
+- `test_parser_out_md()` — —
+- `test_parser_out_json()` — —
+- `test_parser_defscan_scan()` — —
+- `test_parser_refactor_scan()` — —
+- `test_parser_multiple_args()` — —
+- `test_refresh_import_no_frontend()` — —
+- `test_refresh_import_with_frontend_subprocess_failure()` — —
+- `test_refresh_import_timeout()` — —
+- `test_handle_url_mode_without_llm()` — —
+- `test_handle_url_mode_with_llm()` — —
+- `test_handle_url_mode_with_llm_saves_to_file()` — —
+- `test_handle_url_mode_with_apply()` — —
+- `test_handle_import_errors_with_log()` — —
+- `test_handle_import_errors_without_log_all_flag()` — —
+- `test_handle_import_errors_with_git_history()` — —
+- `test_handle_defscan_refactor_with_report()` — —
+- `test_handle_defscan_refactor_with_scan()` — —
+- `test_handle_defscan_refactor_with_refactor_scan()` — —
+- `test_handle_defscan_refactor_none()` — —
+- `test_save_report_to_stdout()` — —
+- `test_save_report_to_json()` — —
+- `test_save_report_to_md()` — —
+- `test_save_report_to_both_formats()` — —
+- `test_file_action_all_action_types()` — —
+- `test_file_action_empty_path()` — —
+- `test_file_action_none_path()` — —
+- `test_file_action_with_special_characters()` — —
+- `test_file_action_target_without_reason()` — —
+- `test_file_action_reason_without_target()` — —
+- `test_file_action_equality()` — —
+- `test_shell_command()` — —
+- `test_shell_command_with_cwd()` — —
+- `test_shell_command_empty_command()` — —
+- `test_shell_command_empty_description()` — —
+- `test_shell_command_none_description()` — —
+- `test_shell_command_multiline()` — —
+- `test_shell_command_with_special_chars()` — —
+- `test_shell_command_with_quotes()` — —
+- `test_diagnosis_defaults()` — —
+- `test_diagnosis_with_actions()` — —
+- `test_diagnosis_with_shell_commands()` — —
+- `test_diagnosis_with_both_actions_and_commands()` — —
+- `test_diagnosis_confidence_bounds()` — —
+- `test_diagnosis_severity_levels()` — —
+- `test_diagnosis_problem_types()` — —
+- `test_diagnosis_empty_summary()` — —
+- `test_diagnosis_empty_nlp_description()` — —
+- `test_diagnosis_multiple_file_actions()` — —
+- `test_diagnosis_multiple_shell_commands()` — —
+- `test_diagnosis_unicode_in_fields()` — —
+- `test_diagnosis_long_description()` — —
+- `test_diagnosis_confidence_out_of_bounds()` — —
+- `test_diagnosis_immutability_of_lists()` — —
+- `test_diagnosis_with_none_confidence()` — —
+- `test_init_sets_scan_root()` — —
+- `test_module_path_map_non_empty()` — —
+- `test_module_path_map_contains_all_modules()` — —
+- `test_reset_analysis_plan()` — —
+- `test_add_plan_step_basic()` — —
+- `test_add_plan_step_with_status()` — —
+- `test_add_plan_step_with_details()` — —
+- `test_set_analysis_context()` — —
+- `test_analyze_from_url_valid_module()` — —
+- `test_analyze_from_url_invalid_url()` — —
+- `test_analyze_from_url_module_not_exists()` — —
+- `test_analyze_import_errors_missing_log()` — —
+- `test_analyze_import_errors_with_valid_log()` — —
+- `test_analyze_import_errors_empty_log()` — —
+- `test_analyze_duplicates_missing_report()` — —
+- `test_analyze_duplicates_valid_report()` — —
+- `test_analyze_duplicates_invalid_json()` — —
+- `test_analyze_git_history_no_git()` — —
+- `test_analyze_git_history_with_git()` — —
+- `test_analyze_git_history_timeout()` — —
+- `test_analyze_with_defscan_subprocess_failure()` — —
+- `test_analyze_with_defscan_timeout()` — —
+- `test_analyze_with_refactor_subprocess_failure()` — —
+- `test_analyze_with_refactor_with_wrappers()` — —
+- `test_apply_fixes_empty()` — —
+- `test_apply_fixes_with_modify_action()` — —
+- `test_apply_fixes_with_delete_action()` — —
+- `test_apply_fixes_with_shell_command()` — —
+- `test_apply_fixes_error_handling()` — —
+- `test_generate_report_empty()` — —
+- `test_generate_report_with_diagnoses()` — —
+- `test_generate_report_with_analysis_plan()` — —
+- `test_generate_report_with_analysis_context()` — —
+- `test_render_markdown_empty()` — —
+- `test_render_markdown_with_diagnoses()` — —
+- `test_render_markdown_with_file_actions()` — —
+- `test_render_markdown_with_shell_commands()` — —
+- `test_render_markdown_severity_emojis()` — —
+- `test_render_markdown_with_decision_workflow()` — —
+- `test_generate_llm_diagnosis()` — —
+- `test_generate_llm_diagnosis_sections()` — —
+- `test_extract_module_name()` — —
+- `test_resolve_module_path()` — —
+- `test_import_exists_in_source()` — —
+- `test_import_exists_in_source_commented()` — —
+- `test_resolve_alias_target()` — —
+- `test_parse_ts_errors()` — —
+- `test_validate_errors()` — —
+- `test_extract_missing_modules()` — —
+- `test_find_main_location()` — —
+- `test_find_main_location_no_shared()` — —
+- `test_analyze_history_patterns()` — —
+- `test_analyze_history_patterns_no_moves()` — —
 - `test_ts_error_re_matches()` — —
 - `test_ts_error_re_no_match_for_plain_text()` — —
 - `test_missing_module_re()` — —
@@ -690,25 +970,6 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
-- `c(text, code)` — —
-- `sim(a, b)` — Podobieństwo ciał (0–100%).
-- `extract_python(path)` — Używa modułu ast — precyzyjne wyodrębnienie z zachowaniem linii.
-- `extract_typescript(path)` — —
-- `extract_go(path)` — —
-- `extract_rust(path)` — —
-- `extract_file(path)` — —
-- `load_gitignore(root)` — Wczytuje wzorce z ``root/.gitignore``. Zwraca listę (pattern, is_negation).
-- `scan(root, name_filter, kind_filter, only_within)` — Zwraca słownik: base_name → [Definition, ...]
-- `compare_seed_to_all(seed_defs, all_defs, min_sim, skip_same_name)` — Dla każdej definicji z seed znajduje wszystkie definicje w all_defs
-- `analyse_group(defs)` — Dla listy definicji o tej samej nazwie oblicza macierz podobieństwa
-- `classify_similarity(pct)` — Zwraca (etykieta, kolor_ANSI).
-- `render_text(groups, root, min_sim, show_body_lines)` — —
-- `render_markdown(groups, root, min_sim)` — —
-- `render_seed_text(results, root, top_per_seed, show_body_lines)` — —
-- `render_seed_markdown(results, root, top_per_seed)` — —
-- `render_seed_json(results, root)` — —
-- `render_json(groups, root)` — —
-- `main()` — —
 
 
 ## Project Structure
@@ -717,8 +978,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (431 functions, 7 classes)
-📄 `SUMR` (197 functions, 7 classes)
+📄 `SUMD` (593 functions, 5 classes)
+📄 `SUMR` (213 functions, 5 classes)
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
 📄 `docs.README` (1 functions)
@@ -734,20 +995,21 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1030 functions)
+📄 `project.map.toon` (1379 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
-📄 `regres.defscan` (43 functions, 1 classes)
+📄 `regres.defscan` (45 functions, 1 classes)
 📄 `regres.doctor`
 📄 `regres.doctor_cli` (8 functions)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (49 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (51 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (52 functions)
 📄 `regres.regres` (55 functions, 1 classes)
-📄 `regres.regres_cli` (1 functions)
+📄 `regres.regres_cli` (9 functions)
+📄 `regres.version_check` (10 functions)
 📄 `scripts.import-error-toon-report`
 📄 `testql-scenarios.generated-cli-tests.testql.toon`
 📄 `tree`

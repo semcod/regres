@@ -26,22 +26,22 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
     doctor.reset_analysis_plan()
 
     parsed = urlparse(args.url)
-    path = parsed.path.strip('/')
+    normalized_path = parsed.path.strip('/')
     module_name = None
     route_hint = None
-    normalized_path = path.strip('/')
+
     for hint, mapped_module in doctor.URL_ROUTE_MODULE_HINTS.items():
         if normalized_path.startswith(hint):
             route_hint = mapped_module
             module_name = mapped_module
             break
 
-    for possible_module in doctor.MODULE_PATH_MAP.keys():
-        if module_name:
-            break
-        if normalized_path.startswith(possible_module):
-            module_name = possible_module
-            break
+    if not module_name:
+        for possible_module in doctor.MODULE_PATH_MAP.keys():
+            if normalized_path.startswith(possible_module):
+                module_name = possible_module
+                break
+
     if not module_name:
         parts = normalized_path.split('/')
         if parts:
@@ -57,6 +57,7 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
             else f"module inferred: {module_name or 'unknown'}"
         ),
     )
+
     doctor.set_analysis_context("url_target", {
         "url": args.url,
         "path": normalized_path,
@@ -95,15 +96,12 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 print(llm_report)
             return
 
-        if args.apply:
-            dry_run = not args.dry_run if args.dry_run else True
-            fix_results = doctor.apply_fixes(doctor.diagnoses, dry_run=dry_run)
-            print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
-            if fix_results['errors']:
-                print("Errors:")
-                for err in fix_results['errors']:
-                    print(f"  - {err}")
-
+        doctor.add_plan_step(
+            name="targeted module analysis",
+            reason="Uruchomienie diagnostyki modułu wynikającego z URL.",
+            command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
+            status="done",
+        )
         diagnoses = doctor.analyze_from_url(args.url)
         doctor.diagnoses.extend(diagnoses)
     else:
@@ -119,8 +117,10 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
             summary=f"Nie znaleziono modułu '{module_name}' dla URL {args.url}",
             problem_type="module_not_found",
             severity="medium",
-            nlp_description=f"Nie udało się rozwiązać ścieżki modułu '{module_name}' z URL {args.url}. "
-                            f"Sprawdź czy moduł istnieje w projekcie lub czy mapowanie MODULE_PATH_MAP jest poprawne.",
+            nlp_description=(
+                f"Nie udało się rozwiązać ścieżki modułu '{module_name}' z URL {args.url}. "
+                "Sprawdź czy moduł istnieje w projekcie lub czy mapowanie MODULE_PATH_MAP jest poprawne."
+            ),
             file_actions=[FileAction(
                 path="doctor_orchestrator.py",
                 action="review",

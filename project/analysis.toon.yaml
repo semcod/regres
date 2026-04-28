@@ -1,62 +1,62 @@
-# code2llm | 38f 14830L | md:13,python:11,yaml:9,shell:2,txt:1,toml:1 | 2026-04-28
-# CC̄=1.5 | critical:9/879 | dups:0 | cycles:0
+# code2llm | 39f 15627L | md:13,python:12,yaml:9,shell:2,txt:1,toml:1 | 2026-04-28
+# CC̄=1.1 | critical:8/1242 | dups:0 | cycles:0
 
-HEALTH[11]:
-  🔴 GOD   SUMR.md = 1055L, 6 classes, 166m, max CC=0.0
-  🔴 GOD   SUMD.md = 965L, 6 classes, 268m, max CC=0.0
-  🟡 CC    main CC=42 (limit:15)
-  🟡 CC    _extract_block_ts CC=18 (limit:15)
-  🟡 CC    _run_seed_mode CC=17 (limit:15)
+HEALTH[10]:
+  🔴 GOD   SUMR.md = 961L, 5 classes, 206m, max CC=0.0
+  🔴 GOD   SUMD.md = 1138L, 5 classes, 420m, max CC=0.0
+  🟡 CC    _render_classification_section CC=15 (limit:15)
   🟡 CC    iter_files CC=15 (limit:15)
   🟡 CC    wrapper_score CC=15 (limit:15)
   🟡 CC    cmd_hotmap CC=16 (limit:15)
-  🟡 CC    _diagnose_import_issue CC=15 (limit:15)
+  🟡 CC    _run_seed_mode CC=17 (limit:15)
+  🟡 CC    _handle_url_mode CC=20 (limit:15)
   🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
-  🟡 CC    _render_classification_section CC=15 (limit:15)
+  🟡 CC    _diagnose_import_issue CC=15 (limit:15)
 
 REFACTOR[3]:
   1. split SUMR.md  (god module)
   2. split SUMD.md  (god module)
-  3. split 9 high-CC methods  (CC>15)
+  3. split 8 high-CC methods  (CC>15)
 
-PIPELINES[67]:
-  [1] Src [main]: main → parse_args
+PIPELINES[69]:
+  [1] Src [_resolve_single_or_error]: _resolve_single_or_error
       PURITY: 100% pure
-  [2] Src [main]: main
+  [2] Src [main]: main → find_repo_root
       PURITY: 100% pure
-  [3] Src [__init__]: __init__ → _normalize
+  [3] Src [cmd_find]: cmd_find → iter_files
       PURITY: 100% pure
-  [4] Src [_normalize]: _normalize
+  [4] Src [cmd_duplicates]: cmd_duplicates → iter_files
       PURITY: 100% pure
-  [5] Src [main]: main → _build_argument_parser
+  [5] Src [cmd_similar]: cmd_similar → iter_files
       PURITY: 100% pure
 
 LAYERS:
-  regres/                         CC̄=5.9    ←in:0  →out:124  !! split
+  regres/                         CC̄=5.5    ←in:0  →out:130  !! split
   │ !! regres                    1495L  1C   55m  CC=15     ←1
+  │ !! defscan                   1261L  1C   45m  CC=17     ←2
   │ !! refactor                  1237L  0C   52m  CC=16     ←2
-  │ !! defscan                   1235L  1C   38m  CC=18     ←2
-  │ !! doctor_orchestrator        992L  1C   49m  CC=15     ←0
-  │ import_error_toon_report   365L  2C   13m  CC=10     ←0
-  │ !! doctor_cli                 303L  0C    8m  CC=18     ←0
-  │ !! regres_cli                 197L  0C    1m  CC=42     ←0
+  │ !! doctor_orchestrator       1078L  1C   51m  CC=15     ←0
+  │ !! doctor_cli                 390L  0C    8m  CC=20     ←0
+  │ import_error_toon_report   372L  2C   13m  CC=10     ←0
+  │ regres_cli                 195L  0C    9m  CC=7      ←0
+  │ version_check              151L  0C   10m  CC=7      ←3
   │ doctor_models               36L  3C    0m  CC=0.0    ←0
-  │ __init__                    13L  0C    0m  CC=0.0    ←0
+  │ __init__                    20L  0C    0m  CC=0.0    ←0
   │ doctor                       6L  0C    0m  CC=0.0    ←0
   │
-  docs/                           CC̄=0.0    ←in:123  →out:0
-  │ !! README.md                  799L  0C    1m  CC=0.0    ←0
+  docs/                           CC̄=0.0    ←in:129  →out:0
+  │ !! README.md                  782L  0C    1m  CC=0.0    ←0
   │ REGRES.md                  220L  0C    0m  CC=0.0    ←0
   │ DOCTOR.md                  198L  1C    1m  CC=0.0    ←0
-  │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←5
+  │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←6
   │ REFACTOR.md                 87L  0C    0m  CC=0.0    ←0
   │ import-error-toon-report.md    76L  0C    0m  CC=0.0    ←0
   │
   ./                              CC̄=0.0    ←in:0  →out:0
-  │ !! SUMR.md                   1055L  6C  166m  CC=0.0    ←1
-  │ !! SUMD.md                    965L  6C  268m  CC=0.0    ←0
+  │ !! SUMD.md                   1138L  5C  420m  CC=0.0    ←0
+  │ !! SUMR.md                    961L  5C  206m  CC=0.0    ←1
   │ !! goal.yaml                  512L  0C    0m  CC=0.0    ←0
-  │ CHANGELOG.md               162L  0C    0m  CC=0.0    ←0
+  │ CHANGELOG.md               225L  0C    0m  CC=0.0    ←0
   │ README.md                   66L  0C    0m  CC=0.0    ←0
   │ pyproject.toml              52L  0C    0m  CC=0.0    ←0
   │ project.sh                  41L  0C    0m  CC=0.0    ←0
@@ -64,16 +64,16 @@ LAYERS:
   │ Makefile                     0L  0C    0m  CC=0.0    ←0
   │
   project/                        CC̄=0.0    ←in:0  →out:0
-  │ !! calls.yaml                2274L  0C    0m  CC=0.0    ←0
-  │ !! context.md                 501L  0C    0m  CC=0.0    ←0
+  │ !! calls.yaml                2561L  0C    0m  CC=0.0    ←0
+  │ context.md                 486L  0C    0m  CC=0.0    ←0
+  │ map.toon.yaml              456L  0C  370m  CC=0.0    ←0
   │ README.md                  339L  0C    0m  CC=0.0    ←0
-  │ map.toon.yaml              303L  0C  226m  CC=0.0    ←0
-  │ calls.toon.yaml            149L  0C    0m  CC=0.0    ←0
-  │ duplication.toon.yaml      116L  0C    0m  CC=0.0    ←0
-  │ analysis.toon.yaml         109L  0C    0m  CC=0.0    ←0
-  │ evolution.toon.yaml         82L  0C    0m  CC=0.0    ←0
-  │ project.toon.yaml           53L  0C    0m  CC=0.0    ←0
+  │ calls.toon.yaml            154L  0C    0m  CC=0.0    ←0
+  │ analysis.toon.yaml         101L  0C    0m  CC=0.0    ←0
+  │ evolution.toon.yaml         78L  0C    0m  CC=0.0    ←0
+  │ project.toon.yaml           52L  0C    0m  CC=0.0    ←0
   │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
+  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
   │
   .regres/                        CC̄=0.0    ←in:0  →out:0
   │ !! import-error-toon-report.md   549L  0C    0m  CC=0.0    ←0
@@ -89,12 +89,12 @@ LAYERS:
 
 COUPLING:
           regres    docs    SUMR
-  regres      ──     123       1  !! fan-out
-    docs    ←123      ──          hub
+  regres      ──     129       1  !! fan-out
+    docs    ←129      ──          hub
     SUMR      ←1              ──
   CYCLES: none
-  HUB: docs/ (fan-in=123)
-  SMELL: regres/ fan-out=124 → split needed
+  HUB: docs/ (fan-in=129)
+  SMELL: regres/ fan-out=130 → split needed
 
 EXTERNAL:
   validation: run `vallm batch .` → validation.toon

@@ -612,3 +612,83 @@ def test_module_loader_compliance_returns_none_when_entry_missing(tmp_path: Path
     module_dir = tmp_path / "connect-foo"
     module_dir.mkdir()
     assert d.analyze_module_loader_compliance(module_dir, "connect-foo") is None
+
+
+# c2004-maskservice-patch-v8: page-registry compliance check
+def _make_pages_index(tmp_path: Path, module_name: str, body: str) -> Path:
+    module_dir = tmp_path / module_name
+    module_dir.mkdir(parents=True, exist_ok=True)
+    (module_dir / "pages-index.ts").write_text(body, encoding="utf-8")
+    return module_dir
+
+
+def test_page_registry_compliance_passes_when_default_present(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = _make_pages_index(
+        tmp_path, "connect-foo",
+        """
+        import { BasePageManager } from 'shared/base-page-manager';
+        export const ConnectFooPages = {
+          'requests-search': SomePage,
+          'services-search': OtherPage,
+        };
+        export class ConnectFooPageManager extends BasePageManager {
+          constructor() {
+            super({ moduleName: 'connect-foo', defaultPage: 'requests-search', pages: ConnectFooPages as any });
+          }
+        }
+        """,
+    )
+    assert d.analyze_page_registry_compliance(module_dir, "connect-foo") is None
+
+
+def test_page_registry_compliance_flags_empty_registry(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = _make_pages_index(
+        tmp_path, "connect-workshop",
+        """
+        export const ConnectWorkshopPages = {
+          // 'requests-search': WorkshopGenericSearchPage,
+          // 'services-search': WorkshopGenericSearchPage,
+        };
+        export class ConnectWorkshopPageManager extends BasePageManager {
+          constructor() {
+            super({ moduleName: 'connect-workshop', defaultPage: 'requests-search', pages: ConnectWorkshopPages as any });
+          }
+        }
+        """,
+    )
+    diag = d.analyze_page_registry_compliance(module_dir, "connect-workshop")
+    assert diag is not None
+    assert diag.problem_type == "page_registry_default_missing"
+    assert diag.severity == "critical"
+    assert "requests-search" in diag.summary
+    assert "ConnectWorkshopPages" in diag.summary or "ConnectWorkshopPages" in diag.nlp_description
+
+
+def test_page_registry_compliance_flags_default_not_in_registry(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = _make_pages_index(
+        tmp_path, "connect-bar",
+        """
+        export const ConnectBarPages = {
+          'real-page': RealPage,
+        };
+        export class ConnectBarPageManager extends BasePageManager {
+          constructor() {
+            super({ moduleName: 'connect-bar', defaultPage: 'missing-default', pages: ConnectBarPages as any });
+          }
+        }
+        """,
+    )
+    diag = d.analyze_page_registry_compliance(module_dir, "connect-bar")
+    assert diag is not None
+    assert diag.problem_type == "page_registry_default_missing"
+    assert "missing-default" in diag.nlp_description
+
+
+def test_page_registry_compliance_returns_none_when_no_index(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = tmp_path / "connect-foo"
+    module_dir.mkdir()
+    assert d.analyze_page_registry_compliance(module_dir, "connect-foo") is None

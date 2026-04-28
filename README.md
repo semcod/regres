@@ -9,8 +9,9 @@ Narzędzia do analizy regresji, refaktoryzacji i duplikatów kodu — z naciskie
 pip install -e .
 ```
 
-## What's new (0.1.38)
+## What's new (0.1.40)
 
+- **Page-registry compliance check** (`page_registry_default_missing`) — parsuje `<module>/pages-index.ts`, weryfikuje że `defaultPage` istnieje w rejestrze stron (z pominięciem zakomentowanych wpisów). Brak → krytyczna diagnoza z gotową instrukcją naprawy. Wykrywa runtime symptom: tysiące powtórzeń `Page '...' not found, using default` + głęboki stos `base-page-manager.ts:67` (nieskończona rekurencja w fallback do nieistniejącego defaultPage).
 - **Module-loader compliance check** (`module_loader_no_class`) — wykrywa pliki `<name>.module.ts`, które nie eksportują klasy `*Module` ani `default`. Bez nich host `frontend/src/modules/index.ts` rzuca runtime: `No Module class found in ./<name>/<name>.module.ts`. Diagnoza pokazuje gotowy fragment `BaseModule` do wklejenia.
 - **Vite runtime probe** (`--vite-base`, autoderywowane z `--url`) — pobiera plik celu z dev-servera Vite i parsuje błędy 500 typu `Failed to resolve import "X" from "Y"`. Łańcuchowo dodaje plik źródłowy błędu do kolejki i kontynuuje sondowanie.
 - **Dependency chain analysis** — BFS po relatywnych importach pliku celu (depth=1); zaznacza `BROKEN`/`STUB`. Każdy broken link generuje gotową komendę regres do naprawy chained.
@@ -90,6 +91,7 @@ regres import-error-toon-report
 | `import_resolution_failure` | high/medium| BFS po relatywnych importach — nie rozwiązany / placeholder |
 | `vite_runtime_failure`      | critical   | HTTP probe Vite zwraca 500 z `Failed to resolve import` |
 | `module_loader_no_class`    | critical   | `<name>.module.ts` bez `*Module` / `export default` |
+| `page_registry_default_missing` | critical | `pages-index.ts` ma `defaultPage` nieobecny w rejestrze → ryzyko nieskończonej rekurencji w `BasePageManager` |
 | `module_not_found`          | medium     | URL prefix bez modułu w `MODULE_PATH_MAP` |
 | `import_error`              | medium     | TS2307/TS2305 z logu kompilatora |
 
@@ -103,11 +105,11 @@ regres import-error-toon-report
 
 ## AI Cost Tracking
 
-![PyPI](https://img.shields.io/badge/pypi-costs-blue) ![Version](https://img.shields.io/badge/version-0.1.40-blue) ![Python](https://img.shields.io/badge/python-3.9+-blue) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
-![AI Cost](https://img.shields.io/badge/AI%20Cost-$5.55-orange) ![Human Time](https://img.shields.io/badge/Human%20Time-7.9h-blue) ![Model](https://img.shields.io/badge/Model-openrouter%2Fqwen%2Fqwen3--coder--next-lightgrey)
+![PyPI](https://img.shields.io/badge/pypi-costs-blue) ![Version](https://img.shields.io/badge/version-0.1.41-blue) ![Python](https://img.shields.io/badge/python-3.9+-blue) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![AI Cost](https://img.shields.io/badge/AI%20Cost-$5.70-orange) ![Human Time](https://img.shields.io/badge/Human%20Time-7.9h-blue) ![Model](https://img.shields.io/badge/Model-openrouter%2Fqwen%2Fqwen3--coder--next-lightgrey)
 
-- 🤖 **LLM usage:** $5.5500 (37 commits)
-- 👤 **Human dev:** ~$791 (7.9h @ $100/h, 30min dedup)
+- 🤖 **LLM usage:** $5.7000 (38 commits)
+- 👤 **Human dev:** ~$794 (7.9h @ $100/h, 30min dedup)
 
 Generated on 2026-04-28 using [openrouter/qwen/qwen3-coder-next](https://openrouter.ai/qwen/qwen3-coder-next)
 

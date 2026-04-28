@@ -447,6 +447,119 @@ class DoctorOrchestrator:
             confidence=0.95,
         )
 
+    # c2004-maskservice-patch-v8: page-registry / defaultPage compliance.
+    # Symptom: console flooded with "Page 'X' not found, using default" with
+    # `base-page-manager.ts:67` recursing thousands of times. Root cause:
+    # the `pages-index.ts` registry is empty (or missing the `defaultPage`
+    # entry), so the BasePageManager's fallback to `defaultPage` itself misses,
+    # and recurses on the same missing key.
+    _PAGES_INDEX_DEFAULT_PAGE_RE = re.compile(
+        r"defaultPage\s*:\s*['\"]([^'\"]+)['\"]"
+    )
+    # Match `pages: <Identifier>` (registry referenced by name) — typical:
+    #   pages: ConnectWorkshopPages as any
+    _PAGES_INDEX_PAGES_REF_RE = re.compile(
+        r"pages\s*:\s*([A-Z]\w*)\b"
+    )
+    # Extract registry key strings from a `const Foo = { 'k1': X, 'k2': Y };`
+    # declaration. Keys may be single- or double-quoted; we ignore comments.
+    _REGISTRY_KEY_RE = re.compile(r"^\s*['\"]([^'\"]+)['\"]\s*:", re.MULTILINE)
+
+    def analyze_page_registry_compliance(
+        self,
+        module_path: Path,
+        module_name: str,
+    ) -> Optional[Diagnosis]:
+        """Detect empty/misconfigured page registries that would recurse forever.
+
+        Reads `<module_path>/pages-index.ts`. If a `defaultPage` is configured
+        but the referenced page registry literal does not contain that key,
+        emits a `page_registry_default_missing` diagnosis. This is the static
+        precursor to the runtime warning loop "Page 'X' not found, using
+        default" repeated thousands of times.
+        """
+        entry = module_path / "pages-index.ts"
+        if not entry.exists() or not entry.is_file():
+            return None
+        try:
+            text = entry.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
+        m_default = self._PAGES_INDEX_DEFAULT_PAGE_RE.search(text)
+        if not m_default:
+            return None
+        default_page = m_default.group(1)
+        m_ref = self._PAGES_INDEX_PAGES_REF_RE.search(text)
+        registry_name = m_ref.group(1) if m_ref else None
+        # Extract keys from the named registry block, if we can find it.
+        keys: List[str] = []
+        if registry_name:
+            block_re = re.compile(
+                rf"(?:export\s+)?const\s+{re.escape(registry_name)}\s*"
+                r"(?::\s*[^=]+)?=\s*\{(.*?)\};",
+                re.DOTALL,
+            )
+            mblock = block_re.search(text)
+            if mblock:
+                block_body = mblock.group(1)
+                # Drop block-comments and line-comments so commented-out keys
+                # (a frequent footgun in this codebase) are NOT counted.
+                block_body = re.sub(r"/\*.*?\*/", "", block_body, flags=re.DOTALL)
+                block_body = re.sub(r"//[^\n]*", "", block_body)
+                keys = self._REGISTRY_KEY_RE.findall(block_body)
+        if default_page in keys:
+            return None
+        try:
+            rel = str(entry.relative_to(self.scan_root)).replace("\\", "/")
+        except ValueError:
+            rel = str(entry)
+        nlp = (
+            f"`{rel}` konfiguruje `defaultPage: '{default_page}'`, ale rejestr stron "
+            + (
+                f"`{registry_name}` zawiera tylko: {keys or '(brak — wszystkie wpisy zakomentowane)'}"
+                if registry_name else
+                f"nie został znaleziony statycznie (sprawdź ręcznie)."
+            )
+            + "\n\nSkutek runtime: `BasePageManager.loadPageByKey` nie znajduje strony, "
+            "wpada w fallback do `defaultPage`, który **też** nie istnieje — i rekurencyjnie "
+            "woła sam siebie. W konsoli pojawiają się tysiące powtarzających się ostrzeżeń "
+            "`Page '...' not found, using default` z głębokim stosem `base-page-manager.ts:67`.\n\n"
+            "Naprawa minimalna:\n"
+            f"1. Dodaj do `{registry_name or 'pages-index.ts registry'}` wpis "
+            f"dla `'{default_page}'` (choćby placeholder).\n"
+            "2. Lub zmień `defaultPage` na klucz, który **istnieje** w rejestrze.\n"
+            "3. Upewnij się, że `BasePageManager` ma guard przed nieskończoną rekurencją "
+            "(jeśli `defaultPage` też nie istnieje → render error page, nie recurse).\n"
+        )
+        return Diagnosis(
+            summary=(
+                f"`{rel}`: defaultPage `'{default_page}'` nieobecny w rejestrze "
+                f"{registry_name or '(?)'} → ryzyko nieskończonej rekurencji"
+            ),
+            problem_type="page_registry_default_missing",
+            severity="critical",
+            nlp_description=nlp,
+            file_actions=[FileAction(
+                path=rel,
+                action="modify",
+                reason=(
+                    f"Dodaj wpis `'{default_page}': <PageClass>` do "
+                    f"`{registry_name or 'rejestru stron'}` lub zmień `defaultPage`."
+                ),
+            )],
+            shell_commands=[
+                ShellCommand(
+                    command=f"sed -n '1,80p' {rel}",
+                    description="Podgląd rejestru stron i defaultPage",
+                ),
+                ShellCommand(
+                    command=f"grep -nE 'defaultPage|export const' {rel}",
+                    description="Wyświetl klucze rejestru i defaultPage",
+                ),
+            ],
+            confidence=0.9,
+        )
+
     def analyze_page_implementations(
         self,
         route_path: str,

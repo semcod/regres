@@ -182,6 +182,33 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 })
             else:
                 doctor.update_last_plan_step(outputs={"compliant": True})
+
+            # c2004-maskservice-patch-v8: page-registry compliance check.
+            # Detect empty / misconfigured `pages-index.ts` registries where
+            # `defaultPage` is not present in the registry — root cause of
+            # `BasePageManager.loadPageByKey` infinite recursion (thousands
+            # of "Page '...' not found, using default" warnings).
+            doctor.add_plan_step(
+                name="page registry compliance",
+                reason=(
+                    "Sprawdź czy `pages-index.ts` ma `defaultPage` obecny w rejestrze "
+                    "stron. Brak → BasePageManager wpada w nieskończoną rekurencję."
+                ),
+                command=f"sed -n '1,80p' {module_path}/pages-index.ts",
+                status="done",
+                inputs={"entry_file": f"{module_path}/pages-index.ts"},
+            )
+            registry_diag = doctor.analyze_page_registry_compliance(
+                module_path, module_name,
+            )
+            if registry_diag is not None:
+                doctor.diagnoses.append(registry_diag)
+                doctor.update_last_plan_step(outputs={
+                    "compliant": False,
+                    "problem_type": registry_diag.problem_type,
+                })
+            else:
+                doctor.update_last_plan_step(outputs={"compliant": True})
             doctor.set_analysis_context(
                 "page_implementation_findings",
                 [

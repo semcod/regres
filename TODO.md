@@ -1,13 +1,14 @@
 # regres TODO
 
-## Done (0.1.38)
+## Done (0.1.40)
 - [x] URL → moduł → ścieżka decyzyjna → raport → patch script (preview/diff/apply)
 - [x] Vite runtime probe + parsowanie `Failed to resolve import` (chained)
 - [x] Dependency chain analysis (BFS, depth=1) z gotowymi komendami chained-regres
 - [x] Patch script auto-rewrite ścieżek importów po przywróceniu pliku
 - [x] **Module-loader compliance check** (`module_loader_no_class`) — wykrywa `<name>.module.ts` bez `*Module`/`default`, generuje gotowy snippet `BaseModule`
+- [x] **Page-registry compliance check** (`page_registry_default_missing`) — wykrywa `pages-index.ts` z `defaultPage` nieobecnym w rejestrze stron (root cause infinite recursion w `BasePageManager.loadPageByKey`)
 - [x] Mapping `connect-deleted` w `MODULE_PATH_MAP`
-- [x] 242/242 testy przechodzą (4 nowe w `test_doctor_orchestrator.py`)
+- [x] 246/246 testy przechodzą (8 nowych w `test_doctor_orchestrator.py` — 4 dla module-loader, 4 dla page-registry)
 
 ## Active backlog
 

@@ -223,6 +223,129 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                     "stub_imports": stub_total,
                 })
 
+                # c2004-maskservice-patch-v6: Vite runtime probe. Auto-derive
+                # base URL from --url if --vite-base not explicit. The probe
+                # gives us the AUTHORITATIVE answer about what's broken — much
+                # better than filesystem-only checks because it accounts for
+                # mounts, aliases, wrappers, etc.
+                vite_base = getattr(args, "vite_base", None)
+                if not vite_base and args.url:
+                    try:
+                        from urllib.parse import urlparse as _up
+                        _parsed = _up(args.url)
+                        if _parsed.scheme and _parsed.netloc:
+                            vite_base = f"{_parsed.scheme}://{_parsed.netloc}"
+                    except Exception:
+                        vite_base = None
+
+                if vite_base:
+                    doctor.add_plan_step(
+                        name="vite runtime probe",
+                        reason=(
+                            "Pobierz każdy plik celu z dev-servera Vite, aby uzyskać "
+                            "autorytatywny status runtime (200 OK / 500 z 'Failed to "
+                            "resolve import'). To wykrywa błędy w wrapperach i alias-ach, "
+                            "których nie widzi sam test istnienia plików."
+                        ),
+                        command=f"# probing {len(chain_targets)} files via {vite_base}",
+                        status="done",
+                        inputs={
+                            "vite_base": vite_base,
+                            "files": [str(p.relative_to(scan_root)) for p in chain_targets],
+                        },
+                    )
+                    vite_results: List[Dict[str, Any]] = []
+                    visited_via_vite: set = set()
+                    queue: List[Path] = list(chain_targets)
+                    max_vite_probes = 20
+                    while queue and len(vite_results) < max_vite_probes:
+                        current = queue.pop(0)
+                        try:
+                            current_rel = str(current.relative_to(scan_root)).replace("\\", "/")
+                        except ValueError:
+                            current_rel = str(current)
+                        if current_rel in visited_via_vite:
+                            continue
+                        visited_via_vite.add(current_rel)
+                        result = doctor.probe_vite_runtime(vite_base, current_rel)
+                        result["target"] = current_rel
+                        vite_results.append(result)
+                        # If broken, follow the failed import: try to resolve
+                        # the missing_import_from path on disk and recurse on
+                        # IT (since the failure originated from THAT file).
+                        if not result["ok"] and result.get("missing_import_from"):
+                            mfrom = result["missing_import_from"]
+                            mfrom_path = scan_root / mfrom
+                            if not mfrom_path.exists():
+                                mfrom_path = scan_root / "frontend" / mfrom
+                            if mfrom_path.exists() and mfrom_path not in queue:
+                                queue.append(mfrom_path)
+                    doctor.set_analysis_context("vite_runtime_results", vite_results)
+                    broken_via_vite = sum(1 for r in vite_results if not r["ok"])
+                    doctor.update_last_plan_step(outputs={
+                        "probes": len(vite_results),
+                        "broken_via_vite": broken_via_vite,
+                    })
+
+                    # Synthesize diagnoses for any Vite-broken file.
+                    from .doctor_models import Diagnosis as _Diag2, FileAction as _FA2, ShellCommand as _SC2
+                    for r in vite_results:
+                        if r["ok"]:
+                            continue
+                        if r.get("transport_error"):
+                            continue  # skip pure network errors
+                        target_rel = r["target"]
+                        nlp_lines = [
+                            f"Vite zwrócił {r['status']} dla `{r['url']}`.",
+                        ]
+                        if r.get("error_message"):
+                            nlp_lines.append(f"Wiadomość: {r['error_message']}")
+                        if r.get("missing_import"):
+                            nlp_lines.append(
+                                f"Brakujący import: `{r['missing_import']}` z "
+                                f"`{r.get('missing_import_from','?')}`"
+                            )
+                        sc2: List[_SC2] = [_SC2(
+                            command=f"curl -s '{r['url']}' | head -40",
+                            description="Podgląd surowej odpowiedzi Vite",
+                        )]
+                        if r.get("missing_import_from"):
+                            url_hint = doctor._suggest_url_for_path(r["missing_import_from"])
+                            if url_hint:
+                                sc2.append(_SC2(
+                                    command=(
+                                        f".venv/bin/python -m regres.regres_cli doctor "
+                                        f"--scan-root {scan_root} --url '{url_hint}' --all "
+                                        f"--git-history --vite-base {vite_base}"
+                                    ),
+                                    description=(
+                                        f"Naprawa łańcuchowa: regres na pliku, "
+                                        f"który zgłosił błąd ({r['missing_import_from']})"
+                                    ),
+                                ))
+                        doctor.diagnoses.append(_Diag2(
+                            summary=(
+                                f"Vite runtime: `{target_rel}` zwraca {r['status']}"
+                                + (
+                                    f" — brakujący import `{r['missing_import']}`"
+                                    if r.get("missing_import") else ""
+                                )
+                            ),
+                            problem_type="vite_runtime_failure",
+                            severity="critical",
+                            nlp_description="\n".join(nlp_lines),
+                            file_actions=[_FA2(
+                                path=r.get("missing_import_from") or target_rel,
+                                action="modify",
+                                reason=(
+                                    f"Vite nie potrafił zresolwować importu "
+                                    f"`{r.get('missing_import','?')}` z tego pliku."
+                                ),
+                            )],
+                            shell_commands=sc2,
+                            confidence=0.95,
+                        ))
+
                 # c2004-maskservice-patch-v5: surface broken imports as their
                 # own diagnoses so they appear in the diagnosis list, get a
                 # severity, and (where the import targets a `.page.ts` file)

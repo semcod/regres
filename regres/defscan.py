@@ -457,6 +457,34 @@ def load_gitignore(root: Path) -> list[tuple[str, bool]]:
     return patterns
 
 
+def _match_anchored_pattern(rel_str: str, pat_cmp: str, is_dir: bool) -> bool:
+    """Match an anchored gitignore pattern against a relative path."""
+    if fnmatch.fnmatch(rel_str, pat_cmp):
+        return True
+    if is_dir:
+        parts = rel_str.split('/')
+        for i in range(1, len(parts)):
+            prefix = '/'.join(parts[:i])
+            if fnmatch.fnmatch(prefix, pat_cmp):
+                return True
+    return False
+
+
+def _match_unanchored_pattern(name: str, rel: Path, rel_str: str, pat_cmp: str, is_dir: bool) -> bool:
+    """Match an unanchored gitignore pattern against a file name or path parts."""
+    if fnmatch.fnmatch(name, pat_cmp):
+        return True
+    for part in rel.parts:
+        if fnmatch.fnmatch(part, pat_cmp):
+            return True
+    if is_dir:
+        parts = rel_str.split('/')
+        for i in range(len(parts) - 1):
+            if fnmatch.fnmatch(parts[i], pat_cmp):
+                return True
+    return False
+
+
 def _path_ignored_by_gitignore(path: Path, root: Path,
                                 patterns: list[tuple[str, bool]]) -> bool:
     """Sprawdza czy ``path`` (względem ``root``) pasuje do .gitignore."""
@@ -468,35 +496,15 @@ def _path_ignored_by_gitignore(path: Path, root: Path,
     name = path.name
     ignored = False
     for pat, neg in patterns:
-        matched = False
         is_dir = pat.endswith('/')
         pat_cmp = pat.rstrip('/')
         anchored = '/' in pat_cmp or pat.startswith('/')
         if pat.startswith('/'):
             pat_cmp = pat_cmp.lstrip('/')
         if anchored:
-            if fnmatch.fnmatch(rel_str, pat_cmp):
-                matched = True
-            if not matched and is_dir:
-                for i in range(1, len(rel_str.split('/'))):
-                    prefix = '/'.join(rel_str.split('/')[:i])
-                    if fnmatch.fnmatch(prefix, pat_cmp):
-                        matched = True
-                        break
+            matched = _match_anchored_pattern(rel_str, pat_cmp, is_dir)
         else:
-            if fnmatch.fnmatch(name, pat_cmp):
-                matched = True
-            else:
-                for part in rel.parts:
-                    if fnmatch.fnmatch(part, pat_cmp):
-                        matched = True
-                        break
-            if not matched and is_dir:
-                parts = rel_str.split('/')
-                for i in range(len(parts) - 1):
-                    if fnmatch.fnmatch(parts[i], pat_cmp):
-                        matched = True
-                        break
+            matched = _match_unanchored_pattern(name, rel, rel_str, pat_cmp, is_dir)
         if matched:
             ignored = not neg
     return ignored
@@ -505,6 +513,34 @@ def _path_ignored_by_gitignore(path: Path, root: Path,
 # ---------------------------------------------------------------------------
 # Skanowanie projektu
 # ---------------------------------------------------------------------------
+
+def _should_skip_file(
+    p: Path,
+    exts: set[str],
+    only_within_resolved: Optional[Path],
+    gitignore_root_resolved: Path,
+    gitignore_patterns: Optional[list[tuple[str, bool]]],
+) -> bool:
+    """Return True if a file should be skipped during scanning."""
+    if not p.is_file():
+        return True
+    if any(part in IGNORED_DIRS for part in p.parts):
+        return True
+    if any(part.startswith('.') for part in p.parts):
+        return True
+    if gitignore_patterns and _path_ignored_by_gitignore(
+        p, gitignore_root_resolved, gitignore_patterns
+    ):
+        return True
+    if p.suffix.lower() not in exts:
+        return True
+    if only_within_resolved is not None:
+        try:
+            p.resolve().relative_to(only_within_resolved)
+        except ValueError:
+            return True
+    return False
+
 
 def scan(root: Path, name_filter: Optional[str] = None,
          kind_filter: Optional[str] = None,
@@ -531,24 +567,8 @@ def scan(root: Path, name_filter: Optional[str] = None,
         gitignore_patterns = load_gitignore(gitignore_root_resolved)
 
     for p in root.rglob('*'):
-        if not p.is_file():
+        if _should_skip_file(p, exts, only_within_resolved, gitignore_root_resolved, gitignore_patterns):
             continue
-        if any(part in IGNORED_DIRS for part in p.parts):
-            continue
-        if any(part.startswith('.') for part in p.parts):
-            continue
-        if gitignore_patterns and _path_ignored_by_gitignore(
-            p, gitignore_root_resolved, gitignore_patterns
-        ):
-            continue
-        if p.suffix.lower() not in exts:
-            continue
-
-        if only_within_resolved is not None:
-            try:
-                p.resolve().relative_to(only_within_resolved)
-            except ValueError:
-                continue
 
         defs = extract_file(p)
         for d in defs:

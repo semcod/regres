@@ -793,82 +793,106 @@ def cmd_deps(args, root: Path):
                         print(f"  -> {i}")
 
 
-def to_json_toon(data: dict) -> str:
-    """Konwertuje dict do formatu toon (YAML-like)."""
+def _sanitize(value: str) -> str:
+    """Sanitize string for toon format by escaping newlines and commas."""
+    return value.replace(',', ';').replace('\n', '↵ ').replace('\r', '↵ ').replace('\f', '↵ ').replace('\v', '↵ ')
+
+
+def _format_imports(raw_imports: list) -> str:
+    """Format imports list for toon output."""
+    imports = [_sanitize(str(i)).strip() for i in raw_imports if _sanitize(str(i)).strip()]
+    if imports:
+        return f"[{len(imports)}]:" + ','.join(imports[:5])
+    return "[0]:"
+
+
+def _format_preview(raw_preview: Any, max_len: int = 200) -> str:
+    """Format preview text for toon output."""
+    if not isinstance(raw_preview, str) or not raw_preview:
+        return ''
+    preview_escaped = _sanitize(raw_preview)
+    if len(preview_escaped) > max_len:
+        preview_escaped = preview_escaped[:max_len] + '…'
+    return preview_escaped
+
+
+def _toon_meta_section(meta: dict) -> list[str]:
+    """Render meta section for toon format."""
     lines = []
-    
-    # Meta sekcja
-    meta = data.get('meta', {})
     for key, value in meta.items():
         if isinstance(value, bool):
             value = 'true' if value else 'false'
         lines.append(f"{key}: {value}")
     lines.append('')
-    
-    # Files sekcja
-    files = data.get('files', [])
-    if files:
-        file_fields = ','.join(files[0].keys())
-        lines.append(f"files[{len(files)}]{{{file_fields}}}:")
-        for f in files:
-            # Format: path,word_count,lines,size_bytes,imports,preview
-            path = f.get('path', '')
-            word_count = f.get('word_count', 0)
-            lines_count = f.get('lines', 0)
-            size_bytes = f.get('size_bytes', 0)
+    return lines
 
-            # Format imports jako count (sanitize commas/newlines to protect CSV-like format)
-            raw_imports = f.get('imports', [])
-            imports = []
-            for i in raw_imports:
-                s = str(i).strip().replace(',', ';').replace('\n', '↵ ').replace('\r', '↵ ').replace('\f', '↵ ').replace('\v', '↵ ')
-                if s:
-                    imports.append(s)
-            imports_str = f"[{len(imports)}]:" if imports else "[0]:"
-            if imports:
-                imports_str = f"[{len(imports)}]:" + ','.join(imports[:5])
 
-            # Format preview - escape newlines and commas
-            raw_preview = f.get('preview', '') or ''
-            if isinstance(raw_preview, str) and raw_preview:
-                preview_escaped = raw_preview.replace('\n', '↵ ').replace('\r', '↵ ').replace('\f', '↵ ').replace('\v', '↵ ').replace(',', ';')
-                if len(preview_escaped) > 200:
-                    preview_escaped = preview_escaped[:200] + '…'
-            else:
-                preview_escaped = ''
-            
-            line = f"  {path},{word_count},{lines_count},{size_bytes},{imports_str},{preview_escaped}"
-            lines.append(line)
-        lines.append('')
-    
-    # Name clusters
-    clusters = data.get('name_clusters', {})
-    if clusters:
-        lines.append(f"name_clusters[{len(clusters)}]:")
-        for cluster_name, cluster_files in clusters.items():
-            files_list = ','.join(cluster_files)
-            lines.append(f"  - {cluster_name}: files[{len(cluster_files)}]: {files_list}")
-        lines.append('')
-    
-    # Similar pairs
-    similar_pairs = data.get('similar_pairs', [])
-    if similar_pairs and isinstance(similar_pairs, list) and similar_pairs:
-        if isinstance(similar_pairs[0], dict):
-            pair_fields = ','.join(similar_pairs[0].keys())
-            lines.append(f"similar_pairs[{len(similar_pairs)}]{{{pair_fields}}}:")
-            for pair in similar_pairs:
-                if isinstance(pair, dict):
-                    file_a = pair.get('file_a', '')
-                    file_b = pair.get('file_b', '')
-                    similarity = pair.get('similarity', 0)
-                    lines.append(f"  {file_a},{file_b},{similarity}")
-        lines.append('')
-    
-    # LLM prompt hint
-    llm_hint = data.get('llm_prompt_hint', '')
-    if llm_hint:
-        lines.append(f"llm_prompt_hint: \"{llm_hint}\"")
-    
+def _toon_files_section(files: list) -> list[str]:
+    """Render files section for toon format."""
+    if not files:
+        return []
+    lines = []
+    file_fields = ','.join(files[0].keys())
+    lines.append(f"files[{len(files)}]{{{file_fields}}}:")
+    for f in files:
+        path = f.get('path', '')
+        word_count = f.get('word_count', 0)
+        lines_count = f.get('lines', 0)
+        size_bytes = f.get('size_bytes', 0)
+        imports_str = _format_imports(f.get('imports', []))
+        preview_escaped = _format_preview(f.get('preview', '') or '')
+        lines.append(f"  {path},{word_count},{lines_count},{size_bytes},{imports_str},{preview_escaped}")
+    lines.append('')
+    return lines
+
+
+def _toon_clusters_section(clusters: dict) -> list[str]:
+    """Render name_clusters section for toon format."""
+    if not clusters:
+        return []
+    lines = []
+    lines.append(f"name_clusters[{len(clusters)}]:")
+    for cluster_name, cluster_files in clusters.items():
+        files_list = ','.join(cluster_files)
+        lines.append(f"  - {cluster_name}: files[{len(cluster_files)}]: {files_list}")
+    lines.append('')
+    return lines
+
+
+def _toon_similar_pairs_section(similar_pairs: list) -> list[str]:
+    """Render similar_pairs section for toon format."""
+    if not similar_pairs or not isinstance(similar_pairs, list) or not similar_pairs:
+        return []
+    if not isinstance(similar_pairs[0], dict):
+        return []
+    lines = []
+    pair_fields = ','.join(similar_pairs[0].keys())
+    lines.append(f"similar_pairs[{len(similar_pairs)}]{{{pair_fields}}}:")
+    for pair in similar_pairs:
+        if isinstance(pair, dict):
+            file_a = pair.get('file_a', '')
+            file_b = pair.get('file_b', '')
+            similarity = pair.get('similarity', 0)
+            lines.append(f"  {file_a},{file_b},{similarity}")
+    lines.append('')
+    return lines
+
+
+def _toon_llm_hint(llm_hint: str) -> list[str]:
+    """Render LLM prompt hint for toon format."""
+    if not llm_hint:
+        return []
+    return [f'llm_prompt_hint: "{llm_hint}"']
+
+
+def to_json_toon(data: dict) -> str:
+    """Konwertuje dict do formatu toon (YAML-like)."""
+    lines = []
+    lines.extend(_toon_meta_section(data.get('meta', {})))
+    lines.extend(_toon_files_section(data.get('files', [])))
+    lines.extend(_toon_clusters_section(data.get('name_clusters', {})))
+    lines.extend(_toon_similar_pairs_section(data.get('similar_pairs', [])))
+    lines.extend(_toon_llm_hint(data.get('llm_prompt_hint', '')))
     return '\n'.join(lines)
 
 

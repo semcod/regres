@@ -816,13 +816,13 @@ class DoctorOrchestrator:
         proposals: List[str] = []
         for d in self.diagnoses:
             if d.problem_type == "duplicate":
-                proposals.append(f"Skonsoliduj duplikaty: {d.summary}")
+                proposals.append(d.summary)
             elif d.problem_type == "wrapper_analysis":
-                proposals.append(f"Zredukuj wrappery i uprość API: {d.summary}")
+                proposals.append(d.summary)
             elif d.problem_type == "scope_drift":
-                proposals.append(f"Ustabilizuj scope modułu na bazie historii: {d.summary}")
+                proposals.append(d.summary)
             elif d.problem_type == "import_error":
-                proposals.append(f"Ujednolić aliasy/importy: {d.summary}")
+                proposals.append(d.summary)
         # dedupe preserving order
         return list(dict.fromkeys(proposals))
 

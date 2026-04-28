@@ -1663,17 +1663,34 @@ class DoctorOrchestrator:
             f"Pliki, które zostałyby zmienione przez sugestie regres ({len(affected)} unikalnych):"
         )
         lines.append("")
-        lines.append("| Plik | Akcje | Diagnozy |")
-        lines.append("|---|---|---|")
         for entry in affected:
             actions = entry.get("actions", []) or []
-            action_summary = ", ".join(
-                a["action"] + (f" ({a['target']})" if a.get("target") else "")
-                for a in actions
-            )
             diag_summary = "; ".join(entry.get("diagnoses", []) or [])
-            lines.append(f"| `{entry['path']}` | {action_summary} | {diag_summary} |")
-        lines.append("")
+            lines.append(f"### `{entry['path']}`")
+            if diag_summary:
+                lines.append(f"_Diagnozy:_ {diag_summary}")
+            lines.append("")
+            # Group: direct modifies vs git-history candidates.
+            direct = [a for a in actions if not (a.get("target") or "").startswith("git:")]
+            git_cands = [a for a in actions if (a.get("target") or "").startswith("git:")]
+            if direct:
+                lines.append("**Bezpośrednie akcje:**")
+                for a in direct:
+                    extra = f" → `{a['target']}`" if a.get("target") else ""
+                    lines.append(f"- `{a['action']}`{extra} — {a.get('reason', '')}")
+                lines.append("")
+            if git_cands:
+                lines.append(f"**Kandydaci z historii git ({len(git_cands)}, od najnowszego):**")
+                for a in git_cands:
+                    target = a.get("target", "")
+                    # target = "git:<hash>:<source_path>"
+                    parts = target.split(":", 2)
+                    if len(parts) == 3:
+                        _, h, src = parts
+                        lines.append(f"- `{h}` ← `{src}` — {a.get('reason', '')}")
+                    else:
+                        lines.append(f"- `{target}` — {a.get('reason', '')}")
+                lines.append("")
         return lines
 
     def _render_structure_snapshot(self, report: Dict[str, Any]) -> List[str]:

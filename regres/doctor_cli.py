@@ -246,6 +246,28 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                         action="modify",
                         reason="Imports require rewriting or chained restore.",
                     )]
+                    # Pull git history candidates for the target file so the
+                    # patch-script generator emits auto-rewrite patches per
+                    # candidate (the same flow as page_content_regression).
+                    target_path_obj = scan_root / target_rel
+                    page_token_for_target = target_path_obj.stem.replace(".page", "")
+                    try:
+                        history_for_target = doctor._collect_page_history_candidates(
+                            page_token_for_target, module_name or "", target_path_obj,
+                        )
+                    except Exception:
+                        history_for_target = []
+                    for hc in history_for_target[:8]:
+                        fa.append(_FA(
+                            path=target_rel,
+                            action="modify",
+                            target=f"git:{hc['hash']}:{hc['source_path']}",
+                            reason=(
+                                f"[{hc.get('date','?')}] {hc['hash']} • "
+                                f"{hc.get('line_count','?')} linii • {hc['source_path']}"
+                                + (f" • {hc['fingerprint']}" if hc.get("fingerprint") else "")
+                            ),
+                        ))
                     sc: List[_SC] = []
                     for c in broken[:6]:
                         nlp_lines.append(f"- BROKEN `{c['import']}` z `{c['from_file']}`")

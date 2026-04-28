@@ -85,6 +85,14 @@ def main() -> int:
     doctor_parser.add_argument("--defscan-scan", help="Uruchom defscan na konkretnym katalogu")
     doctor_parser.add_argument("--refactor-scan", help="Uruchom refactor wrappers na konkretnym katalogu")
     doctor_parser.add_argument("--vite-base", dest="vite_base", help="Vite dev-server base URL (np. http://localhost:8100). Auto-derywowane z --url jeśli nie podane.")
+    doctor_parser.add_argument("--history-window-days", type=int, dest="history_window_days",
+                               help="Ile dni wstecz przegląda historię git (default: 30, env: REGRES_HISTORY_WINDOW_DAYS).")
+    doctor_parser.add_argument("--history-max-iterations", type=int, dest="history_max_iterations",
+                               help="Maksymalna liczba commitów per strona (default: 30, env: REGRES_HISTORY_MAX_ITERATIONS).")
+    doctor_parser.add_argument("--history-shrinkage-factor", type=float, dest="history_shrinkage_factor",
+                               help="Próg regresji: current < factor * recent_max (default: 0.5, env: REGRES_HISTORY_SHRINKAGE_FACTOR).")
+    doctor_parser.add_argument("--no-banner", action="store_true", dest="no_banner",
+                               help="Wyłącz baner startowy (env: REGRES_PRINT_BANNER=0).")
     doctor_parser.add_argument("--out-md", help="Ścieżka do raportu Markdown")
     doctor_parser.add_argument("--out-json", help="Ścieżka do raportu JSON")
 
@@ -152,6 +160,11 @@ def _build_doctor_argv(args) -> list[str]:
     _append_if_true(argv, "--git-history", args.git_history)
     _extend_if_set(argv, "--defscan-scan", args.defscan_scan)
     _extend_if_set(argv, "--refactor-scan", args.refactor_scan)
+    _extend_if_set(argv, "--vite-base", getattr(args, "vite_base", None))
+    _extend_if_set(argv, "--history-window-days", getattr(args, "history_window_days", None), transform=str)
+    _extend_if_set(argv, "--history-max-iterations", getattr(args, "history_max_iterations", None), transform=str)
+    _extend_if_set(argv, "--history-shrinkage-factor", getattr(args, "history_shrinkage_factor", None), transform=str)
+    _append_if_true(argv, "--no-banner", getattr(args, "no_banner", False))
     _extend_if_set(argv, "--out-md", args.out_md)
     _extend_if_set(argv, "--out-json", args.out_json)
     return argv

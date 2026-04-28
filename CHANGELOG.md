@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.43] - 2026-04-28
+
+### Docs
+- Update README.md
+
+### Other
+- Update regres/doctor_cli.py
+- Update regres/doctor_orchestrator.py
+- Update regres/regres_cli.py
+
 ## [0.1.42] - 2026-04-28
 
 ### Docs

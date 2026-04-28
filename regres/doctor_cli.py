@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .doctor_config import DoctorConfig, load_config
 from .doctor_models import Diagnosis
 from .doctor_orchestrator import DoctorOrchestrator
 from .version_check import check_version
@@ -884,6 +885,46 @@ def _build_parser() -> argparse.ArgumentParser:
             'sygnał runtime, niezależny od testu istnienia plików na dysku.'
         ),
     )
+    # ----------------------------------------------------------------------
+    # Scan-window tunables. Each flag overrides the matching key in
+    # ``<scan_root>/.regres/.env`` and any ``REGRES_*`` shell variable.
+    # ----------------------------------------------------------------------
+    parser.add_argument(
+        '--history-window-days',
+        type=int,
+        default=None,
+        dest='history_window_days',
+        help=(
+            'Ile dni wstecz regres przegląda historię git szukając wcześniejszych '
+            'wersji strony (default: 30, env: REGRES_HISTORY_WINDOW_DAYS).'
+        ),
+    )
+    parser.add_argument(
+        '--history-max-iterations',
+        type=int,
+        default=None,
+        dest='history_max_iterations',
+        help=(
+            'Maksymalna liczba commitów branych pod uwagę per strona '
+            '(default: 30, env: REGRES_HISTORY_MAX_ITERATIONS).'
+        ),
+    )
+    parser.add_argument(
+        '--history-shrinkage-factor',
+        type=float,
+        default=None,
+        dest='history_shrinkage_factor',
+        help=(
+            'Współczynnik uznawania regresji: aktualny plik < factor * '
+            'recent_max_lines (default: 0.5, env: REGRES_HISTORY_SHRINKAGE_FACTOR).'
+        ),
+    )
+    parser.add_argument(
+        '--no-banner',
+        action='store_true',
+        dest='no_banner',
+        help='Wyłącz baner startowy (env: REGRES_PRINT_BANNER=0).',
+    )
     return parser
 
 
@@ -894,7 +935,23 @@ def main() -> None:
     args = parser.parse_args()
 
     scan_root = Path(args.scan_root).resolve()
-    doctor = DoctorOrchestrator(scan_root)
+
+    # Build the runtime config (cli > env > .regres/.env > defaults).
+    cli_overrides = {
+        'history_window_days': getattr(args, 'history_window_days', None),
+        'history_max_iterations': getattr(args, 'history_max_iterations', None),
+        'history_shrinkage_factor': getattr(args, 'history_shrinkage_factor', None),
+        'vite_base': getattr(args, 'vite_base', None),
+        'print_banner': False if getattr(args, 'no_banner', False) else None,
+    }
+    config = load_config(scan_root, cli_overrides=cli_overrides)
+    config.print_banner_to()
+
+    # Inherit --vite-base from config if the user didn't pass it explicitly.
+    if not getattr(args, 'vite_base', None) and config.vite_base:
+        args.vite_base = config.vite_base
+
+    doctor = DoctorOrchestrator(scan_root, config=config)
 
     if args.url:
         _handle_url_mode(args, doctor, scan_root)

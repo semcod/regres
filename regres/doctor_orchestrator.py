@@ -622,13 +622,21 @@ class DoctorOrchestrator:
                     matches.append(file_path)
         return matches
 
-    # c2004-maskservice-patch-v3: history scan tunables. We default to a
-    # 2-day OR 10-iterations window (whichever yields more candidates) so the
-    # operator gets enough versions to pick from when the current file looks
-    # smaller/different from recent past.
-    HISTORY_DEFAULT_DAYS = 2
-    HISTORY_DEFAULT_ITERATIONS = 10
-    HISTORY_SHRINKAGE_FACTOR = 0.5  # current must be < 50% of recent max to flag
+    # c2004-maskservice-patch-v3 / v9: history scan tunables.
+    #
+    # These class-level defaults are now only used as a *fallback* when no
+    # ``DoctorConfig`` is attached to the orchestrator (e.g. unit tests that
+    # construct ``DoctorOrchestrator(scan_root)`` directly). The CLI path
+    # always passes a fully resolved config; see ``doctor_config.py``.
+    #
+    # Defaults bumped from 2d/10it -> 30d/30it because the previous window was
+    # too small for typical investigation sessions and missed real regressions
+    # introduced more than 48 h ago. Override per-call via
+    # ``REGRES_HISTORY_WINDOW_DAYS`` / ``REGRES_HISTORY_MAX_ITERATIONS`` or via
+    # ``--history-window-days`` / ``--history-max-iterations`` CLI flags.
+    HISTORY_DEFAULT_DAYS = 30
+    HISTORY_DEFAULT_ITERATIONS = 30
+    HISTORY_SHRINKAGE_FACTOR = 0.5  # current must be < factor * recent_max to flag
 
     def _diagnose_page_stub(
         self,
@@ -667,7 +675,17 @@ class DoctorOrchestrator:
         is_content_regression = (
             history_candidates
             and max_historical_lines > 0
-            and line_count < max(40, int(max_historical_lines * self.HISTORY_SHRINKAGE_FACTOR))
+            and line_count < max(
+                40,
+                int(
+                    max_historical_lines
+                    * getattr(
+                        self.config,
+                        "history_shrinkage_factor",
+                        self.HISTORY_SHRINKAGE_FACTOR,
+                    )
+                ),
+            )
             and not has_placeholder_text  # placeholder case handled separately
         )
 
@@ -747,8 +765,8 @@ class DoctorOrchestrator:
         if history_candidates:
             nlp_lines.append(
                 f"Znaleziono {len(history_candidates)} kandydatów w historii git "
-                f"(okres ostatnie {self.HISTORY_DEFAULT_DAYS} dni lub "
-                f"{self.HISTORY_DEFAULT_ITERATIONS} iteracji, sortowane od najnowszego)."
+                f"(okres ostatnie {getattr(self.config, 'history_window_days', self.HISTORY_DEFAULT_DAYS)} dni lub "
+                f"{getattr(self.config, 'history_max_iterations', self.HISTORY_DEFAULT_ITERATIONS)} iteracji, sortowane od najnowszego)."
             )
             for cand in history_candidates:
                 fp = cand.get("fingerprint") or ""
@@ -823,8 +841,21 @@ class DoctorOrchestrator:
         if not (self.scan_root / ".git").exists():
             return []
 
-        days = days if days is not None else self.HISTORY_DEFAULT_DAYS
-        iterations = iterations if iterations is not None else self.HISTORY_DEFAULT_ITERATIONS
+        # Resolve days/iterations: explicit args > config > class defaults.
+        days = (
+            days
+            if days is not None
+            else getattr(self.config, "history_window_days", self.HISTORY_DEFAULT_DAYS)
+        )
+        iterations = (
+            iterations
+            if iterations is not None
+            else getattr(
+                self.config,
+                "history_max_iterations",
+                self.HISTORY_DEFAULT_ITERATIONS,
+            )
+        )
 
         # Pathspecs: any file ending in `<token>.page.ts` anywhere in the repo.
         pathspec = f"*{page_token}.page.ts"

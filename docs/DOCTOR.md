@@ -11,6 +11,28 @@ Doctor analizuje wyniki z różnych narzędzi i:
 3. **Tworzy polecenia shell** do automatycznej naprawy
 4. **Sugeruje akcje na plikach** (move, copy, delete, modify, create)
 5. **Ocenia pewność** (confidence) każdej diagnozy
+6. **Buduje automatyczny plan decyzyjny** na bazie parametrów CLI
+7. **Generuje raport wykonawczy krok po kroku** (manual + LLM-ready)
+
+## Automatyczny silnik decyzyjny (parameter-driven)
+
+Doctor podejmuje kolejność działań na podstawie przekazanych parametrów.
+
+### Domyślna strategia dla `--all`
+
+1. `defscan` pre-scan (duplikaty / kandydaci do konsolidacji)
+2. `refactor` pre-scan (wrappery / problemy strukturalne)
+3. odświeżenie logu importów TS (`import-error-toon-report`)
+4. analiza importów (`TS2307/TS2305`)
+5. faza "regres" (historia git plików dotkniętych błędami)
+6. synteza planu i wstępnych propozycji refaktoryzacji
+
+### Dostosowanie do parametrów
+
+- `--import-log` → analiza importów z podanego logu (bez wymuszonego refresh)
+- `--defscan-report` / `--defscan-scan` → dołączenie dodatkowych wyników defscan
+- `--refactor-scan` → dołączenie dodatkowych wyników refactor
+- `--url --llm` → raport modułowy z sekcjami kontekstowymi + playbook
 
 ## Użycie
 
@@ -48,6 +70,31 @@ Każda diagnoza zawiera:
 - **file_actions** — lista akcji na plikach
 - **shell_commands** — lista poleceń shell do wykonania
 - **confidence** — pewność diagnozy (0.0 - 1.0)
+
+Dodatkowo raport zawiera metadane orkiestracji:
+
+- **analysis_plan** — sekwencja kroków podjętych przez silnik decyzyjny
+- **analysis_context** — kontekst (snapshot struktury, propozycje refaktoryzacji)
+
+## Sekcje raportu Markdown (nowy format)
+
+Raport Markdown generowany przez `doctor` zawiera teraz:
+
+1. **Decision Workflow** — uzasadniona kolejność kroków + komendy
+2. **Project Structure Snapshot** — szybki obraz struktury TS
+3. **Preliminary Refactor Proposals** — wstępne propozycje refaktoryzacji
+4. **Diagnoses** — klasyczne diagnozy (`severity`, `confidence`, `actions`)
+5. **Step-by-Step Repair Playbook** — instrukcja wykonawcza 1..N
+
+### Step-by-Step Repair Playbook
+
+Każdy krok zawiera trzy codeblocki:
+
+1. `Analyze` (`bash`) — komendy rozpoznawcze
+2. `Apply changes` (`diff`) — szablon patcha (LLM/manual)
+3. `Validate` (`bash`) — komendy walidacyjne po zmianie
+
+To pozwala wykonywać naprawy zarówno ręcznie, jak i przez LLM w trybie iteracyjnym.
 
 ## Przykładowy raport
 
@@ -126,7 +173,8 @@ regres defscan --kind class --min-count 2 --json .regres/defscan-report.json
 # 2. Uruchom doctor z wszystkimi danymi
 regres doctor --all --scan-root . --out-md .regres/doctor-report.md
 
-# 3. Przejrzyj raport i wykonaj akcje
+# 3. Wykonuj kroki z sekcji "Step-by-Step Repair Playbook"
+#    (Analyze -> Apply changes -> Validate)
 ```
 
 ## Rozszerzalność

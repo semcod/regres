@@ -91,6 +91,107 @@ def _handle_defscan_refactor(args, doctor: DoctorOrchestrator) -> None:
         doctor.diagnoses.extend(diagnoses)
 
 
+def _handle_auto_decision_flow(args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn) -> None:
+    """Run parameter-driven analysis sequence and record plan/context."""
+    doctor.reset_analysis_plan()
+
+    structure_snapshot = doctor.collect_structure_snapshot(max_entries=120)
+    if structure_snapshot:
+        doctor.set_analysis_context("structure_snapshot", structure_snapshot)
+
+    # When --all is used, prioritize broad structural scans first.
+    if args.all:
+        doctor.add_plan_step(
+            name="defscan pre-scan",
+            reason="Wykrycie duplikatów i kandydatów do konsolidacji przed naprawą importów.",
+            command=f"python -m regres.regres_cli defscan --path {scan_root} --json",
+            status="done",
+        )
+        doctor.diagnoses.extend(doctor.analyze_with_defscan(scan_root))
+
+        doctor.add_plan_step(
+            name="refactor pre-scan",
+            reason="Wykrycie wrapperów i potencjalnych problemów strukturalnych.",
+            command=f"python -m regres.regres_cli refactor wrappers --path {scan_root}",
+            status="done",
+        )
+        doctor.diagnoses.extend(doctor.analyze_with_refactor(scan_root))
+
+    # Import analysis from provided or refreshed log.
+    import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
+    if args.all and not args.import_log:
+        refreshed = refresh_fn(scan_root, import_log)
+        doctor.add_plan_step(
+            name="import log refresh",
+            reason="Odświeżenie logu TS, aby uniknąć decyzji na nieaktualnych błędach.",
+            command=f"python -m regres.regres_cli import-error-toon-report --frontend-cwd {scan_root / 'frontend'} --scan-root {scan_root}",
+            status="done" if refreshed else "warning",
+            details="refresh failed; fallback to existing log" if not refreshed else None,
+        )
+
+    if args.import_log or args.all:
+        doctor.add_plan_step(
+            name="import diagnostics",
+            reason="Detekcja TS2307/TS2305 i przygotowanie akcji naprawczych.",
+            command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --import-log {import_log}",
+            status="done",
+        )
+        import_diagnoses = doctor.analyze_import_errors(import_log)
+        doctor.diagnoses.extend(import_diagnoses)
+
+        # "regres" phase: history/context over files flagged by import diagnostics.
+        affected_files = []
+        for diag in import_diagnoses:
+            for action in diag.file_actions:
+                if action.path:
+                    affected_files.append(action.path)
+        affected_files = list(dict.fromkeys(affected_files))
+
+        if affected_files:
+            doctor.add_plan_step(
+                name="regres history phase",
+                reason="Analiza historii zmian dla plików z błędami importów.",
+                command="git log --oneline --follow -- <affected-file>",
+                status="done",
+                details=f"files analyzed: {len(affected_files)}",
+            )
+            for p in affected_files:
+                doctor.diagnoses.extend(doctor.analyze_git_history(p))
+
+    # Additional explicit scans requested by parameters.
+    if args.defscan_report:
+        doctor.add_plan_step(
+            name="defscan report merge",
+            reason="Włączenie diagnoz z zewnętrznego raportu defscan.",
+            command=f"python -m regres.regres_cli doctor --defscan-report {args.defscan_report}",
+            status="done",
+        )
+        doctor.diagnoses.extend(doctor.analyze_duplicates(Path(args.defscan_report)))
+
+    if args.defscan_scan:
+        doctor.add_plan_step(
+            name="defscan targeted scan",
+            reason="Dodatkowe skanowanie wskazanego zakresu.",
+            command=f"python -m regres.regres_cli defscan --path {args.defscan_scan} --json",
+            status="done",
+        )
+        doctor.diagnoses.extend(doctor.analyze_with_defscan(Path(args.defscan_scan)))
+
+    if args.refactor_scan:
+        doctor.add_plan_step(
+            name="refactor targeted scan",
+            reason="Dodatkowa analiza wrapperów dla wskazanego zakresu.",
+            command=f"python -m regres.regres_cli refactor wrappers --path {args.refactor_scan}",
+            status="done",
+        )
+        doctor.diagnoses.extend(doctor.analyze_with_refactor(Path(args.refactor_scan)))
+
+    doctor.set_analysis_context(
+        "preliminary_refactor_proposals",
+        doctor.collect_preliminary_refactor_proposals(),
+    )
+
+
 def _save_report(doctor: DoctorOrchestrator, args) -> None:
     """Save report to JSON/Markdown or print to stdout."""
     report = doctor.generate_report()
@@ -116,11 +217,14 @@ def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
     if not frontend_cwd.exists():
         return False
 
+    regres_repo_root = Path(__file__).resolve().parents[1]
+
     out_md = project_root / ".regres" / "import-error-toon-report.md"
     cmd = [
         sys.executable,
         "-m",
-        "regres.import_error_toon_report",
+        "regres.regres_cli",
+        "import-error-toon-report",
         "--frontend-cwd",
         str(frontend_cwd),
         "--scan-root",
@@ -134,7 +238,7 @@ def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
     try:
         result = subprocess.run(
             cmd,
-            cwd=str(project_root),
+            cwd=str(regres_repo_root),
             capture_output=True,
             text=True,
             timeout=180,
@@ -191,10 +295,7 @@ def main() -> None:
         _save_report(doctor, args)
         return
 
-    if args.import_log or args.all:
-        _handle_import_errors(args, doctor, scan_root, _refresh_import_error_log)
-
-    _handle_defscan_refactor(args, doctor)
+    _handle_auto_decision_flow(args, doctor, scan_root, _refresh_import_error_log)
     _save_report(doctor, args)
 
 

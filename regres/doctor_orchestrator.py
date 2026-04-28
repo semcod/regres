@@ -19,6 +19,8 @@ class DoctorOrchestrator:
     def __init__(self, scan_root: Path):
         self.scan_root = scan_root.resolve()
         self.diagnoses: List[Diagnosis] = []
+        self.analysis_plan: List[Dict[str, Any]] = []
+        self.analysis_context: Dict[str, Any] = {}
 
     # Mapowanie URL paths do katalogów modułów
     MODULE_PATH_MAP = {
@@ -153,7 +155,8 @@ class DoctorOrchestrator:
 
             if result.returncode == 0 and result.stdout.strip():
                 data = json.loads(result.stdout)
-                for item in data.get("duplicates", []):
+                duplicates = data if isinstance(data, list) else data.get("duplicates", [])
+                for item in duplicates:
                     if item.get("count", 0) > 1:
                         diag = self._diagnose_duplicate(item)
                         diagnoses.append(diag)
@@ -240,6 +243,8 @@ class DoctorOrchestrator:
         """Generuje kompletny raport diagnoz."""
         return {
             "scan_root": str(self.scan_root),
+            "analysis_plan": self.analysis_plan,
+            "analysis_context": self.analysis_context,
             "diagnoses": [
                 {
                     "summary": d.summary,
@@ -273,6 +278,10 @@ class DoctorOrchestrator:
         """Renderuje raport w formacie Markdown."""
         lines = ["# Doctor Report\n", f"**Scan Root:** `{report['scan_root']}`\n", f"**Diagnoses:** {len(report['diagnoses'])}\n"]
 
+        lines.extend(self._render_decision_workflow(report))
+        lines.extend(self._render_structure_snapshot(report))
+        lines.extend(self._render_preliminary_refactor_proposals(report))
+
         for i, diag in enumerate(report['diagnoses'], 1):
             severity_emoji = {"low": "🟢", "medium": "🟡", "high": "🟠", "critical": "🔴"}.get(diag['severity'], "⚪")
             lines.append(f"## {severity_emoji} {i}. {diag['summary']}")
@@ -298,12 +307,37 @@ class DoctorOrchestrator:
                     lines.append(cmd['command'])
                     if cmd['cwd']:
                         lines.append(f"# cwd: {cmd['cwd']}")
-                    lines.append("```")
+                    lines.append("")
+                lines.append("```")
                 lines.append("")
 
         normalized_diags = self._normalize_diagnoses(report.get('diagnoses', []))
         lines.extend(self._render_step_by_step_playbook(normalized_diags, llm_mode=False))
         return "\n".join(lines)
+
+    def reset_analysis_plan(self) -> None:
+        self.analysis_plan = []
+
+    def add_plan_step(
+        self,
+        name: str,
+        reason: str,
+        command: str,
+        status: str = "planned",
+        details: Optional[str] = None,
+    ) -> None:
+        step = {
+            "name": name,
+            "reason": reason,
+            "command": command,
+            "status": status,
+        }
+        if details:
+            step["details"] = details
+        self.analysis_plan.append(step)
+
+    def set_analysis_context(self, key: str, value: Any) -> None:
+        self.analysis_context[key] = value
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -373,7 +407,7 @@ class DoctorOrchestrator:
         errors_by_file = {}
         ts2307_re = re.compile(r"TS2307:.*?Cannot find module '([^']+)'")
         ts2305_re = re.compile(r"TS2305:.*?has no exported member '([^']+)'")
-        file_re = re.compile(r"([^\s]+\.ts[^\s]*?)\((\d+),\d+)\)")
+        file_re = re.compile(r"([^\s]+\.ts[^\s]*?)\((\d+),\d+\)")
 
         current_file = None
 
@@ -707,6 +741,90 @@ class DoctorOrchestrator:
 
     def _normalize_diagnoses(self, diagnoses: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         return diagnoses
+
+    def _render_decision_workflow(self, report: Dict[str, Any]) -> List[str]:
+        lines = ["## Decision Workflow", ""]
+        plan = report.get("analysis_plan", []) or []
+        if not plan:
+            lines.append("Brak zarejestrowanego planu decyzyjnego.")
+            lines.append("")
+            return lines
+
+        lines.append("Kolejność kroków wybrana automatycznie na bazie parametrów wejściowych:")
+        lines.append("")
+        for idx, step in enumerate(plan, 1):
+            lines.append(f"{idx}. **{step.get('name', 'step')}** — {step.get('reason', '')}")
+            if step.get("details"):
+                lines.append(f"   - {step['details']}")
+        lines.append("")
+        lines.append("```bash")
+        for step in plan:
+            cmd = step.get("command")
+            if cmd:
+                lines.append(f"# {step.get('name', 'step')} [{step.get('status', 'planned')}]")
+                lines.append(cmd)
+                lines.append("")
+        lines.append("```")
+        lines.append("")
+        return lines
+
+    def _render_structure_snapshot(self, report: Dict[str, Any]) -> List[str]:
+        lines = ["## Project Structure Snapshot", ""]
+        snapshot = report.get("analysis_context", {}).get("structure_snapshot", [])
+        if not snapshot:
+            return lines
+        lines.append("```text")
+        lines.extend(snapshot)
+        lines.append("```")
+        lines.append("")
+        return lines
+
+    def _render_preliminary_refactor_proposals(self, report: Dict[str, Any]) -> List[str]:
+        lines = ["## Preliminary Refactor Proposals", ""]
+        proposals = report.get("analysis_context", {}).get("preliminary_refactor_proposals", [])
+        if not proposals:
+            lines.append("Brak wstępnych propozycji refaktoryzacji.")
+            lines.append("")
+            return lines
+        lines.append("```markdown")
+        for item in proposals:
+            lines.append(f"- {item}")
+        lines.append("```")
+        lines.append("")
+        return lines
+
+    def collect_structure_snapshot(self, max_entries: int = 80) -> List[str]:
+        entries: List[str] = []
+        preferred_roots = [
+            self.scan_root / "frontend" / "src",
+            self.scan_root / "connect-manager" / "frontend" / "src",
+            self.scan_root / "connect-scenario" / "frontend" / "src",
+        ]
+
+        for root in preferred_roots:
+            if root.exists() and root.is_dir():
+                for p in root.rglob("*.ts"):
+                    try:
+                        entries.append(str(p.relative_to(self.scan_root)).replace("\\", "/"))
+                    except ValueError:
+                        continue
+                    if len(entries) >= max_entries:
+                        return entries
+        return entries
+
+    def collect_preliminary_refactor_proposals(self) -> List[str]:
+        proposals: List[str] = []
+        for d in self.diagnoses:
+            if d.problem_type == "duplicate":
+                proposals.append(f"Skonsoliduj duplikaty: {d.summary}")
+            elif d.problem_type == "wrapper_analysis":
+                proposals.append(f"Zredukuj wrappery i uprość API: {d.summary}")
+            elif d.problem_type == "scope_drift":
+                proposals.append(f"Ustabilizuj scope modułu na bazie historii: {d.summary}")
+            elif d.problem_type == "import_error":
+                proposals.append(f"Ujednolić aliasy/importy: {d.summary}")
+        # dedupe preserving order
+        return list(dict.fromkeys(proposals))
 
     def _render_step_by_step_playbook(self, diagnoses: List[Dict[str, Any]], llm_mode: bool = False) -> List[str]:
         """Renderuje playbook krok po kroku."""

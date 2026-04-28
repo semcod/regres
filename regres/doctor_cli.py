@@ -133,8 +133,8 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 inputs={
                     "module_path": str(module_path),
                     "page_token": page_token,
-                    "history_window_days": doctor.HISTORY_DEFAULT_DAYS,
-                    "history_max_iterations": doctor.HISTORY_DEFAULT_ITERATIONS,
+                    "history_window_days": getattr(doctor.config, "history_window_days", doctor.HISTORY_DEFAULT_DAYS),
+                    "history_max_iterations": getattr(doctor.config, "history_max_iterations", doctor.HISTORY_DEFAULT_ITERATIONS),
                 },
                 decision=(
                     f"Z URL `{normalized_path}` wyciągnięto token strony `{page_token}`. "

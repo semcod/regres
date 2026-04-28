@@ -563,3 +563,52 @@ def test_analyze_history_patterns_no_moves():
     ]
     result = d._analyze_history_patterns("test.ts", history)
     assert result is None
+
+
+# c2004-maskservice-patch-v7: module-loader compliance check
+def _make_module_entry(tmp_path: Path, module_name: str, body: str) -> Path:
+    module_dir = tmp_path / module_name
+    module_dir.mkdir(parents=True, exist_ok=True)
+    entry = module_dir / f"{module_name}.module.ts"
+    entry.write_text(body, encoding="utf-8")
+    return module_dir
+
+
+def test_module_loader_compliance_passes_with_module_class(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = _make_module_entry(
+        tmp_path, "connect-foo",
+        "export class ConnectFooModule { metadata = {}; }\n",
+    )
+    assert d.analyze_module_loader_compliance(module_dir, "connect-foo") is None
+
+
+def test_module_loader_compliance_passes_with_default_export(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = _make_module_entry(
+        tmp_path, "connect-foo",
+        "class Foo {}\nexport default Foo;\n",
+    )
+    assert d.analyze_module_loader_compliance(module_dir, "connect-foo") is None
+
+
+def test_module_loader_compliance_flags_view_only_export(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = _make_module_entry(
+        tmp_path, "connect-deleted",
+        "export class ConnectDeletedView {}\n",
+    )
+    diag = d.analyze_module_loader_compliance(module_dir, "connect-deleted")
+    assert diag is not None
+    assert diag.problem_type == "module_loader_no_class"
+    assert diag.severity == "critical"
+    assert "ConnectDeletedModule" in diag.nlp_description
+    # Suggested wrapper should reuse the existing view class name
+    assert "ConnectDeletedView" in diag.nlp_description
+
+
+def test_module_loader_compliance_returns_none_when_entry_missing(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = tmp_path / "connect-foo"
+    module_dir.mkdir()
+    assert d.analyze_module_loader_compliance(module_dir, "connect-foo") is None

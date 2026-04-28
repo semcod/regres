@@ -149,6 +149,39 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 "problem_types": [d.problem_type for d in page_diagnoses],
             })
             doctor.diagnoses.extend(page_diagnoses)
+
+            # c2004-maskservice-patch-v7: lazy-loader contract check on the
+            # `<name>.module.ts` entry. Without it the host's lazy registry
+            # throws `No Module class found in ./<name>/<name>.module.ts` at
+            # runtime, which is invisible to the Vite HTTP probe (the file
+            # itself returns 200; the error happens during dynamic-import
+            # resolution).
+            doctor.add_plan_step(
+                name="module loader compliance",
+                reason=(
+                    "Sprawdź czy entry `*.module.ts` eksportuje klasę `*Module` "
+                    "lub `default` — wymóg lazy-loadera w `frontend/src/modules/index.ts`."
+                ),
+                command=(
+                    f"grep -nE 'export\\s+(class|default)' "
+                    f"{module_path}/{module_name}.module.ts"
+                ),
+                status="done",
+                inputs={
+                    "entry_file": f"{module_path}/{module_name}.module.ts",
+                },
+            )
+            loader_diag = doctor.analyze_module_loader_compliance(
+                module_path, module_name,
+            )
+            if loader_diag is not None:
+                doctor.diagnoses.append(loader_diag)
+                doctor.update_last_plan_step(outputs={
+                    "compliant": False,
+                    "problem_type": loader_diag.problem_type,
+                })
+            else:
+                doctor.update_last_plan_step(outputs={"compliant": True})
             doctor.set_analysis_context(
                 "page_implementation_findings",
                 [

@@ -7,49 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.39] - 2026-04-28
+
+### Docs
+- Update CHANGELOG.md
+- Update README.md
+- Update TODO.md
+
+### Test
+- Update tests/test_doctor_orchestrator.py
+
+### Other
+- Update VERSION
+- Update img.png
+- Update regres/doctor_cli.py
+- Update regres/doctor_orchestrator.py
+- Update regres/regres_cli.py
+
+## [0.1.38] - 2026-04-28
+
+### Added
+- **Module-loader compliance check** (`module_loader_no_class`): nowa metoda `DoctorOrchestrator.analyze_module_loader_compliance(module_path, module_name)` wykrywa pliki `<name>.module.ts`, które nie eksportują klasy `*Module` ani `default`. Bez nich host `frontend/src/modules/index.ts` rzuca runtime `No Module class found in ...`. Diagnoza generuje gotowy fragment kodu `extends BaseModule` do wklejenia (severity: critical, confidence: 0.95).
+- **CLI integration**: `_handle_url_mode` w `doctor_cli.py` wywołuje `analyze_module_loader_compliance` po `analyze_page_implementations` i dodaje krok do planu z inputs/outputs/decision.
+- **MODULE_PATH_MAP**: nowy wpis `connect-deleted → connect-deleted/frontend/src/modules/connect-deleted`.
+- **Tests**: 4 nowe testy w `tests/test_doctor_orchestrator.py` pokrywają: pass-on-Module-class, pass-on-default-export, flag-on-view-only, no-entry-file (242 testy → wszystkie przechodzą).
+
+### Changed
+- README.md przepisany: sekcja "What's new (0.1.38)", workflow URL→naprawa, tabela `problem_type` z severity i metodą wykrycia.
+
 ## [0.1.37] - 2026-04-28
 
-### Docs
-- Update README.md
+### Added (skumulowane 0.1.32–0.1.37)
+- **Vite runtime probe** (`probe_vite_runtime`): GET pliku celu z dev-servera Vite, parsowanie 500 z embedded JSON i `Failed to resolve import "X" from "Y"`. CLI flag `--vite-base` (autoderywowane z `--url`). Łańcuchowe sondowanie: jeśli probe zwraca błąd, plik źródłowy `missing_import_from` jest dodawany do kolejki. Tworzy diagnozy `vite_runtime_failure` (critical) z komendami curl + recursive regres.
+- **Dependency chain analysis** (`analyze_dependency_chain`): BFS po relatywnych importach pliku celu (depth=1) z resolverem rozszerzeń (`.ts`, `.tsx`, `/index.ts`, …). Każdy broken/stub link generuje diagnozę `import_resolution_failure` (high/medium) z gotową komendą regres do naprawy łańcuchowej.
+- **Patch scripts z trybami `--preview` / `--diff` / `--apply`** + automatyczne przepisywanie ścieżek importów po przywróceniu pliku z innego głębokiego poziomu w drzewie.
+- **Decision-tree workflow w raporcie**: README, plan kroków z `inputs`/`outputs`/`decision`, snapshot struktury (`collect_structure_snapshot`), kolumna "decision" w renderingu Markdown.
+- **History-based candidates**: `_collect_page_history_candidates` zwraca kandydatów z historii git w oknie 2 dni LUB 10 iteracji (zależnie co większe), z wykryciem `HISTORY_SHRINKAGE_FACTOR=0.5` (current < 50% recent max).
 
 ### Other
-- Update VERSION
-- Update regres/doctor_cli.py
-
-## [0.1.35] - 2026-04-28
-
-### Docs
-- Update README.md
-
-### Other
-- Update regres/doctor_cli.py
-- Update regres/doctor_orchestrator.py
-
-## [0.1.34] - 2026-04-28
-
-### Docs
-- Update README.md
-
-### Other
-- Update regres/doctor_cli.py
-
-## [0.1.33] - 2026-04-28
-
-### Docs
-- Update README.md
-
-### Other
-- Update regres/doctor_cli.py
-
-## [0.1.32] - 2026-04-28
-
-### Docs
-- Update README.md
-
-### Other
-- Update VERSION
-- Update regres/doctor_cli.py
-- Update regres/doctor_orchestrator.py
+- Update VERSION, regres/doctor_cli.py, regres/doctor_orchestrator.py
 
 ## [0.1.30] - 2026-04-28
 

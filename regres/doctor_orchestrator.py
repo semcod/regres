@@ -33,6 +33,7 @@ class DoctorOrchestrator:
         "connect-reports": "connect-reports/frontend/src/modules/connect-reports",
         "connect-config": "connect-config/frontend/src/modules/connect-config",
         "connect-data": "connect-data/backend",
+        "connect-deleted": "connect-deleted/frontend/src/modules/connect-deleted",
         "connect-id": "connect-id/frontend/src/modules/connect-id",
         "connect-template": "connect-template/frontend/src/modules/connect-template",
         "connect-workshop": "connect-workshop/frontend/src/modules/connect-workshop",
@@ -343,6 +344,108 @@ class DoctorOrchestrator:
             "missing_import_from": missing_import_from,
             "transport_error": transport_error,
         }
+
+    # c2004-maskservice-patch-v7: lazy-loader contract check. The host's
+    # `frontend/src/modules/index.ts` registry only resolves a class if it has
+    # either a `default` export OR a class export whose name matches /Module$/.
+    # A `<name>.module.ts` entry that exports only e.g. `XxxView` will throw at
+    # runtime: `Error: No Module class found in ./<name>/<name>.module.ts`.
+    # This check is purely static and complements the Vite runtime probe.
+    _MODULE_DEFAULT_EXPORT_RE = re.compile(r"\bexport\s+default\b")
+    _MODULE_CLASS_EXPORT_RE = re.compile(
+        r"export\s+(?:abstract\s+)?class\s+([A-Z]\w*Module)\b"
+    )
+    _ANY_CLASS_EXPORT_RE = re.compile(
+        r"export\s+(?:abstract\s+)?class\s+([A-Z]\w*)\b"
+    )
+
+    def analyze_module_loader_compliance(
+        self,
+        module_path: Path,
+        module_name: str,
+    ) -> Optional[Diagnosis]:
+        """Detect *.module.ts entry files that won't load via the lazy registry.
+
+        The loader (host `frontend/src/modules/index.ts`) requires either a
+        `default` export or a class whose name matches `*Module`. If neither
+        is present, runtime throws `No Module class found in ...`.
+
+        Returns a critical Diagnosis when the convention is violated, else None.
+        """
+        entry = module_path / f"{module_name}.module.ts"
+        if not entry.exists() or not entry.is_file():
+            return None
+        try:
+            text = entry.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
+        has_default = bool(self._MODULE_DEFAULT_EXPORT_RE.search(text))
+        has_module_class = bool(self._MODULE_CLASS_EXPORT_RE.search(text))
+        if has_default or has_module_class:
+            return None
+        exports = self._ANY_CLASS_EXPORT_RE.findall(text)
+        try:
+            rel = str(entry.relative_to(self.scan_root)).replace("\\", "/")
+        except ValueError:
+            rel = str(entry)
+        suggested_class = (
+            "".join(part.capitalize() for part in module_name.split("-"))
+            + "Module"
+        )
+        view_class = exports[0] if exports else "YourView"
+        suggestion_block = (
+            "import { ModuleMetadata } from '../module.interface';\n"
+            "import { BaseModule } from '../base.module';\n\n"
+            f"export class {suggested_class} extends BaseModule {{\n"
+            "  readonly metadata: ModuleMetadata = {\n"
+            f"    name: '{module_name}',\n"
+            "    version: '1.0.0',\n"
+            "    dependencies: [],\n"
+            "  };\n"
+            f"  getDisplayName(): string {{ return '{module_name}'; }}\n"
+            "  protected async viewImport() {\n"
+            f"    return {{ ViewClass: {view_class} as any }};\n"
+            "  }\n"
+            "  protected viewArgs(): any[] { return [this]; }\n"
+            "}\n\n"
+            f"export default {suggested_class};\n"
+        )
+        nlp = (
+            f"Plik `{rel}` jest entry-point modułu, ale **nie eksportuje** klasy "
+            f"z sufiksem `*Module` ani `export default`. Loader "
+            f"`frontend/src/modules/index.ts` rzuci runtime:\n"
+            f"`Error: No Module class found in ./{module_name}/{module_name}.module.ts`.\n\n"
+            f"Aktualne eksporty klas: {', '.join(exports) if exports else '(brak)'}.\n\n"
+            f"Sugerowany dodatek do pliku:\n```ts\n{suggestion_block}```"
+        )
+        return Diagnosis(
+            summary=(
+                f"Module entry `{rel}` nie spełnia konwencji loadera "
+                f"(brak `*Module` lub `default`)"
+            ),
+            problem_type="module_loader_no_class",
+            severity="critical",
+            nlp_description=nlp,
+            file_actions=[FileAction(
+                path=rel,
+                action="modify",
+                reason=(
+                    f"Dodaj `export class {suggested_class} extends BaseModule "
+                    f"{{ ... }}` oraz `export default {suggested_class};`."
+                ),
+            )],
+            shell_commands=[
+                ShellCommand(
+                    command=f"sed -n '1,40p' {rel}",
+                    description="Podgląd początku pliku",
+                ),
+                ShellCommand(
+                    command=f"grep -nE 'export\\s+(class|default)' {rel}",
+                    description="Znajdź obecne eksporty",
+                ),
+            ],
+            confidence=0.95,
+        )
 
     def analyze_page_implementations(
         self,

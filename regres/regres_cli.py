@@ -84,6 +84,7 @@ def main() -> int:
     doctor_parser.add_argument("--git-history", action="store_true", help="Analizuj historię git plików z błędami")
     doctor_parser.add_argument("--defscan-scan", help="Uruchom defscan na konkretnym katalogu")
     doctor_parser.add_argument("--refactor-scan", help="Uruchom refactor wrappers na konkretnym katalogu")
+    doctor_parser.add_argument("--vite-base", dest="vite_base", help="Vite dev-server base URL (np. http://localhost:8100). Auto-derywowane z --url jeśli nie podane.")
     doctor_parser.add_argument("--out-md", help="Ścieżka do raportu Markdown")
     doctor_parser.add_argument("--out-json", help="Ścieżka do raportu JSON")
 

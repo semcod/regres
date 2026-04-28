@@ -1427,6 +1427,15 @@ def analyze_file(
     return report
 
 
+def _resolve_output_path(path_str: str, cwd: Path) -> Path:
+    """Resolve output path to absolute path and create parent directories."""
+    out_path = Path(path_str)
+    if not out_path.is_absolute():
+        out_path = (cwd / out_path).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    return out_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="REGRES: analiza regresji i rodowodu plików")
     parser.add_argument("--file", required=True, help="Plik docelowy (relative lub absolute)")
@@ -1459,17 +1468,11 @@ def main() -> None:
     md_text = render_markdown(report)
 
     if args.out_json:
-        out_json = Path(args.out_json)
-        if not out_json.is_absolute():
-            out_json = (Path.cwd() / out_json).resolve()
-        out_json.parent.mkdir(parents=True, exist_ok=True)
+        out_json = _resolve_output_path(args.out_json, cwd)
         out_json.write_text(json_text, encoding="utf-8")
 
     if args.out_md:
-        out_md = Path(args.out_md)
-        if not out_md.is_absolute():
-            out_md = (Path.cwd() / out_md).resolve()
-        out_md.parent.mkdir(parents=True, exist_ok=True)
+        out_md = _resolve_output_path(args.out_md, cwd)
         out_md.write_text(md_text, encoding="utf-8")
 
     if not args.out_json and not args.out_md:

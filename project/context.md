@@ -4,37 +4,42 @@
 
 - **Project**: /home/tom/github/semcod/regres
 - **Primary Language**: md
-- **Languages**: md: 13, yaml: 9, python: 8, shell: 2, toml: 1
+- **Languages**: md: 13, python: 10, yaml: 9, shell: 2, toml: 1
 - **Analysis Mode**: static
-- **Total Functions**: 543
-- **Total Classes**: 25
-- **Modules**: 35
-- **Entry Points**: 419
+- **Total Functions**: 850
+- **Total Classes**: 29
+- **Modules**: 37
+- **Entry Points**: 725
 
 ## Architecture by Module
 
 ### SUMD
-- **Functions**: 250
+- **Functions**: 403
 - **Classes**: 8
 - **File**: `SUMD.md`
 
+### project.map.toon
+- **Functions**: 234
+- **File**: `map.toon.yaml`
+
 ### SUMR
-- **Functions**: 131
+- **Functions**: 169
 - **Classes**: 8
 - **File**: `SUMR.md`
 
-### project.map.toon
-- **Functions**: 119
-- **File**: `map.toon.yaml`
-
 ### regres.regres
-- **Functions**: 52
+- **Functions**: 53
 - **Classes**: 1
 - **File**: `regres.py`
 
 ### regres.refactor
 - **Functions**: 41
 - **File**: `refactor.py`
+
+### regres.doctor_orchestrator
+- **Functions**: 41
+- **Classes**: 1
+- **File**: `doctor_orchestrator.py`
 
 ### regres.defscan
 - **Functions**: 31
@@ -68,6 +73,11 @@
 - **Functions**: 1
 - **File**: `README.md`
 
+### regres.doctor_models
+- **Functions**: 0
+- **Classes**: 3
+- **File**: `doctor_models.py`
+
 ## Key Entry Points
 
 Main execution flows into the system:
@@ -89,12 +99,13 @@ Wskaźnik 'hotness' = liczba par podobnych / liczba plików w katalogu × 100.
 Wysoki hotness = kandydat
 - **Calls**: getattr, getattr, regres.refactor.iter_files, list, defaultdict, defaultdict, dir_file_count.items, hotmap.sort
 
-### regres.regres.main
-- **Calls**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
-
 ### regres.refactor.cmd_diff
 > Unified diff dwóch plików. Opcja --normalize usuwa komentarze/stringi.
 - **Calls**: Path, Path, regres.refactor.read_text, regres.refactor.read_text, getattr, regres.refactor.similarity_ratio, list, docs.DEFSCAN.print
+
+### regres.doctor.DoctorOrchestrator.render_markdown
+> Renderuje raport w formacie Markdown.
+- **Calls**: lines.append, lines.append, lines.append, enumerate, lines.extend, None.join, None.get, lines.append
 
 ### regres.refactor.cmd_dead
 > Wykrywa symbole zdefiniowane ale prawdopodobnie nieużywane.
@@ -102,32 +113,46 @@ Definicje: pliki z --word.
 Sprawdzenie: czy symbol pojawia się jako identyfikator w jakimk
 - **Calls**: getattr, regres.refactor.iter_files, regres.refactor.iter_files, defaultdict, set, None.join, defined.items, dead.sort
 
-### regres.doctor.DoctorOrchestrator.render_markdown
-> Renderuje raport w formacie Markdown.
-- **Calls**: lines.append, lines.append, lines.append, enumerate, lines.extend, None.join, None.get, lines.append
-
 ### regres.refactor.cmd_deps
 - **Calls**: regres.refactor.iter_files, getattr, regres.refactor.extract_imports, import_map.items, docs.DEFSCAN.print, docs.DEFSCAN.print, regres.refactor.rel, regres.refactor.read_text
+
+### regres.doctor.DoctorOrchestrator._diagnose_import_issue
+> Diagnozuje problem z importami i generuje plan naprawy.
+- **Calls**: Diagnosis, module.startswith, module.replace, self._resolve_alias_target, commands.append, len, any, actions.append
 
 ### regres.refactor.cmd_similar
 - **Calls**: getattr, regres.refactor.iter_files, list, range, pairs.sort, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print
 
-### regres.doctor.DoctorOrchestrator._diagnose_import_issue
+### regres.doctor_orchestrator.DoctorOrchestrator.render_markdown
+> Renderuje raport w formacie Markdown.
+- **Calls**: enumerate, self._normalize_diagnoses, lines.extend, None.join, None.get, lines.append, lines.append, lines.append
+
+### regres.doctor_orchestrator.DoctorOrchestrator._diagnose_import_issue
 > Diagnozuje problem z importami i generuje plan naprawy.
 - **Calls**: Diagnosis, module.startswith, module.replace, self._resolve_alias_target, commands.append, len, any, actions.append
 
 ### regres.refactor.cmd_cluster
 - **Calls**: getattr, regres.refactor.iter_files, defaultdict, sorted, docs.DEFSCAN.print, getattr, regres.refactor.read_text, None.append
 
-### regres.doctor.main
+### regres.regres.main
 - **Calls**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
-### regres.refactor.cmd_duplicates
-- **Calls**: regres.refactor.iter_files, defaultdict, docs.DEFSCAN.print, enumerate, getattr, None.append, docs.DEFSCAN.print, docs.DEFSCAN.print
+### regres.doctor.main
+- **Calls**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
 ### regres.doctor.DoctorOrchestrator._collect_defscan_context
 > Zbiera kontekst duplikatów z defscan.
 - **Calls**: None.join, io.StringIO, output.strip, defscan.main, sys.stdout.getvalue, json.loads, lines.append, lines.append
+
+### regres.refactor.cmd_duplicates
+- **Calls**: regres.refactor.iter_files, defaultdict, docs.DEFSCAN.print, enumerate, getattr, None.append, docs.DEFSCAN.print, docs.DEFSCAN.print
+
+### regres.doctor_orchestrator.DoctorOrchestrator._collect_defscan_context
+- **Calls**: None.join, io.StringIO, output.strip, defscan.main, sys.stdout.getvalue, json.loads, lines.append, lines.append
+
+### regres.doctor.DoctorOrchestrator.apply_fixes
+> Wykonuje akcje naprawcze z diagnoz.
+- **Calls**: None.append, subprocess.run, None.append, None.append, None.append, None.append, None.append, file_path.exists
 
 ### regres.refactor.cmd_find
 - **Calls**: regres.refactor.iter_files, results.sort, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, regres.refactor.read_text, regres.refactor.count_word
@@ -144,20 +169,23 @@ Sprawdzenie: czy symbol pojawia się jako identyfikator w jakimk
 Heurystyki: krótkie + sys.path + dynamic import + barrel export + sygnatury tekstowe.
 - **Calls**: getattr, regres.refactor.iter_files, results.sort, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, getattr
 
-### regres.doctor.DoctorOrchestrator.apply_fixes
-> Wykonuje akcje naprawcze z diagnoz.
-- **Calls**: None.append, subprocess.run, None.append, None.append, None.append, None.append, None.append, file_path.exists
+### regres.doctor_orchestrator.DoctorOrchestrator._render_step_by_step_playbook
+> Renderuje playbook krok po kroku.
+- **Calls**: enumerate, lines.append, lines.append, diag.get, diag.get, sorted, lines.append, lines.append
 
-### regres.import_error_toon_report.main
-- **Calls**: regres.import_error_toon_report.parse_args, regres.import_error_toon_report.parse_ts_errors, ReportData, regres.import_error_toon_report.render_markdown, args.out_md.parent.mkdir, args.out_md.write_text, args.out_raw_log.parent.mkdir, args.out_raw_log.write_text
+### regres.doctor.DoctorOrchestrator.analyze_from_url
+> Analizuje moduł na podstawie URL.
+- **Calls**: self.MODULE_PATH_MAP.keys, self.MODULE_PATH_MAP.get, self.analyze_with_defscan, diagnoses.extend, self.analyze_with_refactor, diagnoses.extend, full_module_path.rglob, urlparse
 
 ### regres.refactor.cmd_report
 > Generuje kompleksowy raport JSON dla LLM.
 - **Calls**: getattr, getattr, getattr, docs.DEFSCAN.print, regres.refactor.iter_files, regres.refactor._collect_file_infos, regres.refactor._find_md5_duplicates, regres.refactor._find_name_clusters
 
-### regres.doctor.DoctorOrchestrator.analyze_from_url
-> Analizuje moduł na podstawie URL.
-- **Calls**: self.MODULE_PATH_MAP.keys, self.MODULE_PATH_MAP.get, self.analyze_with_defscan, diagnoses.extend, self.analyze_with_refactor, diagnoses.extend, full_module_path.rglob, urlparse
+### regres.import_error_toon_report.main
+- **Calls**: regres.import_error_toon_report.parse_args, regres.import_error_toon_report.parse_ts_errors, ReportData, regres.import_error_toon_report.render_markdown, args.out_md.parent.mkdir, args.out_md.write_text, args.out_raw_log.parent.mkdir, args.out_raw_log.write_text
+
+### regres.doctor_orchestrator.DoctorOrchestrator._render_apply_step
+- **Calls**: lines.append, lines.append, lines.append, lines.append, lines.append, lines.append, lines.append, lines.append
 
 ### regres.doctor.DoctorOrchestrator._resolve_alias_target
 > Próbuje znaleźć rzeczywistą ścieżkę dla aliasu @c2004/*.
@@ -167,28 +195,9 @@ Heurystyki: krótkie + sys.path + dynamic import + barrel export + sygnatury tek
 > Używa refactor do analizy kodu w konkretnym katalogu.
 - **Calls**: subprocess.run, str, result.stdout.strip, None.split, len, str, actions.append, commands.append
 
-### regres.defscan.main
-- **Calls**: regres.defscan._build_argument_parser, parser.parse_args, None.resolve, str, regres.defscan.load_gitignore, root.exists, docs.DEFSCAN.print, sys.exit
-
-### regres.doctor.DoctorOrchestrator.analyze_import_errors
-> Analizuje błędy importów z logu TS.
-- **Calls**: self._parse_ts_errors, errors_by_file.items, log_path.exists, self._extract_missing_modules, re.search, self._diagnose_import_issue, diagnoses.append, mod_match.group
-
-### regres.doctor.DoctorOrchestrator._collect_git_context
-> Zbiera kontekst historii git dla modułu.
-- **Calls**: lines.append, lines.append, lines.append, None.join, subprocess.run, str, lines.append, lines.append
-
-### regres.doctor.DoctorOrchestrator._collect_refactor_context
-> Zbiera kontekst wrapperów z refactor.
-- **Calls**: None.join, io.StringIO, output.strip, refactor.main, sys.stdout.getvalue, lines.append, lines.append, lines.append
-
-### regres.doctor.DoctorOrchestrator._parse_ts_errors
-> Parsuje log błędów TS.
-- **Calls**: re.compile, re.compile, re.compile, open, file_re.search, file_match.group, None.append, None.append
-
-### regres.doctor.DoctorOrchestrator._diagnose_duplicate
-> Diagnozuje problem z duplikatami.
-- **Calls**: duplicate_data.get, duplicate_data.get, duplicate_data.get, Diagnosis, self._find_main_location, actions.append, commands.append, FileAction
+### regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url
+> Analizuje moduł na podstawie URL.
+- **Calls**: self._extract_module_name, self._resolve_module_path, diagnoses.extend, diagnoses.extend, full_module_path.rglob, urlparse, parsed.path.strip, full_module_path.exists
 
 ## Process Flows
 
@@ -222,16 +231,16 @@ cmd_diff [regres.refactor]
   └─> read_text
 ```
 
-### Flow 6: cmd_dead
+### Flow 6: render_markdown
+```
+render_markdown [regres.doctor.DoctorOrchestrator]
+```
+
+### Flow 7: cmd_dead
 ```
 cmd_dead [regres.refactor]
   └─> iter_files
   └─> iter_files
-```
-
-### Flow 7: render_markdown
-```
-render_markdown [regres.doctor.DoctorOrchestrator]
 ```
 
 ### Flow 8: cmd_deps
@@ -242,18 +251,23 @@ cmd_deps [regres.refactor]
   └─ →> print
 ```
 
-### Flow 9: cmd_similar
+### Flow 9: _diagnose_import_issue
+```
+_diagnose_import_issue [regres.doctor.DoctorOrchestrator]
+```
+
+### Flow 10: cmd_similar
 ```
 cmd_similar [regres.refactor]
   └─> iter_files
 ```
 
-### Flow 10: _diagnose_import_issue
-```
-_diagnose_import_issue [regres.doctor.DoctorOrchestrator]
-```
-
 ## Key Classes
+
+### regres.doctor_orchestrator.DoctorOrchestrator
+> Orchestrator analizy i generator akcji.
+- **Methods**: 41
+- **Key Methods**: regres.doctor_orchestrator.DoctorOrchestrator.__init__, regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url, regres.doctor_orchestrator.DoctorOrchestrator.analyze_import_errors, regres.doctor_orchestrator.DoctorOrchestrator.analyze_duplicates, regres.doctor_orchestrator.DoctorOrchestrator.analyze_git_history, regres.doctor_orchestrator.DoctorOrchestrator.analyze_with_defscan, regres.doctor_orchestrator.DoctorOrchestrator.analyze_with_refactor, regres.doctor_orchestrator.DoctorOrchestrator.apply_fixes, regres.doctor_orchestrator.DoctorOrchestrator.generate_llm_diagnosis, regres.doctor_orchestrator.DoctorOrchestrator.generate_report
 
 ### regres.doctor.DoctorOrchestrator
 > Orchestrator analizy i generator akcji.
@@ -266,6 +280,33 @@ _diagnose_import_issue [regres.doctor.DoctorOrchestrator]
 - **Key Methods**: regres.defscan.Definition.__init__, regres.defscan.Definition.loc, regres.defscan.Definition.__repr__
 
 ### docs.DOCTOR.DoctorOrchestrator
+- **Methods**: 0
+
+### regres.regres.GitCommit
+- **Methods**: 0
+
+### regres.doctor_models.FileAction
+> Akcja na pliku.
+- **Methods**: 0
+
+### regres.doctor_models.ShellCommand
+> Polecenie shell do wykonania.
+- **Methods**: 0
+
+### regres.doctor_models.Diagnosis
+> Diagnoza problemu i plan naprawy.
+- **Methods**: 0
+
+### regres.doctor.FileAction
+> Akcja na pliku.
+- **Methods**: 0
+
+### regres.doctor.ShellCommand
+> Polecenie shell do wykonania.
+- **Methods**: 0
+
+### regres.doctor.Diagnosis
+> Diagnoza problemu i plan naprawy.
 - **Methods**: 0
 
 ### regres.import_error_toon_report.TsError
@@ -295,39 +336,43 @@ _diagnose_import_issue [regres.doctor.DoctorOrchestrator]
 ### SUMR.TsError
 - **Methods**: 0
 
-### SUMR.ReportData
-- **Methods**: 0
-
-### SUMD.GitCommit
-- **Methods**: 0
-
-### SUMD.Definition
-- **Methods**: 0
-
-### SUMD.FileAction
-- **Methods**: 0
-
-### SUMD.ShellCommand
-- **Methods**: 0
-
-### SUMD.Diagnosis
-- **Methods**: 0
-
-### SUMD.DoctorOrchestrator
-- **Methods**: 0
-
-### SUMD.TsError
-- **Methods**: 0
-
 ## Data Transformation Functions
 
 Key functions that process and transform data:
+
+### regres.regres.parse_numstat_block
+- **Output to**: None.split, a.isdigit, d.isdigit, len, int
+
+### regres.doctor.DoctorOrchestrator._parse_ts_errors
+> Parsuje log błędów TS.
+- **Output to**: re.compile, re.compile, re.compile, open, file_re.search
+
+### regres.refactor.build_parser
+- **Output to**: argparse.ArgumentParser, p.add_argument, p.add_argument, p.add_argument, p.add_subparsers
 
 ### regres.import_error_toon_report.parse_args
 - **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
 ### regres.import_error_toon_report.parse_ts_errors
 - **Output to**: log_text.splitlines, TS_ERROR_RE.match, m.group, m.group, MISSING_MODULE_RE.search
+
+### regres.defscan._build_argument_parser
+> Build and return the argument parser for defscan.
+- **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
+
+### SUMR.parse_numstat_block
+
+### SUMR.build_parser
+
+### SUMR._build_argument_parser
+
+### SUMR._parse_ts_errors
+
+### SUMR.parse_args
+
+### SUMR.parse_ts_errors
+
+### project.map.toon._build_argument_parser
 
 ### project.map.toon.parse_args
 
@@ -337,39 +382,21 @@ Key functions that process and transform data:
 
 ### project.map.toon.parse_numstat_block
 
-### SUMR.parse_numstat_block
+### project.map.toon.test_parse_ts_errors_basic
 
-### SUMR.build_parser
+### project.map.toon.test_parse_ts_errors_filters_code
 
-### SUMR._parse_ts_errors
+### project.map.toon.test_parse_ts_errors_empty
 
-### SUMR.parse_args
+### project.map.toon.test_parse_numstat_block
 
-### SUMR.parse_ts_errors
+### project.map.toon.test_parse_numstat_block_empty
+
+### SUMD._build_argument_parser
 
 ### SUMD.parse_args
 
 ### SUMD.parse_ts_errors
-
-### SUMD.build_parser
-
-### SUMD.parse_numstat_block
-
-### SUMD._parse_ts_errors
-
-### regres.defscan._build_argument_parser
-> Build and return the argument parser for defscan.
-- **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
-
-### regres.refactor.build_parser
-- **Output to**: argparse.ArgumentParser, p.add_argument, p.add_argument, p.add_argument, p.add_subparsers
-
-### regres.doctor.DoctorOrchestrator._parse_ts_errors
-> Parsuje log błędów TS.
-- **Output to**: re.compile, re.compile, re.compile, open, file_re.search
-
-### regres.regres.parse_numstat_block
-- **Output to**: None.split, a.isdigit, d.isdigit, len, int
 
 ## Behavioral Patterns
 
@@ -387,41 +414,41 @@ Functions exposed as public API (no underscore prefix):
 - `regres.refactor.to_json_toon` - 60 calls
 - `regres.defscan.render_text` - 55 calls
 - `regres.refactor.build_parser` - 49 calls
-- `regres.defscan.render_seed_text` - 42 calls
 - `regres.refactor.cmd_hotmap` - 42 calls
+- `regres.defscan.render_seed_text` - 42 calls
 - `regres.defscan.extract_python` - 37 calls
 - `regres.defscan.render_markdown` - 35 calls
 - `regres.regres.llm_context_packet` - 33 calls
 - `regres.defscan.extract_go` - 32 calls
-- `regres.regres.main` - 32 calls
-- `regres.import_error_toon_report.to_toon_global_payload` - 31 calls
 - `regres.refactor.cmd_diff` - 31 calls
-- `regres.refactor.cmd_dead` - 28 calls
-- `regres.doctor.DoctorOrchestrator.render_markdown` - 28 calls
+- `regres.import_error_toon_report.to_toon_global_payload` - 31 calls
 - `regres.regres.trace_name_and_hash_candidates` - 28 calls
+- `regres.doctor.DoctorOrchestrator.render_markdown` - 28 calls
+- `regres.refactor.cmd_dead` - 28 calls
 - `regres.refactor.cmd_deps` - 27 calls
 - `regres.refactor.cmd_similar` - 26 calls
-- `regres.refactor.cmd_cluster` - 25 calls
+- `regres.doctor_orchestrator.DoctorOrchestrator.render_markdown` - 26 calls
 - `regres.regres.analyze_file` - 25 calls
-- `regres.doctor.main` - 24 calls
+- `regres.refactor.cmd_cluster` - 25 calls
 - `regres.regres.exact_and_near_duplicates` - 24 calls
-- `regres.import_error_toon_report.render_markdown` - 23 calls
+- `regres.regres.main` - 24 calls
+- `regres.doctor.main` - 24 calls
 - `regres.regres.resolve_target_file` - 23 calls
-- `regres.defscan.scan` - 22 calls
+- `regres.import_error_toon_report.render_markdown` - 23 calls
 - `regres.regres.resolve_import_historical` - 22 calls
+- `regres.defscan.scan` - 22 calls
 - `regres.regres.resolve_import_at_commit` - 21 calls
+- `regres.regres.render_markdown` - 20 calls
 - `regres.refactor.wrapper_score` - 20 calls
 - `regres.refactor.cmd_duplicates` - 20 calls
-- `regres.regres.render_markdown` - 20 calls
-- `regres.defscan.render_seed_markdown` - 19 calls
+- `regres.doctor.DoctorOrchestrator.apply_fixes` - 19 calls
 - `regres.refactor.cmd_find` - 19 calls
 - `regres.refactor.cmd_symbols` - 19 calls
 - `regres.refactor.cmd_wrappers` - 19 calls
-- `regres.doctor.DoctorOrchestrator.apply_fixes` - 19 calls
-- `regres.import_error_toon_report.main` - 18 calls
-- `regres.refactor.cmd_report` - 18 calls
-- `regres.doctor.DoctorOrchestrator.analyze_from_url` - 18 calls
+- `regres.defscan.render_seed_markdown` - 19 calls
 - `regres.regres.check_imports_at_commit` - 18 calls
+- `regres.regres.classify_problem` - 18 calls
+- `regres.doctor.DoctorOrchestrator.analyze_from_url` - 18 calls
 
 ## System Interactions
 
@@ -443,22 +470,22 @@ graph TD
     cmd_diff --> Path
     cmd_diff --> read_text
     cmd_diff --> getattr
+    render_markdown --> append
+    render_markdown --> enumerate
+    render_markdown --> extend
     cmd_dead --> getattr
     cmd_dead --> iter_files
     cmd_dead --> defaultdict
     cmd_dead --> set
-    render_markdown --> append
-    render_markdown --> enumerate
-    render_markdown --> extend
     cmd_deps --> iter_files
     cmd_deps --> getattr
     cmd_deps --> extract_imports
     cmd_deps --> items
     cmd_deps --> print
-    cmd_similar --> getattr
-    cmd_similar --> iter_files
-    cmd_similar --> list
-    cmd_similar --> range
+    _diagnose_import_iss --> Diagnosis
+    _diagnose_import_iss --> startswith
+    _diagnose_import_iss --> replace
+    _diagnose_import_iss --> _resolve_alias_targe
 ```
 
 ## Reverse Engineering Guidelines

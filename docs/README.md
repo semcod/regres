@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-607-green)
-> **607** functions | **25** classes | **38** files | CC̄ = 7.1
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-878-green)
+> **878** functions | **29** classes | **40** files | CC̄ = 6.7
 
 > Auto-generated project documentation from source code analysis.
 
@@ -87,17 +87,19 @@ regres/
         ├── toon
             ├── toon
     ├── regres
+    ├── doctor_models
     ├── doctor
 ├── regres/
     ├── refactor
     ├── import_error_toon_report
     ├── regres_cli
     ├── defscan
+    ├── doctor_orchestrator
+        ├── toon
     ├── prompt
+        ├── toon
+        ├── toon
     ├── context
-        ├── toon
-        ├── toon
-        ├── toon
     ├── README
         ├── toon
     ├── calls
@@ -129,10 +131,14 @@ regres/
 - **`FileAction`** — Akcja na pliku.
 - **`ShellCommand`** — Polecenie shell do wykonania.
 - **`Diagnosis`** — Diagnoza problemu i plan naprawy.
+- **`FileAction`** — Akcja na pliku.
+- **`ShellCommand`** — Polecenie shell do wykonania.
+- **`Diagnosis`** — Diagnoza problemu i plan naprawy.
 - **`DoctorOrchestrator`** — Orchestrator analizy i generator akcji.
 - **`TsError`** — —
 - **`ReportData`** — —
 - **`Definition`** — Pojedyncza definicja (klasa / funkcja / enum / interface / mixin).
+- **`DoctorOrchestrator`** — Orchestrator analizy i generator akcji.
 
 ### Functions
 
@@ -171,24 +177,6 @@ regres/
 - `render_markdown()` — —
 - `analyze_file()` — —
 - `main()` — —
-- `c()` — —
-- `sim()` — —
-- `extract_python()` — —
-- `extract_typescript()` — —
-- `extract_go()` — —
-- `extract_rust()` — —
-- `extract_file()` — —
-- `load_gitignore()` — —
-- `scan()` — —
-- `compare_seed_to_all()` — —
-- `analyse_group()` — —
-- `classify_similarity()` — —
-- `render_text()` — —
-- `render_seed_text()` — —
-- `render_seed_markdown()` — —
-- `render_seed_json()` — —
-- `render_json()` — —
-- `loc()` — —
 - `iter_files()` — —
 - `read_text()` — —
 - `md5_file()` — —
@@ -216,6 +204,24 @@ regres/
 - `to_json_toon()` — —
 - `cmd_report()` — —
 - `build_parser()` — —
+- `c()` — —
+- `sim()` — —
+- `extract_python()` — —
+- `extract_typescript()` — —
+- `extract_go()` — —
+- `extract_rust()` — —
+- `extract_file()` — —
+- `load_gitignore()` — —
+- `scan()` — —
+- `compare_seed_to_all()` — —
+- `analyse_group()` — —
+- `classify_similarity()` — —
+- `render_text()` — —
+- `render_seed_text()` — —
+- `render_seed_markdown()` — —
+- `render_seed_json()` — —
+- `render_json()` — —
+- `loc()` — —
 - `analyze_from_url()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -326,6 +332,66 @@ regres/
 - `find_last_good_version()` — —
 - `llm_context_packet()` — —
 - `analyze_file()` — —
+- `test_ext_lang_mappings()` — —
+- `test_ignored_dirs()` — —
+- `test_c_without_color()` — —
+- `test_normalize_strips_comments()` — —
+- `test_normalize_collapses_whitespace()` — —
+- `test_definition_repr()` — —
+- `test_definition_similarity_identical()` — —
+- `test_definition_similarity_different()` — —
+- `test_classify_similarity_identical()` — —
+- `test_classify_similarity_high()` — —
+- `test_classify_similarity_medium()` — —
+- `test_classify_similarity_low()` — —
+- `test_load_gitignore_missing()` — —
+- `test_load_gitignore_reads_patterns()` — —
+- `test_path_ignored_by_gitignore()` — —
+- `test_file_action_defaults()` — —
+- `test_file_action_full()` — —
+- `test_shell_command_defaults()` — —
+- `test_diagnosis()` — —
+- `test_import_doctor()` — —
+- `test_import_doctor_main()` — —
+- `test_ts_error_re_matches()` — —
+- `test_ts_error_re_no_match_for_plain_text()` — —
+- `test_missing_module_re()` — —
+- `test_exported_member_re()` — —
+- `test_toon_quote_escapes()` — —
+- `test_parse_ts_errors_basic()` — —
+- `test_parse_ts_errors_filters_code()` — —
+- `test_parse_ts_errors_empty()` — —
+- `test_suggestions_ts2307_alias()` — —
+- `test_suggestions_ts2307_relative()` — —
+- `test_suggestions_ts2305()` — —
+- `test_suggestions_unknown_code()` — —
+- `test_grouped_errors()` — —
+- `test_metrics()` — —
+- `test_metrics_empty()` — —
+- `test_to_toon_block_legacy()` — —
+- `test_to_toon_global_payload()` — —
+- `test_to_toon_compact_per_file()` — —
+- `test_ts_error_dataclass()` — —
+- `test_report_data()` — —
+- `test_default_extensions_contains_py()` — —
+- `test_ignored_dirs_contains_node_modules()` — —
+- `test_count_word_case_insensitive()` — —
+- `test_count_word_case_sensitive()` — —
+- `test_line_count()` — —
+- `test_similarity_ratio_identical()` — —
+- `test_similarity_ratio_empty()` — —
+- `test_similarity_ratio_different()` — —
+- `test_normalize_code_strips_comments()` — —
+- `test_rel_path()` — —
+- `test_name_prefix()` — —
+- `test_extract_imports_python()` — —
+- `test_extract_imports_ts()` — —
+- `test_extract_symbols_regex_python()` — —
+- `test_extract_symbols_regex_ts()` — —
+- `test_wrapper_score_empty()` — —
+- `test_wrapper_score_high_for_reexport()` — —
+- `test_md5_file_consistent()` — —
+- `test_read_text_reads_utf8()` — —
 - `test_placeholder()` — —
 - `test_import()` — —
 - `test_import_regres_module()` — —
@@ -340,6 +406,23 @@ regres/
 - `test_regres_cli_defscan_help()` — —
 - `test_regres_cli_refactor_help()` — —
 - `test_regres_cli_doctor_on_self()` — —
+- `test_git_commit_fields()` — —
+- `test_find_repo_root_finds_git()` — —
+- `test_find_repo_root_raises_when_no_git()` — —
+- `test_dedupe_paths()` — —
+- `test_check_absolute_path_existing()` — —
+- `test_check_absolute_path_missing()` — —
+- `test_check_relative_paths()` — —
+- `test_resolve_single_or_error()` — —
+- `test_resolve_single_or_error_raises()` — —
+- `test_to_rel()` — —
+- `test_safe_read_text_utf8()` — —
+- `test_sha256_of_file_consistent()` — —
+- `test_content_metrics()` — —
+- `test_extract_local_imports()` — —
+- `test_extract_symbols_ts()` — —
+- `test_parse_numstat_block()` — —
+- `test_parse_numstat_block_empty()` — —
 - `loc()` — —
 - `analyze_from_url()` — —
 - `analyze_import_errors()` — —
@@ -451,24 +534,6 @@ regres/
 - `render_json(groups, root)` — —
 - `main()` — —
 - `main()` — —
-- `c()` — —
-- `sim()` — —
-- `extract_python()` — —
-- `extract_typescript()` — —
-- `extract_go()` — —
-- `extract_rust()` — —
-- `extract_file()` — —
-- `load_gitignore()` — —
-- `scan()` — —
-- `compare_seed_to_all()` — —
-- `analyse_group()` — —
-- `classify_similarity()` — —
-- `render_text()` — —
-- `render_markdown()` — —
-- `render_seed_text()` — —
-- `render_seed_markdown()` — —
-- `render_seed_json()` — —
-- `render_json()` — —
 - `iter_files()` — —
 - `read_text()` — —
 - `md5_file()` — —
@@ -496,6 +561,24 @@ regres/
 - `to_json_toon()` — —
 - `cmd_report()` — —
 - `build_parser()` — —
+- `c()` — —
+- `sim()` — —
+- `extract_python()` — —
+- `extract_typescript()` — —
+- `extract_go()` — —
+- `extract_rust()` — —
+- `extract_file()` — —
+- `load_gitignore()` — —
+- `scan()` — —
+- `compare_seed_to_all()` — —
+- `analyse_group()` — —
+- `classify_similarity()` — —
+- `render_text()` — —
+- `render_markdown()` — —
+- `render_seed_text()` — —
+- `render_seed_markdown()` — —
+- `render_seed_json()` — —
+- `render_json()` — —
 - `run_git()` — —
 - `find_repo_root()` — —
 - `resolve_target_file()` — —
@@ -543,6 +626,76 @@ regres/
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
+- `loc()` — —
+- `analyze_from_url()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `test_ext_lang_mappings()` — —
+- `test_ignored_dirs()` — —
+- `test_c_without_color()` — —
+- `test_normalize_strips_comments()` — —
+- `test_normalize_collapses_whitespace()` — —
+- `test_definition_repr()` — —
+- `test_definition_similarity_identical()` — —
+- `test_definition_similarity_different()` — —
+- `test_classify_similarity_identical()` — —
+- `test_classify_similarity_high()` — —
+- `test_classify_similarity_medium()` — —
+- `test_classify_similarity_low()` — —
+- `test_load_gitignore_missing()` — —
+- `test_load_gitignore_reads_patterns()` — —
+- `test_path_ignored_by_gitignore()` — —
+- `test_file_action_defaults()` — —
+- `test_file_action_full()` — —
+- `test_shell_command_defaults()` — —
+- `test_diagnosis()` — —
+- `test_import_doctor()` — —
+- `test_import_doctor_main()` — —
+- `test_ts_error_re_matches()` — —
+- `test_ts_error_re_no_match_for_plain_text()` — —
+- `test_missing_module_re()` — —
+- `test_exported_member_re()` — —
+- `test_toon_quote_escapes()` — —
+- `test_parse_ts_errors_basic()` — —
+- `test_parse_ts_errors_filters_code()` — —
+- `test_parse_ts_errors_empty()` — —
+- `test_suggestions_ts2307_alias()` — —
+- `test_suggestions_ts2307_relative()` — —
+- `test_suggestions_ts2305()` — —
+- `test_suggestions_unknown_code()` — —
+- `test_grouped_errors()` — —
+- `test_metrics()` — —
+- `test_metrics_empty()` — —
+- `test_to_toon_block_legacy()` — —
+- `test_to_toon_global_payload()` — —
+- `test_to_toon_compact_per_file()` — —
+- `test_ts_error_dataclass()` — —
+- `test_report_data()` — —
+- `test_default_extensions_contains_py()` — —
+- `test_ignored_dirs_contains_node_modules()` — —
+- `test_count_word_case_insensitive()` — —
+- `test_count_word_case_sensitive()` — —
+- `test_line_count()` — —
+- `test_similarity_ratio_identical()` — —
+- `test_similarity_ratio_empty()` — —
+- `test_similarity_ratio_different()` — —
+- `test_normalize_code_strips_comments()` — —
+- `test_rel_path()` — —
+- `test_name_prefix()` — —
+- `test_extract_imports_python()` — —
+- `test_extract_imports_ts()` — —
+- `test_extract_symbols_regex_python()` — —
+- `test_extract_symbols_regex_ts()` — —
+- `test_wrapper_score_empty()` — —
+- `test_wrapper_score_high_for_reexport()` — —
+- `test_md5_file_consistent()` — —
+- `test_read_text_reads_utf8()` — —
 - `test_placeholder()` — —
 - `test_import()` — —
 - `test_import_regres_module()` — —
@@ -557,16 +710,23 @@ regres/
 - `test_regres_cli_defscan_help()` — —
 - `test_regres_cli_refactor_help()` — —
 - `test_regres_cli_doctor_on_self()` — —
-- `loc()` — —
-- `analyze_from_url()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
+- `test_git_commit_fields()` — —
+- `test_find_repo_root_finds_git()` — —
+- `test_find_repo_root_raises_when_no_git()` — —
+- `test_dedupe_paths()` — —
+- `test_check_absolute_path_existing()` — —
+- `test_check_absolute_path_missing()` — —
+- `test_check_relative_paths()` — —
+- `test_resolve_single_or_error()` — —
+- `test_resolve_single_or_error_raises()` — —
+- `test_to_rel()` — —
+- `test_safe_read_text_utf8()` — —
+- `test_sha256_of_file_consistent()` — —
+- `test_content_metrics()` — —
+- `test_extract_local_imports()` — —
+- `test_extract_symbols_ts()` — —
+- `test_parse_numstat_block()` — —
+- `test_parse_numstat_block_empty()` — —
 
 
 ## Project Structure
@@ -575,8 +735,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (250 functions, 8 classes)
-📄 `SUMR` (131 functions, 8 classes)
+📄 `SUMD` (403 functions, 8 classes)
+📄 `SUMR` (169 functions, 8 classes)
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
 📄 `docs.README` (1 functions)
@@ -592,16 +752,18 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (645 functions)
+📄 `project.map.toon` (952 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
 📄 `regres.defscan` (31 functions, 1 classes)
 📄 `regres.doctor` (30 functions, 4 classes)
+📄 `regres.doctor_models` (3 classes)
+📄 `regres.doctor_orchestrator` (41 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (41 functions)
-📄 `regres.regres` (52 functions, 1 classes)
+📄 `regres.regres` (53 functions, 1 classes)
 📄 `regres.regres_cli` (1 functions)
 📄 `scripts.import-error-toon-report`
 📄 `testql-scenarios.generated-cli-tests.testql.toon`

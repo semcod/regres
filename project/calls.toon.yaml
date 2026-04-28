@@ -1,6 +1,6 @@
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 126 | edges: 175 | modules: 7
-# CC̄=2.2
+# nodes: 126 | edges: 175 | modules: 6
+# CC̄=1.6
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -17,12 +17,12 @@ HUBS[20]:
     CC=16  in:0  out:42  total:42
   regres.defscan.extract_python
     CC=14  in:1  out:37  total:38
+  regres.defscan.extract_go
+    CC=6  in:1  out:32  total:33
   regres.defscan._run_focus_mode
     CC=20  in:1  out:32  total:33
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
-  regres.defscan.extract_go
-    CC=6  in:1  out:32  total:33
   regres.regres._render_classification_section
     CC=15  in:1  out:31  total:32
   regres.import_error_toon_report.to_toon_global_payload
@@ -35,31 +35,29 @@ HUBS[20]:
     CC=13  in:1  out:28  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
-  regres.defscan.scan
-    CC=23  in:5  out:22  total:27
-  regres.refactor.cmd_deps
-    CC=18  in:0  out:27  total:27
   regres.regres._render_regression_section
     CC=12  in:1  out:26  total:27
-  regres.defscan._run_default_mode
-    CC=17  in:1  out:25  total:26
+  regres.refactor.cmd_deps
+    CC=18  in:0  out:27  total:27
+  regres.defscan.scan
+    CC=23  in:5  out:22  total:27
+  regres.refactor.cmd_similar
+    CC=14  in:0  out:26  total:26
 
 MODULES:
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
-  project.map.toon  [1 funcs]
-    _normalize  CC=0  out:0
-  regres.defscan  [27 funcs]
+  regres.defscan  [28 funcs]
     __init__  CC=3  out:2
     _build_argument_parser  CC=1  out:18
     _def_key  CC=1  out:0
     _extract_block_ts  CC=18  out:6
     _lineno_at  CC=1  out:1
+    _normalize  CC=1  out:8
     _run_default_mode  CC=17  out:25
     _run_focus_mode  CC=20  out:32
     _run_seed_mode  CC=17  out:32
     _short_path  CC=2  out:3
-    analyse_group  CC=3  out:8
   regres.doctor  [3 funcs]
     _handle_url_mode  CC=12  out:19
     _refresh_import_error_log  CC=5  out:9
@@ -99,53 +97,53 @@ MODULES:
     _render_lineage_section  CC=2  out:3
 
 EDGES:
-  regres.import_error_toon_report.parse_ts_errors → regres.import_error_toon_report.normalize_file_rel
-  regres.import_error_toon_report.to_toon_global_payload → regres.import_error_toon_report.grouped_errors
-  regres.import_error_toon_report.to_toon_global_payload → regres.import_error_toon_report.metrics
-  regres.import_error_toon_report.to_toon_compact_per_file → regres.import_error_toon_report.toon_quote
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.grouped_errors
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.metrics
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.to_toon_global_payload
-  regres.import_error_toon_report.render_markdown → regres.import_error_toon_report.to_toon_compact_per_file
-  regres.import_error_toon_report.main → regres.import_error_toon_report.parse_args
-  regres.import_error_toon_report.main → regres.import_error_toon_report.parse_ts_errors
-  regres.import_error_toon_report.main → regres.import_error_toon_report.render_markdown
-  regres.import_error_toon_report.main → docs.DEFSCAN.print
-  regres.defscan.Definition.__init__ → project.map.toon._normalize
-  regres.defscan.extract_typescript → regres.defscan._lineno_at
-  regres.defscan.extract_typescript → regres.defscan._extract_block_ts
-  regres.defscan.extract_go → regres.defscan._extract_block_ts
-  regres.defscan.extract_go → regres.defscan._lineno_at
-  regres.defscan.extract_rust → regres.defscan._extract_block_ts
-  regres.defscan.extract_rust → regres.defscan._lineno_at
-  regres.defscan.extract_file → regres.defscan.extract_python
-  regres.defscan.extract_file → docs.DEFSCAN.print
-  regres.defscan.extract_file → regres.defscan.extract_typescript
-  regres.defscan.extract_file → regres.defscan.extract_go
-  regres.defscan.extract_file → regres.defscan.extract_rust
-  regres.defscan.scan → regres.defscan.load_gitignore
-  regres.defscan.compare_seed_to_all → regres.defscan._def_key
-  regres.defscan.compare_seed_to_all → regres.defscan.sim
-  regres.defscan.analyse_group → regres.defscan.sim
-  regres.defscan.render_text → regres.defscan.c
-  regres.defscan.render_seed_text → regres.defscan.c
-  regres.defscan.render_seed_markdown → regres.defscan._short_path
-  regres.defscan.render_seed_json → regres.defscan._short_path
-  regres.defscan.render_seed_json → regres.defscan.classify_similarity
-  regres.defscan.render_json → regres.defscan.classify_similarity
-  regres.defscan.render_json → regres.defscan._short_path
-  regres.defscan._run_seed_mode → docs.DEFSCAN.print
-  regres.defscan._run_seed_mode → regres.defscan.scan
-  regres.defscan._run_seed_mode → regres.defscan.compare_seed_to_all
-  regres.defscan._run_focus_mode → docs.DEFSCAN.print
-  regres.defscan._run_focus_mode → regres.defscan.scan
-  regres.defscan._run_default_mode → docs.DEFSCAN.print
-  regres.defscan._run_default_mode → regres.defscan.scan
-  regres.defscan._run_default_mode → regres.defscan.analyse_group
-  regres.defscan.main → regres.defscan._build_argument_parser
-  regres.defscan.main → regres.defscan.load_gitignore
-  regres.defscan.main → docs.DEFSCAN.print
-  regres.defscan.main → regres.defscan._run_seed_mode
-  regres.refactor.get_symbols → regres.refactor.extract_symbols_regex
-  regres.refactor.get_symbols → regres.refactor.extract_symbols_ast
-  regres.refactor.cmd_find → regres.refactor.iter_files
+  regres.regres._check_relative_paths → regres.regres._dedupe_paths
+  regres.regres._search_by_name_suffix → regres.regres._dedupe_paths
+  regres.regres.resolve_target_file → regres.regres._check_absolute_path
+  regres.regres.resolve_target_file → regres.regres._check_relative_paths
+  regres.regres.resolve_target_file → regres.regres._search_by_name_suffix
+  regres.regres.content_metrics → regres.regres.sha256_of_file
+  regres.regres.check_imports_at_commit → regres.regres.extract_local_imports
+  regres.regres.check_imports_at_commit → regres.regres.file_content_at_commit
+  regres.regres.check_imports_at_commit → regres.regres.safe_read_text
+  regres.regres.find_last_working_commit → regres.regres.check_imports_at_commit
+  regres.regres.search_missing_in_history → regres.regres.run_git
+  regres.regres.analyze_regression → regres.regres.check_imports_at_commit
+  regres.regres.analyze_regression → regres.regres.find_last_working_commit
+  regres.regres.analyze_regression → regres.regres.search_missing_in_history
+  regres.regres.track_filename_history → regres.regres.run_git
+  regres.regres._classify_import_problem → regres.regres.find_current_locations
+  regres.regres.classify_problem → regres.regres.extract_symbols
+  regres.regres.classify_problem → regres.regres._determine_primary_type
+  regres.regres.classify_problem → regres.regres._classify_import_problem
+  regres.regres.classify_problem → regres.regres.track_filename_history
+  regres.regres.dependency_tree → regres.regres.to_rel
+  regres.regres.dependency_tree → regres.regres.safe_read_text
+  regres.regres.dependency_tree → regres.regres.resolve_local_import
+  regres.regres.reverse_references → regres.regres.to_rel
+  regres.regres.reverse_references → regres.regres.safe_read_text
+  regres.regres.reverse_references → regres.regres.resolve_local_import
+  regres.regres.exact_and_near_duplicates → regres.regres.sha256_of_file
+  regres.regres.exact_and_near_duplicates → regres.regres.safe_read_text
+  regres.regres.exact_and_near_duplicates → regres.regres.to_rel
+  regres.regres.trace_name_and_hash_candidates → regres.regres.to_rel
+  regres.regres.trace_name_and_hash_candidates → regres.regres.safe_read_text
+  regres.regres.trace_name_and_hash_candidates → regres.regres.sha256_of_file
+  regres.regres.file_lineage → regres.regres.run_git
+  regres.regres.file_lineage → regres.regres.parse_numstat_block
+  regres.regres.changed_files_for_commit → regres.regres.run_git
+  regres.regres.references_in_recent_commits → regres.regres.changed_files_for_commit
+  regres.regres.file_content_at_commit → regres.regres.run_git
+  regres.regres.historical_dependency_tree → regres.regres.file_content_at_commit
+  regres.regres.historical_dependency_tree → regres.regres.resolve_import_historical
+  regres.regres.analyze_evolution → regres.regres.file_content_at_commit
+  regres.regres.analyze_evolution → regres.regres.historical_dependency_tree
+  regres.regres.render_markdown → regres.regres._render_classification_section
+  regres.regres.render_markdown → regres.regres._render_name_hash_section
+  regres.regres.render_markdown → regres.regres._render_metrics_section
+  regres.regres.render_markdown → regres.regres._render_references_section
+  regres.regres.render_markdown → regres.regres._render_duplicates_section
+  regres.regres.render_markdown → regres.regres._render_lineage_section
+  regres.regres.render_markdown → regres.regres._render_evolution_section
+  regres.regres.render_markdown → regres.regres._render_last_good_section
+  regres.regres.render_markdown → regres.regres._render_regression_section

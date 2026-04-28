@@ -78,3 +78,43 @@ def test_regres_cli_doctor_help():
     )
     assert result.returncode == 0, f"CLI doctor help failed: {result.stderr}"
     assert "doctor" in result.stdout, "CLI doctor help should contain 'doctor'"
+
+
+def test_regres_cli_defscan_help():
+    """Verify regres CLI defscan help works."""
+    root = Path(__file__).parent.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "regres.regres_cli", "defscan", "--help"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"CLI defscan help failed: {result.stderr}"
+    assert "defscan" in result.stdout, "CLI defscan help should contain 'defscan'"
+
+
+def test_regres_cli_refactor_help():
+    """Verify regres CLI refactor help works."""
+    root = Path(__file__).parent.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "regres.regres_cli", "refactor", "--help"],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"CLI refactor help failed: {result.stderr}"
+    assert "refactor" in result.stdout, "CLI refactor help should contain 'refactor'"
+
+
+def test_regres_cli_doctor_on_self():
+    """Verify regres CLI doctor works on the regres project itself."""
+    root = Path(__file__).parent.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "regres.regres_cli", "doctor", "--scan-root", str(root)],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"CLI doctor failed: {result.stderr}"
+    # The command should produce some output
+    assert len(result.stdout) > 0, "CLI doctor should produce output"

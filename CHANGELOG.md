@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-28
+
+### Docs
+- Update README.md
+- Update docs/DEFSCAN.md
+- Update docs/DOCTOR.md
+- Update docs/REFACTOR.md
+- Update docs/REGRES.md
+
+### Test
+- Update tests/test_regres.py
+
+### Other
+- Update regres/__init__.py
+- Update regres/defscan.py
+- Update regres/doctor.py
+- Update regres/refactor.py
+- Update regres/regres.py
+- Update regres_cli.py
+
 ## [0.1.2] - 2026-04-28
 
 ### Docs

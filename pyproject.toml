@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "regres"
-version = "0.1.2"
+version = "0.1.3"
 description = "Regression/import diagnostics helpers with TOON reports"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,6 +15,7 @@ license = "Apache-2.0"
 dependencies = []
 
 [project.scripts]
+regres = "regres_cli:main"
 import-error-toon-report = "regres.import_error_toon_report:main"
 
 [tool.setuptools]

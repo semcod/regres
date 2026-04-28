@@ -51,11 +51,11 @@ regres import-error-toon-report
 
 ## AI Cost Tracking
 
-![PyPI](https://img.shields.io/badge/pypi-costs-blue) ![Version](https://img.shields.io/badge/version-0.1.32-blue) ![Python](https://img.shields.io/badge/python-3.9+-blue) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
-![AI Cost](https://img.shields.io/badge/AI%20Cost-$4.65-orange) ![Human Time](https://img.shields.io/badge/Human%20Time-7.2h-blue) ![Model](https://img.shields.io/badge/Model-openrouter%2Fqwen%2Fqwen3--coder--next-lightgrey)
+![PyPI](https://img.shields.io/badge/pypi-costs-blue) ![Version](https://img.shields.io/badge/version-0.1.33-blue) ![Python](https://img.shields.io/badge/python-3.9+-blue) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![AI Cost](https://img.shields.io/badge/AI%20Cost-$4.80-orange) ![Human Time](https://img.shields.io/badge/Human%20Time-7.3h-blue) ![Model](https://img.shields.io/badge/Model-openrouter%2Fqwen%2Fqwen3--coder--next-lightgrey)
 
-- 🤖 **LLM usage:** $4.6500 (31 commits)
-- 👤 **Human dev:** ~$718 (7.2h @ $100/h, 30min dedup)
+- 🤖 **LLM usage:** $4.8000 (32 commits)
+- 👤 **Human dev:** ~$726 (7.3h @ $100/h, 30min dedup)
 
 Generated on 2026-04-28 using [openrouter/qwen/qwen3-coder-next](https://openrouter.ai/qwen/qwen3-coder-next)
 

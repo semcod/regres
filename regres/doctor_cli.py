@@ -162,10 +162,12 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                 ],
             )
 
-            # c2004-maskservice-patch-v5: dependency chain analysis. For each
-            # target file flagged by page diagnoses, walk its relative imports
-            # and report broken/stub links. This unlocks the multi-step repair
-            # workflow shown in the markdown report.
+            # c2004-maskservice-patch-v5: dependency chain analysis. We walk
+            # imports of:
+            #   (a) any file flagged by page diagnoses (modify action),
+            #   (b) the URL-target page file itself even if no page diagnosis
+            #       fired — to catch cases where the page looks fine content-
+            #       wise but its imports are broken (Vite 500 at runtime).
             chain_targets: List[Path] = []
             for diag in page_diagnoses:
                 for action in diag.file_actions:
@@ -176,6 +178,10 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                     candidate = scan_root / action.path
                     if candidate.exists() and candidate not in chain_targets:
                         chain_targets.append(candidate)
+            # Always include the resolved page files even when no diag fired.
+            for page_file in doctor._find_page_files(module_path, page_token or ""):
+                if page_file.exists() and page_file not in chain_targets:
+                    chain_targets.append(page_file)
 
             if chain_targets:
                 doctor.add_plan_step(
@@ -216,6 +222,72 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
                     "broken_imports": broken_total,
                     "stub_imports": stub_total,
                 })
+
+                # c2004-maskservice-patch-v5: surface broken imports as their
+                # own diagnoses so they appear in the diagnosis list, get a
+                # severity, and (where the import targets a `.page.ts` file)
+                # become a pointer for the user to invoke regres recursively
+                # on the chained file.
+                from .doctor_models import Diagnosis as _Diag, FileAction as _FA, ShellCommand as _SC
+                for entry in chains_data:
+                    target_rel = entry["target"]
+                    chain = entry["chain"] or []
+                    broken = [c for c in chain if not c.get("exists")]
+                    stubs = [c for c in chain if c.get("is_page_stub")]
+                    if not broken and not stubs:
+                        continue
+                    nlp_lines = [
+                        f"Plik `{target_rel}` zawiera relatywne importy, które nie są zresolwowane "
+                        f"({len(broken)} broken, {len(stubs)} stub). Vite zwróci 500 przy próbie "
+                        "załadowania strony, dopóki łańcuch nie zostanie naprawiony."
+                    ]
+                    fa: List[_FA] = [_FA(
+                        path=target_rel,
+                        action="modify",
+                        reason="Imports require rewriting or chained restore.",
+                    )]
+                    sc: List[_SC] = []
+                    for c in broken[:6]:
+                        nlp_lines.append(f"- BROKEN `{c['import']}` z `{c['from_file']}`")
+                        sc.append(_SC(
+                            command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
+                            description=f"Import `{c['import']}` nie znaleziony",
+                        ))
+                        url_hint = doctor._suggest_url_for_path(c["import"])
+                        if url_hint:
+                            sc.append(_SC(
+                                command=(
+                                    f".venv/bin/python -m regres.regres_cli doctor "
+                                    f"--scan-root {scan_root} --url '{url_hint}' --all "
+                                    f"--git-history --out-md .regres/{Path(c['import']).stem}-doctor.md"
+                                ),
+                                description=f"Następny krok: regres na {url_hint}",
+                            ))
+                    for c in stubs[:6]:
+                        resolved = c.get("resolved_path", "?")
+                        nlp_lines.append(f"- STUB `{resolved}` ← `{c['import']}` (placeholder page)")
+                        url_hint = doctor._suggest_url_for_path(resolved)
+                        if url_hint:
+                            sc.append(_SC(
+                                command=(
+                                    f".venv/bin/python -m regres.regres_cli doctor "
+                                    f"--scan-root {scan_root} --url '{url_hint}' --all "
+                                    f"--git-history --out-md .regres/{Path(resolved).stem}-doctor.md"
+                                ),
+                                description=f"Naprawa łańcuchowa: {url_hint}",
+                            ))
+                    doctor.diagnoses.append(_Diag(
+                        summary=(
+                            f"Łańcuch importów `{target_rel}` ma {len(broken)} "
+                            "niezresolwowanych i " f"{len(stubs)} placeholder linków"
+                        ),
+                        problem_type="import_resolution_failure",
+                        severity="high" if broken else "medium",
+                        nlp_description="\n".join(nlp_lines),
+                        file_actions=fa,
+                        shell_commands=sc,
+                        confidence=0.8,
+                    ))
 
             if args.llm:
                 doctor.add_plan_step(

@@ -183,6 +183,12 @@ def _ensure_env_file(scan_root: Path) -> Tuple[Path, bool]:
     env_path = scan_root / ENV_FILE_RELATIVE
     if env_path.is_file():
         return env_path, True
+
+    def _default_to_env_literal(default: Any) -> str:
+        if isinstance(default, bool):
+            return "1" if default else "0"
+        return str(default)
+
     try:
         env_path.parent.mkdir(parents=True, exist_ok=True)
         # Write a self-documenting template with all known keys.
@@ -194,7 +200,7 @@ def _ensure_env_file(scan_root: Path) -> Tuple[Path, bool]:
         ]
         for env_name, _attr, default, _parser, help_text in CONFIG_FIELDS:
             lines.append(f"# {help_text}")
-            lines.append(f"# {env_name}={default}")
+            lines.append(f"{env_name}={_default_to_env_literal(default)}")
             lines.append("")
         env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     except OSError:

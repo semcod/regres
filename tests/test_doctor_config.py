@@ -46,8 +46,13 @@ def test_load_config_uses_defaults_and_creates_env_file(tmp_path: Path, monkeypa
     assert env_path.is_file()
     text = env_path.read_text(encoding="utf-8")
     assert "REGRES_HISTORY_WINDOW_DAYS" in text
+    assert "REGRES_HISTORY_WINDOW_DAYS=30" in text
+    assert "REGRES_HISTORY_MAX_ITERATIONS=30" in text
+    assert "REGRES_HISTORY_SHRINKAGE_FACTOR=0.5" in text
+    assert "REGRES_DEPENDENCY_CHAIN_DEPTH=1" in text
+    assert "REGRES_PRINT_BANNER=1" in text
     assert cfg.env_file_existed is False
-    assert cfg.sources["history_window_days"] == "default"
+    assert cfg.sources["history_window_days"] == "file"
 
 
 # --------------------------------------------------------------------------
@@ -98,7 +103,7 @@ def test_load_config_invalid_int_falls_back_to_default(tmp_path: Path, monkeypat
     monkeypatch.setenv("REGRES_HISTORY_WINDOW_DAYS", "not-a-number")
     cfg = load_config(tmp_path)
     assert cfg.history_window_days == 30
-    assert cfg.sources["history_window_days"] == "default"
+    assert cfg.sources["history_window_days"] == "file"
 
 
 # --------------------------------------------------------------------------

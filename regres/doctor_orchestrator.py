@@ -373,6 +373,7 @@ class DoctorOrchestrator:
 
     PLACEHOLDER_TEXT_PATTERNS = (
         "strona w trakcie migracji",
+        "w trakcie migracji",
         "page under migration",
         "coming soon",
         "wkrótce",
@@ -960,16 +961,19 @@ class DoctorOrchestrator:
         if not route_path:
             return None
         path = route_path.strip('/').split('?', 1)[0]
-        first_segment = path.split('/', 1)[0]
+        parts = [segment for segment in path.split('/') if segment]
+        if not parts:
+            return None
+
+        first_segment = parts[0]
         if not first_segment:
             return None
+        if len(parts) > 1 and first_segment == module_name:
+            return parts[1]
         if first_segment == module_name:
             return None
         if first_segment.startswith(module_name + '-'):
             return first_segment[len(module_name) + 1 :]
-        parts = path.split('/')
-        if len(parts) > 1 and parts[0] == module_name:
-            return parts[1]
         return None
 
     def _find_page_files(self, module_path: Path, page_token: str) -> List[Path]:

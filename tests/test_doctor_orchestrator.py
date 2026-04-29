@@ -159,6 +159,35 @@ def test_analyze_runtime_console_icon_not_found(tmp_path: Path):
     assert "📝" in diag.nlp_description
     assert "📄" in diag.nlp_description
 
+
+def test_extract_page_token_for_nested_module_path(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    assert d._extract_page_token("connect-test/operator-workshop", "connect-test") == "operator-workshop"
+
+
+def test_page_stub_detects_generic_migration_phrase(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_path = tmp_path / "connect-test" / "frontend" / "src" / "modules" / "connect-test"
+    pages_dir = module_path / "pages"
+    pages_dir.mkdir(parents=True)
+    page_file = pages_dir / "reports.page.ts"
+    page_file.write_text(
+        """
+export class ReportsPage {
+  render(): string {
+    return '<div>Raporty</div><p>Widok raportów jest w trakcie migracji.</p>';
+  }
+}
+""",
+        encoding="utf-8",
+    )
+
+    result = d.analyze_page_implementations("connect-test/reports", module_path, "connect-test")
+
+    assert len(result) == 1
+    assert result[0].problem_type == "page_placeholder"
+    assert "placeholder" in result[0].summary.lower()
+
 # ---------------------------------------------------------------------------
 # analyze_duplicates tests
 # ---------------------------------------------------------------------------

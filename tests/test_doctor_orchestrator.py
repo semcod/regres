@@ -792,3 +792,630 @@ def test_page_registry_compliance_returns_none_when_no_index(tmp_path: Path):
     module_dir = tmp_path / "connect-foo"
     module_dir.mkdir()
     assert d.analyze_page_registry_compliance(module_dir, "connect-foo") is None
+
+# ---------------------------------------------------------------------------
+# Helper function tests (refactored from _diagnose_page_stub)
+# ---------------------------------------------------------------------------
+
+def test_check_page_stub_indicators_placeholder_text(tmp_path: Path):
+    """Test _check_page_stub_indicators detects placeholder text."""
+    d = DoctorOrchestrator(tmp_path)
+    text = "To jest placeholder w trakcie migracji"
+    has_placeholder, is_short_stub, empty_render = d._check_page_stub_indicators(text, 5)
+    assert has_placeholder is True
+    assert is_short_stub is False
+    assert empty_render is False
+
+def test_check_page_stub_indicators_short_stub(tmp_path: Path):
+    """Test _check_page_stub_indicators detects short stub."""
+    d = DoctorOrchestrator(tmp_path)
+    text = "render() { return 'placeholder'; }"
+    has_placeholder, is_short_stub, empty_render = d._check_page_stub_indicators(text, 10)
+    assert has_placeholder is False
+    assert is_short_stub is True
+    assert empty_render is False
+
+def test_check_page_stub_indicators_empty_render(tmp_path: Path):
+    """Test _check_page_stub_indicators detects empty render."""
+    d = DoctorOrchestrator(tmp_path)
+    text = "render() { return ''; }"
+    has_placeholder, is_short_stub, empty_render = d._check_page_stub_indicators(text, 20)
+    assert has_placeholder is False
+    assert is_short_stub is False
+    assert empty_render is True
+
+def test_check_page_stub_indicators_normal_page(tmp_path: Path):
+    """Test _check_page_stub_indicators with normal page content."""
+    d = DoctorOrchestrator(tmp_path)
+    text = "class TestPage { render() { return '<div>Content</div>'; } }"
+    has_placeholder, is_short_stub, empty_render = d._check_page_stub_indicators(text, 50)
+    assert has_placeholder is False
+    assert is_short_stub is False
+    assert empty_render is False
+
+def test_detect_content_regression(tmp_path: Path):
+    """Test _detect_content_regression detects shrinkage."""
+    d = DoctorOrchestrator(tmp_path)
+    history_candidates = [
+        {"line_count": 100, "hash": "abc123"},
+        {"line_count": 80, "hash": "def456"},
+    ]
+    is_regression = d._detect_content_regression(30, history_candidates, False)
+    assert is_regression is True
+
+def test_detect_content_regression_no_regression(tmp_path: Path):
+    """Test _detect_content_regression when no regression."""
+    d = DoctorOrchestrator(tmp_path)
+    history_candidates = [
+        {"line_count": 100, "hash": "abc123"},
+    ]
+    is_regression = d._detect_content_regression(80, history_candidates, False)
+    assert is_regression is False
+
+def test_detect_content_regression_with_placeholder(tmp_path: Path):
+    """Test _detect_content_regression ignores placeholder case."""
+    d = DoctorOrchestrator(tmp_path)
+    history_candidates = [
+        {"line_count": 100, "hash": "abc123"},
+    ]
+    is_regression = d._detect_content_regression(10, history_candidates, True)
+    assert is_regression is False
+
+def test_detect_content_regression_empty_history(tmp_path: Path):
+    """Test _detect_content_regression with empty history."""
+    d = DoctorOrchestrator(tmp_path)
+    is_regression = d._detect_content_regression(10, [], False)
+    # Empty history returns empty list (falsy)
+    assert not is_regression
+
+def test_add_backup_candidate_none(tmp_path: Path):
+    """Test _add_backup_candidate with None candidate."""
+    d = DoctorOrchestrator(tmp_path)
+    actions = []
+    commands = []
+    nlp_lines = []
+    
+    d._add_backup_candidate(None, "test.ts", actions, commands, nlp_lines)
+    
+    assert len(actions) == 0
+    assert len(commands) == 0
+    assert len(nlp_lines) == 0
+
+def test_add_backup_candidate_with_path(tmp_path: Path):
+    """Test _add_backup_candidate with valid path."""
+    d = DoctorOrchestrator(tmp_path)
+    backup_path = tmp_path / "backup.ts"
+    backup_path.write_text("backup content")
+    
+    actions = []
+    commands = []
+    nlp_lines = []
+    
+    d._add_backup_candidate(backup_path, "test.ts", actions, commands, nlp_lines)
+    
+    assert len(actions) == 1
+    assert len(commands) == 1
+    assert len(nlp_lines) == 1
+    assert "backup" in nlp_lines[0].lower()
+
+def test_add_history_candidates_empty(tmp_path: Path):
+    """Test _add_history_candidates with empty list."""
+    d = DoctorOrchestrator(tmp_path)
+    actions = []
+    commands = []
+    nlp_lines = []
+    
+    d._add_history_candidates([], "test.ts", actions, commands, nlp_lines)
+    
+    assert len(actions) == 0
+    assert len(commands) == 0
+    assert len(nlp_lines) == 0
+
+def test_add_history_candidates_with_data(tmp_path: Path):
+    """Test _add_history_candidates with valid candidates."""
+    d = DoctorOrchestrator(tmp_path)
+    history_candidates = [
+        {"hash": "abc123", "date": "2024-01-01", "line_count": 100, "source_path": "test.ts", "fingerprint": "abc"},
+    ]
+    actions = []
+    commands = []
+    nlp_lines = []
+    
+    d._add_history_candidates(history_candidates, "test.ts", actions, commands, nlp_lines)
+    
+    assert len(actions) == 1
+    assert len(commands) == 2  # 1 for show, 1 for comparison
+    assert len(nlp_lines) == 1
+    assert "kandydatów" in nlp_lines[0]
+
+
+# ---------------------------------------------------------------------------
+# resolve_symlink tests
+# ---------------------------------------------------------------------------
+
+def test_resolve_symlink_regular_file(tmp_path: Path):
+    f = tmp_path / "real.ts"
+    f.write_text("content")
+    result = DoctorOrchestrator.resolve_symlink(f)
+    assert result == f.resolve()
+
+
+def test_resolve_symlink_with_symlink(tmp_path: Path):
+    target = tmp_path / "target.ts"
+    target.write_text("content")
+    link = tmp_path / "link.ts"
+    link.symlink_to(target)
+    result = DoctorOrchestrator.resolve_symlink(link)
+    assert result == target.resolve()
+
+
+def test_resolve_symlink_nonexistent(tmp_path: Path):
+    result = DoctorOrchestrator.resolve_symlink(tmp_path / "ghost.ts")
+    assert isinstance(result, Path)
+
+
+# ---------------------------------------------------------------------------
+# _map_workspace_to_frontend tests
+# ---------------------------------------------------------------------------
+
+def test_map_workspace_to_frontend_matches_pattern(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    src = tmp_path / "connect-config" / "frontend" / "src" / "modules" / "connect-config" / "pages" / "foo.ts"
+    result = d._map_workspace_to_frontend(src)
+    expected = tmp_path / "frontend" / "src" / "modules" / "connect-config" / "pages" / "foo.ts"
+    assert result == expected
+
+
+def test_map_workspace_to_frontend_no_match(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    src = tmp_path / "frontend" / "src" / "modules" / "connect-config" / "pages" / "foo.ts"
+    result = d._map_workspace_to_frontend(src)
+    assert result == src
+
+
+def test_map_workspace_to_frontend_different_module_names(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    src = tmp_path / "connect-config" / "frontend" / "src" / "modules" / "connect-other" / "foo.ts"
+    result = d._map_workspace_to_frontend(src)
+    assert result == src
+
+
+# ---------------------------------------------------------------------------
+# _find_symlink_base tests
+# ---------------------------------------------------------------------------
+
+def test_find_symlink_base_no_symlink(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    nested = tmp_path / "a" / "b" / "c.ts"
+    nested.parent.mkdir(parents=True)
+    nested.write_text("x")
+    assert d._find_symlink_base(nested) is None
+
+
+def test_find_symlink_base_with_symlinked_dir(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    real_dir = tmp_path / "real_dir"
+    real_dir.mkdir()
+    link_dir = tmp_path / "link_dir"
+    link_dir.symlink_to(real_dir)
+    file_in_link = link_dir / "file.ts"
+    result = d._find_symlink_base(file_in_link)
+    assert result is not None
+
+
+# ---------------------------------------------------------------------------
+# _extract_relative_imports tests
+# ---------------------------------------------------------------------------
+
+def test_extract_relative_imports_double_quoted(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    text = 'import { Foo } from "./foo";\nimport { Bar } from "../bar";'
+    result = d._extract_relative_imports(text)
+    assert "./foo" in result
+    assert "../bar" in result
+
+
+def test_extract_relative_imports_single_quoted(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    text = "import { Baz } from './baz';"
+    result = d._extract_relative_imports(text)
+    assert "./baz" in result
+
+
+def test_extract_relative_imports_skips_absolute(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    text = 'import { X } from "some-library";\nimport { Y } from "./local";'
+    result = d._extract_relative_imports(text)
+    assert "./local" in result
+    assert "some-library" not in result
+
+
+def test_extract_relative_imports_deduplicates(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    text = 'import { A } from "./same";\nimport { B } from "./same";'
+    result = d._extract_relative_imports(text)
+    assert result.count("./same") == 1
+
+
+def test_extract_relative_imports_empty(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    assert d._extract_relative_imports("") == []
+
+
+# ---------------------------------------------------------------------------
+# _resolve_relative_import tests
+# ---------------------------------------------------------------------------
+
+def test_resolve_relative_import_finds_ts_file(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    target = tmp_path / "frontend" / "src" / "helper.ts"
+    target.parent.mkdir(parents=True)
+    target.write_text("export const x = 1;")
+    from_file = tmp_path / "frontend" / "src" / "page.ts"
+    from_file.write_text("")
+    resolved, tried = d._resolve_relative_import(from_file, "./helper")
+    assert resolved == target
+    assert any("helper" in t for t in tried)
+
+
+def test_resolve_relative_import_not_found(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    from_file = tmp_path / "frontend" / "src" / "page.ts"
+    from_file.parent.mkdir(parents=True)
+    from_file.write_text("")
+    resolved, tried = d._resolve_relative_import(from_file, "./nonexistent-module")
+    assert resolved is None
+    assert len(tried) > 0
+
+
+def test_resolve_relative_import_with_explicit_extension(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    target = tmp_path / "frontend" / "src" / "utils.ts"
+    target.parent.mkdir(parents=True)
+    target.write_text("export {};")
+    from_file = tmp_path / "frontend" / "src" / "consumer.ts"
+    from_file.write_text("")
+    resolved, _ = d._resolve_relative_import(from_file, "./utils.ts")
+    assert resolved == target
+
+
+def test_resolve_relative_import_maps_workspace_to_frontend(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    target = tmp_path / "frontend" / "src" / "modules" / "connect-config" / "helper.ts"
+    target.parent.mkdir(parents=True)
+    target.write_text("export const h = 1;")
+    from_file = tmp_path / "connect-config" / "frontend" / "src" / "modules" / "connect-config" / "page.ts"
+    from_file.parent.mkdir(parents=True)
+    from_file.write_text("")
+    resolved, _ = d._resolve_relative_import(from_file, "./helper")
+    assert resolved == target
+
+
+# ---------------------------------------------------------------------------
+# analyze_dependency_chain tests
+# ---------------------------------------------------------------------------
+
+def test_analyze_dependency_chain_no_imports(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    target = tmp_path / "page.ts"
+    target.write_text("export class Foo { render() { return '<div/>'; } }")
+    result = d.analyze_dependency_chain(target, max_depth=1)
+    assert result == []
+
+
+def test_analyze_dependency_chain_broken_import(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    target = tmp_path / "frontend" / "src" / "page.ts"
+    target.parent.mkdir(parents=True)
+    target.write_text('import { X } from "./missing-dep";')
+    result = d.analyze_dependency_chain(target, max_depth=1)
+    broken = [r for r in result if not r.get("exists")]
+    assert len(broken) == 1
+    assert "missing-dep" in broken[0]["import"]
+
+
+def test_analyze_dependency_chain_resolved_import(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    base = tmp_path / "frontend" / "src"
+    base.mkdir(parents=True)
+    dep = base / "dep.ts"
+    dep.write_text("export const x = 1;")
+    target = base / "page.ts"
+    target.write_text('import { x } from "./dep";')
+    result = d.analyze_dependency_chain(target, max_depth=1)
+    resolved = [r for r in result if r.get("exists")]
+    assert len(resolved) == 1
+
+
+def test_analyze_dependency_chain_missing_file(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    result = d.analyze_dependency_chain(tmp_path / "nonexistent.ts", max_depth=1)
+    assert result == []
+
+
+# ---------------------------------------------------------------------------
+# analyze_module_loader_compliance tests
+# ---------------------------------------------------------------------------
+
+def test_analyze_module_loader_compliance_no_entry_file(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = tmp_path / "connect-foo"
+    module_dir.mkdir()
+    result = d.analyze_module_loader_compliance(module_dir, "connect-foo")
+    assert result is None
+
+
+def test_analyze_module_loader_compliance_has_default_export(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = tmp_path / "connect-foo"
+    module_dir.mkdir()
+    entry = module_dir / "connect-foo.module.ts"
+    entry.write_text("export default class ConnectFooModule {}")
+    result = d.analyze_module_loader_compliance(module_dir, "connect-foo")
+    assert result is None
+
+
+def test_analyze_module_loader_compliance_has_module_class(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = tmp_path / "connect-bar"
+    module_dir.mkdir()
+    entry = module_dir / "connect-bar.module.ts"
+    entry.write_text("export class ConnectBarModule extends BaseModule {}")
+    result = d.analyze_module_loader_compliance(module_dir, "connect-bar")
+    assert result is None
+
+
+def test_analyze_module_loader_compliance_no_module_export(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_dir = tmp_path / "connect-baz"
+    module_dir.mkdir()
+    entry = module_dir / "connect-baz.module.ts"
+    entry.write_text("export class ConnectBazView {}\nexport class ConnectBazHelper {}")
+    result = d.analyze_module_loader_compliance(module_dir, "connect-baz")
+    assert result is not None
+    assert result.problem_type == "module_loader_no_class"
+    assert result.severity == "critical"
+    assert "ConnectBazModule" in result.nlp_description
+
+
+# ---------------------------------------------------------------------------
+# _fingerprint_page_content tests
+# ---------------------------------------------------------------------------
+
+def test_fingerprint_page_content_extracts_heading(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    html = "<div><h2>Konfiguracja systemu</h2><p>opis</p></div>"
+    result = d._fingerprint_page_content(html)
+    assert "Konfiguracja systemu" in result
+
+
+def test_fingerprint_page_content_known_marker(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    result = d._fingerprint_page_content("some text Sitemap here")
+    assert "Sitemap" in result
+
+
+def test_fingerprint_page_content_empty(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    result = d._fingerprint_page_content("")
+    assert result == ""
+
+
+def test_fingerprint_page_content_max_length(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    html = "".join(f"<h1>Heading {i}</h1>" for i in range(20))
+    result = d._fingerprint_page_content(html)
+    assert len(result) <= 200
+
+
+# ---------------------------------------------------------------------------
+# _filter_actionable_diagnoses tests
+# ---------------------------------------------------------------------------
+
+def test_filter_actionable_diagnoses_keeps_with_file_actions(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    from regres.doctor_models import FileAction
+    diag = Diagnosis(
+        summary="test", problem_type="page_placeholder", severity="high",
+        nlp_description="desc",
+        file_actions=[FileAction(path="foo.ts", action="modify", reason="fix")],
+    )
+    result = d._filter_actionable_diagnoses([diag])
+    assert len(result) == 1
+
+
+def test_filter_actionable_diagnoses_keeps_import_error(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    diag = Diagnosis(
+        summary="test", problem_type="import_error", severity="high",
+        nlp_description="desc",
+    )
+    result = d._filter_actionable_diagnoses([diag])
+    assert len(result) == 1
+
+
+def test_filter_actionable_diagnoses_drops_empty(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    diag = Diagnosis(
+        summary="no actions", problem_type="wrapper_analysis", severity="low",
+        nlp_description="desc",
+    )
+    result = d._filter_actionable_diagnoses([diag])
+    assert len(result) == 0
+
+
+def test_filter_actionable_diagnoses_mixed(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    from regres.doctor_models import ShellCommand
+    keep = Diagnosis(
+        summary="keep", problem_type="import_error", severity="high",
+        nlp_description="d", shell_commands=[ShellCommand(command="ls", description="x")],
+    )
+    drop = Diagnosis(
+        summary="drop", problem_type="wrapper_analysis", severity="low",
+        nlp_description="d",
+    )
+    result = d._filter_actionable_diagnoses([keep, drop])
+    assert len(result) == 1
+    assert result[0].summary == "keep"
+
+
+# ---------------------------------------------------------------------------
+# _build_url_fallback_diagnosis tests
+# ---------------------------------------------------------------------------
+
+def test_build_url_fallback_diagnosis_returns_diagnosis(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_path = tmp_path / "connect-foo"
+    module_path.mkdir()
+    diag = d._build_url_fallback_diagnosis("connect-foo/settings", module_path)
+    assert diag is not None
+    assert diag.problem_type == "url_targeted_review"
+    assert diag.severity == "low"
+
+
+def test_build_url_fallback_diagnosis_includes_candidate_file(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    module_path = tmp_path / "connect-foo"
+    module_path.mkdir()
+    ts_file = module_path / "settings-helper.ts"
+    ts_file.write_text("export const x = 1;")
+    diag = d._build_url_fallback_diagnosis("connect-foo/settings", module_path)
+    paths = [a.path for a in diag.file_actions]
+    assert any("settings" in p for p in paths)
+
+
+# ---------------------------------------------------------------------------
+# probe_vite_runtime transport error tests
+# ---------------------------------------------------------------------------
+
+def test_probe_vite_runtime_transport_error(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        import urllib.error
+        mock_urlopen.side_effect = urllib.error.URLError("connection refused")
+        result = d.probe_vite_runtime("http://localhost:8100", "frontend/src/page.ts")
+    assert result["ok"] is False
+    assert result["transport_error"]  # non-empty string
+
+
+def test_probe_vite_runtime_ok_response(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_response = MagicMock()
+        mock_response.status = 200
+        mock_response.read.return_value = b"export class Foo {}"
+        mock_response.__enter__ = lambda s: s
+        mock_response.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_response
+        result = d.probe_vite_runtime("http://localhost:8100", "frontend/src/page.ts")
+    assert result["ok"] is True
+    assert result["status"] == 200
+
+
+# ---------------------------------------------------------------------------
+# analyze_runtime_console edge case tests
+# ---------------------------------------------------------------------------
+
+def test_analyze_runtime_console_no_icon_lines(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    log = tmp_path / "runtime.log"
+    log.write_text("normal log line\nanother line\n[ERROR] something else", encoding="utf-8")
+    result = d.analyze_runtime_console(log)
+    assert result == []
+
+
+def test_analyze_runtime_console_single_icon(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    log = tmp_path / "runtime.log"
+    log.write_text(
+        "[IconComponent] SVG icon not found: 🔐 - Available icons: 50",
+        encoding="utf-8",
+    )
+    result = d.analyze_runtime_console(log)
+    assert len(result) == 1
+    assert result[0].problem_type == "runtime_icon_registry_miss"
+    assert "🔐" in result[0].nlp_description
+
+
+def test_analyze_runtime_console_many_icons_severity_high(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    log = tmp_path / "runtime.log"
+    lines = [
+        f"[IconComponent] SVG icon not found: icon-{i} - Available icons: 50"
+        for i in range(10)
+    ]
+    log.write_text("\n".join(lines), encoding="utf-8")
+    result = d.analyze_runtime_console(log)
+    assert len(result) == 1
+    assert result[0].severity == "high"
+
+
+def test_analyze_runtime_console_deduplicates_icons(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    log = tmp_path / "runtime.log"
+    log.write_text(
+        "\n".join([
+            "[IconComponent] SVG icon not found: 📝 - Available icons: 149",
+        ] * 20),
+        encoding="utf-8",
+    )
+    result = d.analyze_runtime_console(log)
+    assert len(result) == 1
+    assert result[0].nlp_description.count("📝") == 1
+
+
+# ---------------------------------------------------------------------------
+# _extract_page_token edge cases
+# ---------------------------------------------------------------------------
+
+def test_extract_page_token_module_name_only(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    assert d._extract_page_token("connect-test", "connect-test") is None
+
+
+def test_extract_page_token_hyphenated_subpage(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    assert d._extract_page_token("connect-config-security-settings", "connect-config") == "security-settings"
+
+
+def test_extract_page_token_empty_path(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    assert d._extract_page_token("", "connect-test") is None
+
+
+def test_extract_page_token_unrelated_module(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    assert d._extract_page_token("other-module/page", "connect-test") is None
+
+
+# ---------------------------------------------------------------------------
+# collect_structure_snapshot tests
+# ---------------------------------------------------------------------------
+
+def test_collect_structure_snapshot_empty_dir(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    result = d.collect_structure_snapshot(max_entries=10)
+    assert isinstance(result, list)
+
+
+def test_collect_structure_snapshot_returns_ts_files(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    frontend_src = tmp_path / "frontend" / "src"
+    frontend_src.mkdir(parents=True)
+    (frontend_src / "foo.ts").write_text("export class Foo {}")
+    (frontend_src / "bar.ts").write_text("export class Bar {}")
+    result = d.collect_structure_snapshot(max_entries=50)
+    assert isinstance(result, list)
+    assert all(isinstance(e, str) for e in result)
+    assert any("foo.ts" in p or "bar.ts" in p for p in result)
+
+
+def test_collect_structure_snapshot_respects_max_entries(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    src = tmp_path / "frontend" / "src"
+    src.mkdir(parents=True)
+    for i in range(30):
+        (src / f"file{i}.ts").write_text(f"export const x{i} = {i};")
+    result = d.collect_structure_snapshot(max_entries=10)
+    assert len(result) <= 10

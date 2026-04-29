@@ -1,9 +1,9 @@
-# redup/duplication | 0 groups | 13f 9341L | 2026-04-29
+# redup/duplication | 0 groups | 13f 9492L | 2026-04-29
 
 SUMMARY:
   files_scanned: 13
-  total_lines:   9341
+  total_lines:   9492
   dup_groups:    0
   dup_fragments: 0
   saved_lines:   0
-  scan_ms:       4152
+  scan_ms:       4204

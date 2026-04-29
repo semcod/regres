@@ -1,6 +1,6 @@
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 178 | edges: 240 | modules: 9
-# CC̄=1.3
+# nodes: 188 | edges: 250 | modules: 9
+# CC̄=1.2
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -13,32 +13,32 @@ HUBS[20]:
     CC=1  in:1  out:49  total:50
   regres.defscan.render_seed_text
     CC=10  in:1  out:42  total:43
-  regres.refactor.cmd_hotmap
-    CC=16  in:0  out:42  total:42
   regres.doctor_cli._handle_auto_decision_flow
     CC=18  in:1  out:41  total:42
+  regres.refactor.cmd_hotmap
+    CC=16  in:0  out:42  total:42
   regres.doctor_cli._handle_url_mode
     CC=21  in:1  out:33  total:34
-  regres.defscan._run_seed_mode
-    CC=17  in:1  out:32  total:33
+  regres.doctor_cli._create_import_chain_diagnoses
+    CC=18  in:1  out:32  total:33
   regres.defscan.extract_go
     CC=6  in:1  out:32  total:33
+  regres.defscan._run_seed_mode
+    CC=17  in:1  out:32  total:33
   regres.regres._render_classification_section
     CC=15  in:1  out:31  total:32
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
-  regres.defscan.c
-    CC=2  in:30  out:0  total:30
   regres.regres_cli._extend_if_set
     CC=3  in:28  out:2  total:30
+  regres.defscan.c
+    CC=2  in:30  out:0  total:30
   regres.regres.trace_name_and_hash_candidates
     CC=13  in:1  out:28  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
-  regres.regres._render_regression_section
-    CC=12  in:1  out:26  total:27
   regres.doctor_cli._save_report
     CC=20  in:2  out:25  total:27
   regres.regres_cli._build_doctor_argv
@@ -58,15 +58,17 @@ MODULES:
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
     _extract_block_ts  CC=12  out:4
-  regres.doctor_cli  [8 funcs]
+  regres.doctor_cli  [18 funcs]
     _build_parser  CC=1  out:23
+    _collect_dependency_chain_targets  CC=12  out:6
+    _create_import_chain_diagnoses  CC=18  out:32
+    _derive_vite_base  CC=6  out:2
     _handle_auto_decision_flow  CC=18  out:41
     _handle_runtime_log_diagnostics  CC=6  out:8
     _handle_url_mode  CC=21  out:33
     _refresh_import_error_log  CC=5  out:11
     _resolve_runtime_log_path  CC=7  out:8
-    _save_report  CC=20  out:25
-    main  CC=5  out:19
+    _run_dependency_chain_analysis  CC=8  out:16
   regres.doctor_config  [4 funcs]
     print_banner_to  CC=4  out:2
     _ensure_env_file  CC=4  out:7

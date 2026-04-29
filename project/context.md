@@ -6,29 +6,29 @@
 - **Primary Language**: md
 - **Languages**: md: 17, python: 13, yaml: 9, shell: 2, txt: 1
 - **Analysis Mode**: static
-- **Total Functions**: 1485
-- **Total Classes**: 20
+- **Total Functions**: 1544
+- **Total Classes**: 16
 - **Modules**: 44
-- **Entry Points**: 1307
+- **Entry Points**: 1356
 
 ## Architecture by Module
 
 ### SUMD
-- **Functions**: 693
-- **Classes**: 5
+- **Functions**: 715
+- **Classes**: 3
 - **File**: `SUMD.md`
 
 ### project.map.toon
-- **Functions**: 452
+- **Functions**: 463
 - **File**: `map.toon.yaml`
 
 ### SUMR
-- **Functions**: 241
-- **Classes**: 5
+- **Functions**: 252
+- **Classes**: 3
 - **File**: `SUMR.md`
 
 ### regres.doctor_orchestrator
-- **Functions**: 86
+- **Functions**: 91
 - **Classes**: 1
 - **File**: `doctor_orchestrator.py`
 
@@ -46,14 +46,14 @@
 - **Classes**: 1
 - **File**: `defscan.py`
 
+### regres.doctor_cli
+- **Functions**: 23
+- **File**: `doctor_cli.py`
+
 ### regres.import_error_toon_report
 - **Functions**: 13
 - **Classes**: 2
 - **File**: `import_error_toon_report.py`
-
-### regres.doctor_cli
-- **Functions**: 13
-- **File**: `doctor_cli.py`
 
 ### regres.version_check
 - **Functions**: 10
@@ -108,10 +108,6 @@ Main execution flows into the system:
 Wskaźnik 'hotness' = liczba par podobnych / liczba plików w katalogu × 100.
 Wysoki hotness = kandydat
 - **Calls**: getattr, getattr, regres.refactor.iter_files, list, defaultdict, defaultdict, dir_file_count.items, hotmap.sort
-
-### regres.doctor_orchestrator.DoctorOrchestrator._diagnose_page_stub
-> Zwraca diagnozę, jeżeli plik strony to stub/placeholder lub uległa skróceniu.
-- **Calls**: sum, text.lower, any, bool, None.replace, self._collect_page_history_candidates, max, self._find_backup_page_implementation
 
 ### regres.doctor_orchestrator.DoctorOrchestrator.render_markdown
 > Renderuje raport w formacie Markdown.
@@ -218,13 +214,17 @@ The loader (host `frontend/src/modules/index.ts`) requires either a
 Heurystyki: krótkie + sys.path + dynamic import + barrel export + sygnatury tekstowe.
 - **Calls**: getattr, regres.refactor.iter_files, results.sort, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, docs.DEFSCAN.print, getattr
 
-### regres.doctor_cli.main
-> Main entry point for doctor CLI.
-- **Calls**: regres.version_check.check_version, regres.doctor_cli._build_parser, parser.parse_args, None.resolve, regres.doctor_config.load_config, config.print_banner_to, DoctorOrchestrator, regres.doctor_cli._handle_auto_decision_flow
-
 ### regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url
 > Analizuje moduł na podstawie URL.
 - **Calls**: self._extract_module_name, self._resolve_module_path, diagnoses.extend, diagnoses.extend, diagnoses.extend, full_module_path.rglob, self._filter_actionable_diagnoses, self._build_url_fallback_diagnosis
+
+### regres.doctor_orchestrator.DoctorOrchestrator._render_step_by_step_playbook
+> Renderuje playbook krok po kroku.
+- **Calls**: enumerate, lines.append, lines.append, diag.get, diag.get, sorted, lines.append, lines.append
+
+### regres.doctor_cli.main
+> Main entry point for doctor CLI.
+- **Calls**: regres.version_check.check_version, regres.doctor_cli._build_parser, parser.parse_args, None.resolve, regres.doctor_config.load_config, config.print_banner_to, DoctorOrchestrator, regres.doctor_cli._handle_auto_decision_flow
 
 ## Process Flows
 
@@ -260,38 +260,38 @@ cmd_hotmap [regres.refactor]
   └─> iter_files
 ```
 
-### Flow 6: _diagnose_page_stub
-```
-_diagnose_page_stub [regres.doctor_orchestrator.DoctorOrchestrator]
-```
-
-### Flow 7: render_markdown
+### Flow 6: render_markdown
 ```
 render_markdown [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
-### Flow 8: _render_decision_workflow
+### Flow 7: _render_decision_workflow
 ```
 _render_decision_workflow [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
-### Flow 9: _collect_page_history_candidates
+### Flow 8: _collect_page_history_candidates
 ```
 _collect_page_history_candidates [regres.doctor_orchestrator.DoctorOrchestrator]
 ```
 
-### Flow 10: cmd_diff
+### Flow 9: cmd_diff
 ```
 cmd_diff [regres.refactor]
   └─> read_text
   └─> read_text
 ```
 
+### Flow 10: generate_patch_scripts
+```
+generate_patch_scripts [regres.doctor_orchestrator.DoctorOrchestrator]
+```
+
 ## Key Classes
 
 ### regres.doctor_orchestrator.DoctorOrchestrator
 > Orchestrator analizy i generator akcji.
-- **Methods**: 86
+- **Methods**: 91
 - **Key Methods**: regres.doctor_orchestrator.DoctorOrchestrator.__init__, regres.doctor_orchestrator.DoctorOrchestrator.resolve_symlink, regres.doctor_orchestrator.DoctorOrchestrator._discover_module_path_map, regres.doctor_orchestrator.DoctorOrchestrator._get_module_path_map, regres.doctor_orchestrator.DoctorOrchestrator._get_url_route_module_hints, regres.doctor_orchestrator.DoctorOrchestrator.build_project_relation_map, regres.doctor_orchestrator.DoctorOrchestrator._collect_git_relation_changes, regres.doctor_orchestrator.DoctorOrchestrator._rel_or_abs, regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url, regres.doctor_orchestrator.DoctorOrchestrator.analyze_dependency_chain
 
 ### regres.defscan.Definition
@@ -337,12 +337,6 @@ cmd_diff [regres.refactor]
 ### SUMR.Definition
 - **Methods**: 0
 
-### SUMR.TsError
-- **Methods**: 0
-
-### SUMR.ReportData
-- **Methods**: 0
-
 ### SUMD.DoctorOrchestrator
 - **Methods**: 0
 
@@ -350,12 +344,6 @@ cmd_diff [regres.refactor]
 - **Methods**: 0
 
 ### SUMD.Definition
-- **Methods**: 0
-
-### SUMD.TsError
-- **Methods**: 0
-
-### SUMD.ReportData
 - **Methods**: 0
 
 ## Data Transformation Functions
@@ -393,26 +381,6 @@ Key functions that process and transform data:
 > Build and return the argument parser for defscan.
 - **Output to**: argparse.ArgumentParser, parser.add_argument, parser.add_argument, parser.add_argument, parser.add_argument
 
-### SUMR._parse_ts_errors
-
-### SUMR._validate_errors
-
-### SUMR._render_validate_step
-
-### SUMR.parse_numstat_block
-
-### SUMR._format_imports
-
-### SUMR._format_preview
-
-### SUMR.build_parser
-
-### SUMR._build_argument_parser
-
-### SUMR.parse_args
-
-### SUMR.parse_ts_errors
-
 ### project.map.toon._build_argument_parser
 
 ### project.map.toon._build_parser
@@ -424,6 +392,26 @@ Key functions that process and transform data:
 ### project.map.toon.parse_ts_errors
 
 ### project.map.toon._format_imports
+
+### project.map.toon._format_preview
+
+### project.map.toon.build_parser
+
+### project.map.toon.parse_numstat_block
+
+### project.map.toon._parse_version
+
+### project.map.toon.test_build_parser
+
+### project.map.toon.test_parser_scan_root
+
+### project.map.toon.test_parser_all
+
+### project.map.toon.test_parser_url
+
+### project.map.toon.test_parser_llm
+
+### project.map.toon.test_parser_import_log
 
 ## Behavioral Patterns
 
@@ -472,8 +460,8 @@ Functions exposed as public API (no underscore prefix):
 - `regres.refactor.cmd_symbols` - 19 calls
 - `regres.refactor.cmd_wrappers` - 19 calls
 - `regres.defscan.render_seed_markdown` - 19 calls
-- `regres.doctor_cli.main` - 19 calls
 - `regres.doctor_orchestrator.DoctorOrchestrator.analyze_from_url` - 19 calls
+- `regres.doctor_cli.main` - 19 calls
 - `regres.regres.check_imports_at_commit` - 18 calls
 - `regres.regres.classify_problem` - 18 calls
 
@@ -503,16 +491,16 @@ graph TD
     cmd_hotmap --> iter_files
     cmd_hotmap --> list
     cmd_hotmap --> defaultdict
-    _diagnose_page_stub --> sum
-    _diagnose_page_stub --> lower
-    _diagnose_page_stub --> any
-    _diagnose_page_stub --> bool
-    _diagnose_page_stub --> replace
     render_markdown --> extend
     _render_decision_wor --> append
     _render_decision_wor --> enumerate
     _collect_page_histor --> set
     _collect_page_histor --> splitlines
+    _collect_page_histor --> sort
+    _collect_page_histor --> exists
+    cmd_diff --> Path
+    cmd_diff --> read_text
+    cmd_diff --> getattr
 ```
 
 ## Reverse Engineering Guidelines

@@ -1,9 +1,9 @@
-# code2llm/evolution | 1485 func | 15f | 2026-04-29
+# code2llm/evolution | 1544 func | 15f | 2026-04-29
 
 NEXT[10] (ranked by impact):
   [1] !! SPLIT           regres/doctor_orchestrator.py
-      WHY: 3190L, 1 classes, max CC=31
-      EFFORT: ~4h  IMPACT: 98890
+      WHY: 3244L, 1 classes, max CC=28
+      EFFORT: ~4h  IMPACT: 90832
 
   [2] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
@@ -13,45 +13,45 @@ NEXT[10] (ranked by impact):
       WHY: 1261L, 1 classes, max CC=17
       EFFORT: ~4h  IMPACT: 21437
 
-  [4] !! SPLIT-FUNC      _run_url_module_analysis  CC=71  fan=56
-      WHY: CC=71 exceeds 15
-      EFFORT: ~1h  IMPACT: 3976
-
-  [5] !! SPLIT-FUNC      DoctorOrchestrator.build_project_relation_map  CC=26  fan=37
+  [4] !! SPLIT-FUNC      DoctorOrchestrator.build_project_relation_map  CC=26  fan=37
       WHY: CC=26 exceeds 15
       EFFORT: ~1h  IMPACT: 962
 
-  [6] !! SPLIT-FUNC      DoctorOrchestrator._diagnose_page_stub  CC=31  fan=24
-      WHY: CC=31 exceeds 15
-      EFFORT: ~1h  IMPACT: 744
-
-  [7] !  SPLIT-FUNC      DoctorOrchestrator._collect_page_history_candidates  CC=23  fan=25
+  [5] !  SPLIT-FUNC      DoctorOrchestrator._collect_page_history_candidates  CC=23  fan=25
       WHY: CC=23 exceeds 15
       EFFORT: ~1h  IMPACT: 575
 
-  [8] !  SPLIT-FUNC      _handle_url_mode  CC=21  fan=23
+  [6] !  SPLIT-FUNC      _handle_url_mode  CC=21  fan=23
       WHY: CC=21 exceeds 15
       EFFORT: ~1h  IMPACT: 483
 
-  [9] !! SPLIT-FUNC      DoctorOrchestrator.generate_patch_scripts  CC=26  fan=17
+  [7] !! SPLIT-FUNC      DoctorOrchestrator.generate_patch_scripts  CC=26  fan=17
       WHY: CC=26 exceeds 15
       EFFORT: ~1h  IMPACT: 442
 
-  [10] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
+  [8] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
       WHY: CC=16 exceeds 15
       EFFORT: ~1h  IMPACT: 384
 
+  [9] !  SPLIT-FUNC      DoctorOrchestrator.analyze_dependency_chain  CC=21  fan=18
+      WHY: CC=21 exceeds 15
+      EFFORT: ~1h  IMPACT: 378
+
+  [10] !  SPLIT-FUNC      _handle_auto_decision_flow  CC=18  fan=21
+      WHY: CC=18 exceeds 15
+      EFFORT: ~1h  IMPACT: 378
+
 
 RISKS[3]:
-  ⚠ Splitting regres/doctor_orchestrator.py may break 86 import paths
+  ⚠ Splitting regres/doctor_orchestrator.py may break 91 import paths
   ⚠ Splitting regres/regres.py may break 55 import paths
   ⚠ Splitting regres/defscan.py may break 45 import paths
 
 METRICS-TARGET:
-  CC̄:          1.3 → ≤0.9
-  max-CC:      71 → ≤20
+  CC̄:          1.2 → ≤0.8
+  max-CC:      28 → ≤14
   god-modules: 5 → 0
-  high-CC(≥15): 19 → ≤9
+  high-CC(≥15): 18 → ≤9
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -79,4 +79,4 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.3 → now CC̄=1.3
+  prev CC̄=1.3 → now CC̄=1.2

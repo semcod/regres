@@ -10,6 +10,7 @@ from regres.doctor_cli import (
     _handle_defscan_refactor,
     _handle_auto_decision_flow,
     _save_report,
+    _derive_vite_base,
 )
 from regres.doctor_orchestrator import DoctorOrchestrator
 from regres.doctor_models import Diagnosis, FileAction
@@ -491,3 +492,37 @@ def test_full_workflow_with_all_mocks(tmp_path: Path):
                         # Test defscan/refactor mode
                         args = Mock(dry_run=True, defscan_report=None, defscan_scan=None, refactor_scan=None)
                         _handle_defscan_refactor(args, doctor)
+
+# ---------------------------------------------------------------------------
+# Helper function tests (refactored from _run_url_module_analysis)
+# ---------------------------------------------------------------------------
+
+def test_derive_vite_base_from_explicit_arg():
+    """Test _derive_vite_base with explicit vite_base argument."""
+    args = Mock(vite_base="http://localhost:5173", url="http://example.com/test")
+    result = _derive_vite_base(args)
+    assert result == "http://localhost:5173"
+
+def test_derive_vite_base_from_url():
+    """Test _derive_vite_base deriving from URL when vite_base not set."""
+    args = Mock(vite_base=None, url="http://example.com:8080/test")
+    result = _derive_vite_base(args)
+    assert result == "http://example.com:8080"
+
+def test_derive_vite_base_no_url():
+    """Test _derive_vite_base when neither vite_base nor url is set."""
+    args = Mock(vite_base=None, url=None)
+    result = _derive_vite_base(args)
+    assert result is None
+
+def test_derive_vite_base_invalid_url():
+    """Test _derive_vite_base with invalid URL."""
+    args = Mock(vite_base=None, url="not-a-valid-url")
+    result = _derive_vite_base(args)
+    assert result is None
+
+def test_derive_vite_base_https_url():
+    """Test _derive_vite_base with HTTPS URL."""
+    args = Mock(vite_base=None, url="https://example.com/test")
+    result = _derive_vite_base(args)
+    assert result == "https://example.com"

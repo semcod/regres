@@ -466,6 +466,50 @@ def _run_url_module_analysis(
         doctor.diagnoses.extend(diagnoses)
 
 
+def _resolve_runtime_log_path(args, scan_root: Path) -> Optional[Path]:
+    runtime_log_arg = getattr(args, "runtime_log", None)
+    if isinstance(runtime_log_arg, (str, Path)) and str(runtime_log_arg).strip():
+        return Path(runtime_log_arg)
+
+    args_all = getattr(args, "all", False)
+    if not isinstance(args_all, bool) or not args_all:
+        return None
+
+    for candidate in (
+        scan_root / ".regres" / "runtime-console.log",
+        scan_root / ".regres" / "browser-console.log",
+        scan_root / ".regres" / "console.log",
+    ):
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _handle_runtime_log_diagnostics(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
+    runtime_log = _resolve_runtime_log_path(args, scan_root)
+    if runtime_log is None:
+        return
+
+    exists = runtime_log.exists()
+    doctor.add_plan_step(
+        name="runtime console diagnostics",
+        reason="Wykrycie problemów runtime UI (np. brak mapowania ikon SVG) przed wdrożeniem.",
+        command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --runtime-log {runtime_log}",
+        status="done" if exists else "warning",
+        details=None if exists else "runtime log does not exist",
+        inputs={"runtime_log": str(runtime_log)},
+    )
+    if not exists:
+        return
+
+    runtime_diagnoses = doctor.analyze_runtime_console(runtime_log)
+    doctor.diagnoses.extend(runtime_diagnoses)
+    doctor.update_last_plan_step(outputs={
+        "diagnoses_found": len(runtime_diagnoses),
+        "problem_types": [d.problem_type for d in runtime_diagnoses],
+    })
+
+
 def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
     """Handle URL-based discovery and analysis mode."""
     from urllib.parse import urlparse
@@ -535,6 +579,7 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
         "project_relation_map",
         doctor.build_project_relation_map(include_git=bool(getattr(args, "git_history", False))),
     )
+    _handle_runtime_log_diagnostics(args, doctor, scan_root)
 
     module_path_str = module_path_map.get(module_name)
     if not module_path_str:
@@ -635,6 +680,7 @@ def _handle_auto_decision_flow(args, doctor: DoctorOrchestrator, scan_root: Path
         "project_relation_map",
         doctor.build_project_relation_map(include_git=bool(getattr(args, "git_history", False))),
     )
+    _handle_runtime_log_diagnostics(args, doctor, scan_root)
 
     # When --all is used, prioritize broad structural scans first.
     if args.all:
@@ -896,6 +942,14 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--refactor-scan', help='Uruchom refactor wrappers na konkretnym katalogu')
     parser.add_argument('--out-md', help='Ścieżka do raportu Markdown')
     parser.add_argument('--out-json', help='Ścieżka do raportu JSON')
+    parser.add_argument(
+        '--runtime-log',
+        help=(
+            'Ścieżka do logu runtime console (np. browser/devtools). '
+            'Jeśli podany, doctor wykrywa m.in. ostrzeżenia `SVG icon not found` '
+            'i dodaje diagnozę pre-deploy.'
+        ),
+    )
     parser.add_argument(
         '--out-patches-dir',
         help=(

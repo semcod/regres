@@ -8,6 +8,7 @@ from regres.doctor_cli import (
     _handle_url_mode,
     _handle_import_errors,
     _handle_defscan_refactor,
+    _handle_auto_decision_flow,
     _save_report,
 )
 from regres.doctor_orchestrator import DoctorOrchestrator
@@ -75,6 +76,12 @@ def test_parser_out_json():
     parser = _build_parser()
     args = parser.parse_args(["--out-json", "/path/to/report.json"])
     assert args.out_json == "/path/to/report.json"
+
+
+def test_parser_runtime_log():
+    parser = _build_parser()
+    args = parser.parse_args(["--runtime-log", "/path/to/runtime.log"])
+    assert args.runtime_log == "/path/to/runtime.log"
 
 def test_parser_defscan_scan():
     parser = _build_parser()
@@ -433,6 +440,29 @@ def test_handle_defscan_refactor_subprocess_mock(tmp_path: Path):
         with patch.object(doctor, 'analyze_with_refactor', return_value=[]):
             _handle_defscan_refactor(args, doctor)
             # Should not raise any errors
+
+
+def test_handle_auto_decision_flow_runtime_log(tmp_path: Path):
+    doctor = DoctorOrchestrator(tmp_path)
+    runtime_log = tmp_path / "runtime.log"
+    runtime_log.write_text("[IconComponent] SVG icon not found: 📝 - Available icons: 149", encoding="utf-8")
+
+    args = Mock(
+        all=False,
+        git_history=False,
+        runtime_log=str(runtime_log),
+        import_log=None,
+        defscan_report=None,
+        defscan_scan=None,
+        refactor_scan=None,
+    )
+    refresh_fn = Mock(return_value=True)
+
+    with patch.object(doctor, 'collect_structure_snapshot', return_value=[]):
+        with patch.object(doctor, 'build_project_relation_map', return_value={}):
+            with patch.object(doctor, 'analyze_runtime_console', return_value=[]):
+                _handle_auto_decision_flow(args, doctor, tmp_path, refresh_fn)
+                assert doctor.analyze_runtime_console.called
 
 def test_full_workflow_with_all_mocks(tmp_path: Path):
     """Test full doctor workflow with all subprocess calls mocked."""

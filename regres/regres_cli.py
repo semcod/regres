@@ -84,6 +84,7 @@ def main() -> int:
     doctor_parser.add_argument("--git-history", action="store_true", help="Analizuj historię git plików z błędami")
     doctor_parser.add_argument("--defscan-scan", help="Uruchom defscan na konkretnym katalogu")
     doctor_parser.add_argument("--refactor-scan", help="Uruchom refactor wrappers na konkretnym katalogu")
+    doctor_parser.add_argument("--runtime-log", dest="runtime_log", help="Ścieżka do logu runtime console (browser/devtools)")
     doctor_parser.add_argument("--vite-base", dest="vite_base", help="Vite dev-server base URL (np. http://localhost:8100). Auto-derywowane z --url jeśli nie podane.")
     doctor_parser.add_argument("--history-window-days", type=int, dest="history_window_days",
                                help="Ile dni wstecz przegląda historię git (default: 30, env: REGRES_HISTORY_WINDOW_DAYS).")
@@ -160,6 +161,7 @@ def _build_doctor_argv(args) -> list[str]:
     _append_if_true(argv, "--git-history", args.git_history)
     _extend_if_set(argv, "--defscan-scan", args.defscan_scan)
     _extend_if_set(argv, "--refactor-scan", args.refactor_scan)
+    _extend_if_set(argv, "--runtime-log", getattr(args, "runtime_log", None))
     _extend_if_set(argv, "--vite-base", getattr(args, "vite_base", None))
     _extend_if_set(argv, "--history-window-days", getattr(args, "history_window_days", None), transform=str)
     _extend_if_set(argv, "--history-max-iterations", getattr(args, "history_max_iterations", None), transform=str)

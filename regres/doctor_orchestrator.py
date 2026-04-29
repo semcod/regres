@@ -387,6 +387,7 @@ class DoctorOrchestrator:
     # is consistent between detection and remediation.
     _RELATIVE_IMPORT_DQ = re.compile(r'(?:from|import)\s+"(\.{1,2}/[^"]+)"')
     _RELATIVE_IMPORT_SQ = re.compile(r"(?:from|import)\s+'(\.{1,2}/[^']+)'")
+    _RUNTIME_ICON_NOT_FOUND_RE = re.compile(r"SVG icon not found:\s*(.+?)\s*-\s*Available icons:\s*(\d+)", re.IGNORECASE)
 
     # File extensions tried when resolving an import without explicit suffix.
     _IMPORT_RESOLUTION_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.tsx", "/index.js")
@@ -859,6 +860,100 @@ class DoctorOrchestrator:
             if diag is not None:
                 diagnoses.append(diag)
         return diagnoses
+
+    def analyze_runtime_console(self, log_path: Path) -> List[Diagnosis]:
+        """Analizuje log runtime (console/browser) pod kątem błędów UI.
+
+        Aktualnie wykrywa m.in. przypadki `SVG icon not found: ...` i tworzy
+        diagnozę, która pomaga domknąć pre-deploy gate dla frontendu.
+        """
+        if not log_path.exists():
+            return []
+
+        try:
+            text = log_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return []
+
+        icon_hits = self._RUNTIME_ICON_NOT_FOUND_RE.findall(text)
+        if not icon_hits:
+            return []
+
+        icon_counts: Dict[str, int] = {}
+        available_counts: List[int] = []
+        for icon_name, available in icon_hits:
+            icon = icon_name.strip()
+            if not icon:
+                continue
+            icon_counts[icon] = icon_counts.get(icon, 0) + 1
+            try:
+                available_counts.append(int(available))
+            except ValueError:
+                continue
+
+        if not icon_counts:
+            return []
+
+        unique_icons = sorted(icon_counts.keys())
+        total_occurrences = sum(icon_counts.values())
+        available_hint = max(available_counts) if available_counts else None
+        severity = "high" if len(unique_icons) >= 6 else "medium"
+
+        icon_preview = ", ".join(f"`{n}`" for n in unique_icons[:10])
+        if len(unique_icons) > 10:
+            icon_preview += f" (+{len(unique_icons) - 10} więcej)"
+
+        actions = [
+            FileAction(
+                path="frontend/src",
+                action="review",
+                reason=(
+                    "W runtime brak mapowania części ikon do rejestru SVG; "
+                    "sprawdź translację emoji/name -> ikonę systemową."
+                ),
+            ),
+            FileAction(
+                path="frontend/src/components",
+                action="review",
+                reason="Zweryfikuj miejsca renderujące ikonę oraz fallback dla nieznanych wartości.",
+            ),
+        ]
+        commands = [
+            ShellCommand(
+                command=f"grep -n 'SVG icon not found' {log_path}",
+                description="Pokaż wszystkie brakujące ikony z logu runtime",
+            ),
+            ShellCommand(
+                command=(
+                    "grep -RIn --include='*.ts' --include='*.tsx' "
+                    "'SVG icon not found\\|icon not found' frontend/src"
+                ),
+                description="Znajdź źródło logowania i ścieżkę mapowania ikon",
+            ),
+        ]
+
+        diagnosis = Diagnosis(
+            summary=(
+                f"Runtime: brak mapowania SVG dla {len(unique_icons)} ikon "
+                f"({total_occurrences} wystąpień)"
+            ),
+            problem_type="runtime_icon_registry_miss",
+            severity=severity,
+            nlp_description=(
+                "W logu runtime wykryto ostrzeżenia `SVG icon not found`. "
+                f"Brakuje mapowania dla ikon: {icon_preview}. "
+                + (
+                    f"Rejestr raportuje około {available_hint} dostępnych ikon. "
+                    if available_hint is not None else
+                    ""
+                )
+                + "To zwykle oznacza przekazanie emoji/label zamiast klucza SVG albo brak fallbacku."
+            ),
+            file_actions=actions,
+            shell_commands=commands,
+            confidence=0.9,
+        )
+        return [diagnosis]
 
     def _extract_page_token(self, route_path: str, module_name: str) -> Optional[str]:
         """Zwraca sub-token URL po nazwie modułu (np. 'sitemap')."""

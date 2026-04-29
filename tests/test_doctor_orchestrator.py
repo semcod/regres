@@ -131,6 +131,34 @@ def test_analyze_import_errors_empty_log(tmp_path: Path):
     result = d.analyze_import_errors(log_path)
     assert result == []
 
+
+def test_analyze_runtime_console_missing_log(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    result = d.analyze_runtime_console(tmp_path / "missing-runtime.log")
+    assert result == []
+
+
+def test_analyze_runtime_console_icon_not_found(tmp_path: Path):
+    d = DoctorOrchestrator(tmp_path)
+    runtime_log = tmp_path / "runtime.log"
+    runtime_log.write_text(
+        "\n".join([
+            "logs-collector.component.ts:55 [IconComponent] SVG icon not found: 📝 - Available icons: 149",
+            "logs-collector.component.ts:55 [IconComponent] SVG icon not found: 📄 - Available icons: 149",
+            "logs-collector.component.ts:55 [IconComponent] SVG icon not found: 📝 - Available icons: 149",
+        ]),
+        encoding="utf-8",
+    )
+
+    result = d.analyze_runtime_console(runtime_log)
+
+    assert len(result) == 1
+    diag = result[0]
+    assert diag.problem_type == "runtime_icon_registry_miss"
+    assert diag.severity == "medium"
+    assert "📝" in diag.nlp_description
+    assert "📄" in diag.nlp_description
+
 # ---------------------------------------------------------------------------
 # analyze_duplicates tests
 # ---------------------------------------------------------------------------

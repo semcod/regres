@@ -905,12 +905,19 @@ class DoctorOrchestrator:
         module_path: Path,
         module_name: str,
     ) -> List[Diagnosis]:
-        """Wykrywa stub/placeholder strony powiązane z URL-em."""
+        """Wykrywa stub/placeholder strony powiązane z URL-em.
+
+        Locates page candidates both inside the resolved module path and in
+        the host frontend's pages directory (``<scan_root>/frontend/src/pages``)
+        for monorepos where the implementation is a thin iframe wrapper
+        rather than a module-local page (c2004 connect-scenario,
+        connect-template, connect-id, connect-manager families).
+        """
         page_token = self._extract_page_token(route_path, module_name)
         if not page_token:
             return []
 
-        candidates = self._find_page_files(module_path, page_token)
+        candidates = self._find_page_files(module_path, page_token, module_name=module_name)
         if not candidates:
             return [self._build_missing_page_diagnosis(route_path, module_path, module_name, page_token)]
 
@@ -1035,12 +1042,34 @@ class DoctorOrchestrator:
             return first_segment[len(module_name) + 1 :]
         return None
 
-    def _find_page_files(self, module_path: Path, page_token: str) -> List[Path]:
-        """Lokalizuje pliki strony pasujące do tokenu URL."""
+    def _find_page_files(
+        self,
+        module_path: Path,
+        page_token: str,
+        *,
+        module_name: Optional[str] = None,
+    ) -> List[Path]:
+        """Lokalizuje pliki strony pasujące do tokenu URL.
+
+        Two locations are searched:
+
+        1. Inside the resolved module path (recursive ``*.page.ts`` glob).
+        2. In the host frontend's pages directory
+           ``<scan_root>/frontend/src/pages/<module>-<token>.page.ts``
+           — where iframe wrapper pages live in monorepos that embed
+           sub-applications (c2004 connect-scenario / connect-template /
+           connect-id / connect-manager).
+
+        Results from (1) take precedence; (2) is a fallback used when the
+        module directory exists but contains no matching page file (typical
+        for thin iframe wrappers where the entire React app is a single
+        sub-module without per-route page classes).
+        """
         token = page_token.lower()
         matches: List[Path] = []
         seen: set = set()
-        for file_path in module_path.rglob("*.page.ts"):
+
+        def _consider(file_path: Path) -> None:
             name = file_path.name.lower()
             base = name.replace('.page.ts', '')
             if base == token or base.endswith('-' + token) or base.endswith('.' + token):
@@ -1048,6 +1077,23 @@ class DoctorOrchestrator:
                 if key not in seen:
                     seen.add(key)
                     matches.append(file_path)
+
+        # 1) Module-local pages.
+        for file_path in module_path.rglob("*.page.ts"):
+            _consider(file_path)
+
+        # 2) Host-frontend iframe wrapper fallback.
+        if module_name:
+            host_pages = self.scan_root / "frontend" / "src" / "pages"
+            if host_pages.is_dir():
+                # Match flat pattern: connect-scenario-scenarios.page.ts
+                for file_path in host_pages.glob(f"{module_name}-{token}.page.ts"):
+                    _consider(file_path)
+                # Also match nested helpers/families: connect-scenario-*-{token}.page.ts
+                if not matches:
+                    for file_path in host_pages.glob(f"{module_name}-*{token}.page.ts"):
+                        _consider(file_path)
+
         return matches
 
     # c2004-maskservice-patch-v3 / v9: history scan tunables.

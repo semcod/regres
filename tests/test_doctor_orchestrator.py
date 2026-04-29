@@ -165,6 +165,49 @@ def test_extract_page_token_for_nested_module_path(tmp_path: Path):
     assert d._extract_page_token("connect-test/operator-workshop", "connect-test") == "operator-workshop"
 
 
+def test_find_page_files_falls_back_to_host_iframe_wrapper(tmp_path: Path):
+    """Regression test for c2004-style host iframe wrappers.
+
+    The connect-scenario / connect-template / connect-id / connect-manager
+    monorepo modules contain an empty placeholder ``frontend/src/modules/<name>``
+    directory (created by scaffolding) but the actual page implementation is
+    an iframe wrapper located in the host frontend at
+    ``frontend/src/pages/<module>-<token>.page.ts``. The doctor must locate
+    these pages instead of reporting ``page_missing``.
+    """
+    d = DoctorOrchestrator(tmp_path)
+    module_path = tmp_path / "connect-scenario" / "frontend" / "src" / "modules" / "connect-scenario"
+    module_path.mkdir(parents=True)  # exists, but empty (no module-local pages)
+
+    host_pages = tmp_path / "frontend" / "src" / "pages"
+    host_pages.mkdir(parents=True)
+    wrapper = host_pages / "connect-scenario-scenarios.page.ts"
+    wrapper.write_text(
+        """
+import { renderCqlIframe, cqlIframeStyles, attachCqlIframe } from './helpers/cql-iframe';
+const IFRAME_PATH = '/scenarios';
+const IFRAME_TITLE = 'CQL Scenarios Editor';
+export class ScenariosPage {
+  render(): string { return ScenariosPage.getContent(); }
+  static getContent(): string { return renderCqlIframe(IFRAME_PATH, IFRAME_TITLE); }
+  static getStyles(): string { return cqlIframeStyles(); }
+  static attachEventListeners(root?: HTMLElement): void { attachCqlIframe(root, IFRAME_PATH); }
+}
+""",
+        encoding="utf-8",
+    )
+
+    matches = d._find_page_files(module_path, "scenarios", module_name="connect-scenario")
+    assert len(matches) == 1
+    assert matches[0] == wrapper
+
+    # And via the public entry point — must NOT report page_missing.
+    result = d.analyze_page_implementations(
+        "connect-scenario-scenarios", module_path, "connect-scenario",
+    )
+    assert all(diag.problem_type != "page_missing" for diag in result)
+
+
 def test_page_stub_detects_generic_migration_phrase(tmp_path: Path):
     d = DoctorOrchestrator(tmp_path)
     module_path = tmp_path / "connect-test" / "frontend" / "src" / "modules" / "connect-test"

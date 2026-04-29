@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.52] - 2026-04-29
+
+### Docs
+- Update README.md
+
+### Test
+- Update tests/test_doctor_orchestrator.py
+
+### Other
+- Update regres/doctor_orchestrator.py
+
 ## [0.1.51] - 2026-04-29
 
 ### Docs

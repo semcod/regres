@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.50] - 2026-04-29
+
+### Docs
+- Update .regres/connect-test-reports-doctor.md
+- Update .windsurf/workflows/c2004-preanalysis-predeploy.md
+- Update .windsurf/workflows/c2004-security-settings-baseline.md
+- Update README.md
+
 ## [0.1.49] - 2026-04-29
 
 ### Docs

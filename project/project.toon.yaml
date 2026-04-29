@@ -1,40 +1,41 @@
-# regres | 1410 func | 15f | 23406L | md | 2026-04-29
+# regres | 1485 func | 15f | 24771L | md | 2026-04-29
 
 HEALTH:
-  CC̄=1.3  critical=57 (limit:10)  dup=5  cycles=0
+  CC̄=1.3  critical=63 (limit:10)  dup=5  cycles=0
 
 ALERTS[20]:
-  !!! cc_exceeded      _handle_url_mode = 91 (limit:15)
-  !!! high_fan_out     _handle_url_mode = 71 (limit:10)
+  !!! cc_exceeded      _run_url_module_analysis = 71 (limit:15)
+  !!! high_fan_out     _run_url_module_analysis = 56 (limit:10)
+  !!! high_fan_out     DoctorOrchestrator.build_project_relation_map = 37 (limit:10)
   !!! cc_exceeded      DoctorOrchestrator._diagnose_page_stub = 31 (limit:15)
   !!! cc_exceeded      DoctorOrchestrator._render_dependency_chain = 28 (limit:15)
+  !!! cc_exceeded      DoctorOrchestrator.build_project_relation_map = 26 (limit:15)
   !!! cc_exceeded      DoctorOrchestrator.generate_patch_scripts = 26 (limit:15)
   !!! high_fan_out     DoctorOrchestrator._collect_page_history_candidates = 25 (limit:10)
   !!! high_fan_out     cmd_hotmap = 24 (limit:10)
   !!! high_fan_out     DoctorOrchestrator._diagnose_page_stub = 24 (limit:10)
-  !!! high_fan_out     analyze_file = 23 (limit:10)
-  !!! high_fan_out     trace_name_and_hash_candidates = 22 (limit:10)
 
-MODULES[41] (top by size):
-  M[project/calls.yaml] 3320L C:0 F:0 CC↑0 D:0 (yaml)
-  M[regres/doctor_orchestrator.py] 2683L C:1 F:75 CC↑31 D:0 (python)
+MODULES[44] (top by size):
+  M[project/calls.yaml] 3375L C:0 F:0 CC↑0 D:0 (yaml)
+  M[regres/doctor_orchestrator.py] 3190L C:1 F:86 CC↑31 D:0 (python)
   M[regres/regres.py] 1495L C:1 F:55 CC↑15 D:0 (python)
+  M[SUMD.md] 1275L C:5 F:518 CC↑0 D:0 (md)
   M[regres/defscan.py] 1261L C:1 F:45 CC↑17 D:0 (python)
   M[regres/refactor.py] 1237L C:0 F:52 CC↑16 D:0 (python)
-  M[SUMD.md] 1231L C:5 F:488 CC↑0 D:3 (md)
-  M[docs/README.md] 1117L C:0 F:1 CC↑0 D:0 (md)
-  M[SUMR.md] 1023L C:5 F:226 CC↑0 D:0 (md)
-  M[regres/doctor_cli.py] 966L C:0 F:9 CC↑91 D:0 (python)
+  M[docs/README.md] 1122L C:0 F:1 CC↑0 D:0 (md)
+  M[regres/doctor_cli.py] 1054L C:0 F:13 CC↑71 D:0 (python)
+  M[SUMR.md] 1049L C:5 F:234 CC↑0 D:0 (md)
   M[.regres/import-error-toon-report.md] 549L C:0 F:0 CC↑0 D:0 (md)
+  M[project/map.toon.yaml] 541L C:0 F:442 CC↑0 D:0 (yaml)
+  M[CHANGELOG.md] 529L C:0 F:0 CC↑0 D:0 (md)
+  M[project/context.md] 525L C:0 F:0 CC↑0 D:0 (md)
   M[goal.yaml] 512L C:0 F:0 CC↑0 D:0 (yaml)
-  M[project/map.toon.yaml] 512L C:0 F:420 CC↑0 D:0 (yaml)
-  M[project/context.md] 507L C:0 F:0 CC↑0 D:0 (md)
-  M[CHANGELOG.md] 465L C:0 F:0 CC↑0 D:0 (md)
   M[regres/import_error_toon_report.py] 372L C:2 F:13 CC↑10 D:0 (python)
-  LANGS: md:14/python:13/yaml:9/shell:2/other:1/txt:1/toml:1
+  LANGS: md:17/python:13/yaml:9/shell:2/other:1/txt:1/toml:1
 
 HOTSPOTS[10]:
-  ★ _handle_url_mode fan=71  // Handle URL-based discovery and analysis mode.
+  ★ _run_url_module_analysis fan=56  // Orchestrates 56 calls
+  ★ DoctorOrchestrator.build_project_relation_map fan=37  // Orchestrates 37 calls
   ★ DoctorOrchestrator._collect_page_history_candidates fan=25  // Zbiera kandydatów z historii git dla danej strony.
 
 Strategia:
@@ -42,14 +43,13 @@ Strategia:
   ★ cmd_hotmap fan=24  // Mapa katalogów wg koncentracji podobnych plików.
 Wskaźnik 'hotness' = liczba par
   ★ DoctorOrchestrator._diagnose_page_stub fan=24  // Zwraca diagnozę, jeżeli plik strony to stub/placeholder lub uległa skróceniu.
-  ★ analyze_file fan=23  // Analysis pipeline, 23 stages
 
 REFACTOR[15]:
-  [1] H/L Split DoctorOrchestrator._diagnose_page_stub (CC=31)
-  [2] H/L Split DoctorOrchestrator.generate_patch_scripts (CC=26)
-  [3] H/L Split DoctorOrchestrator._render_dependency_chain (CC=28)
-  [4] H/L Split _handle_url_mode (CC=91)
-  [5] H/H Split god module regres/doctor_cli.py (966L, 0 classes)
+  [1] H/L Split _run_url_module_analysis (CC=71)
+  [2] H/L Split DoctorOrchestrator.build_project_relation_map (CC=26)
+  [3] H/L Split DoctorOrchestrator._diagnose_page_stub (CC=31)
+  [4] H/L Split DoctorOrchestrator.generate_patch_scripts (CC=26)
+  [5] H/L Split DoctorOrchestrator._render_dependency_chain (CC=28)
 
 EVOLUTION:
-  2026-04-29 CC̄=1.3 crit=57 23406L // Automated analysis
+  2026-04-29 CC̄=1.3 crit=63 24771L // Automated analysis

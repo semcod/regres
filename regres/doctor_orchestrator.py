@@ -1112,41 +1112,25 @@ class DoctorOrchestrator:
     HISTORY_DEFAULT_ITERATIONS = 30
     HISTORY_SHRINKAGE_FACTOR = 0.5  # current must be < factor * recent_max to flag
 
-    def _diagnose_page_stub(
-        self,
-        page_file: Path,
-        page_token: str,
-        module_name: str,
-    ) -> Optional[Diagnosis]:
-        """Zwraca diagnozę, jeżeli plik strony to stub/placeholder lub uległa skróceniu."""
-        try:
-            text = page_file.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            return None
-
-        line_count = sum(1 for _ in text.splitlines())
+    def _check_page_stub_indicators(
+        self, text: str, line_count: int
+    ) -> tuple:
+        """Check if page file has stub/placeholder indicators.
+        
+        Returns (has_placeholder, is_short_stub, empty_render).
+        """
         lower_text = text.lower()
-        has_placeholder_text = any(p in lower_text for p in self.PLACEHOLDER_TEXT_PATTERNS)
+        has_placeholder = any(p in lower_text for p in self.PLACEHOLDER_TEXT_PATTERNS)
         is_short_stub = line_count <= 15 and 'render' in text and 'placeholder' in lower_text
         empty_render = bool(re.search(r"render\s*\([^)]*\)\s*[:\w\s<>|]*\{\s*return\s+['\"`]['\"`]\s*;?\s*\}", text))
+        return has_placeholder, is_short_stub, empty_render
 
-        try:
-            relative = page_file.relative_to(self.scan_root)
-        except ValueError:
-            relative = page_file
-        relative_str = str(relative).replace("\\", "/")
-
-        # Always collect git history candidates for the page name across the
-        # repository — even if the current file is not a recognized stub. This
-        # lets us flag content regression (e.g. user replaced a 517-line page
-        # with a 159-line minimal config form) and offer concrete restore
-        # actions with hashes/dates/stats.
-        history_candidates = self._collect_page_history_candidates(
-            page_token, module_name, page_file,
-        )
-
+    def _detect_content_regression(
+        self, line_count: int, history_candidates: List[Dict], has_placeholder: bool
+    ) -> bool:
+        """Detect if page has undergone content regression."""
         max_historical_lines = max((c["line_count"] for c in history_candidates), default=0)
-        is_content_regression = (
+        return (
             history_candidates
             and max_historical_lines > 0
             and line_count < max(
@@ -1160,14 +1144,24 @@ class DoctorOrchestrator:
                     )
                 ),
             )
-            and not has_placeholder_text  # placeholder case handled separately
+            and not has_placeholder
         )
 
-        if not (has_placeholder_text or is_short_stub or empty_render or is_content_regression):
-            return None
-
-        backup_candidate = self._find_backup_page_implementation(page_token, module_name)
-
+    def _build_stub_diagnosis_actions(
+        self,
+        relative_str: str,
+        line_count: int,
+        max_historical_lines: int,
+        has_placeholder: bool,
+        is_short_stub: bool,
+        empty_render: bool,
+        is_content_regression: bool,
+        page_token: str,
+    ) -> tuple:
+        """Build file actions and shell commands for stub diagnosis.
+        
+        Returns (actions, commands, problem_type, summary, nlp_lines).
+        """
         actions: List[FileAction] = [
             FileAction(
                 path=relative_str,
@@ -1176,7 +1170,7 @@ class DoctorOrchestrator:
                     f"Plik strony zawiera placeholder ({line_count} linii). "
                     "Zaimplementuj klasę `*Page` z metodami `render()`/`getStyles()`/"
                     "`setupEventListeners()` używanymi przez `pages-index.ts`."
-                    if has_placeholder_text or is_short_stub or empty_render
+                    if has_placeholder or is_short_stub or empty_render
                     else (
                         f"Aktualna wersja ma {line_count} linii, ale w historii git "
                         f"istnieje wersja o {max_historical_lines} liniach. Wybierz "
@@ -1192,9 +1186,9 @@ class DoctorOrchestrator:
             )
         ]
 
-        if has_placeholder_text or is_short_stub or empty_render:
+        if has_placeholder or is_short_stub or empty_render:
             problem_type = "page_placeholder"
-            summary = f"Strona '{page_token}' w module '{module_name}' to placeholder"
+            summary = f"Strona '{page_token}' to placeholder"
             nlp_lines = [
                 f"Plik `{relative_str}` jest placeholder-em (długość {line_count} linii). "
                 "URL kieruje na ten plik, więc UI pokazuje komunikat zamiast właściwej strony."
@@ -1212,78 +1206,138 @@ class DoctorOrchestrator:
                 "Sprawdź kandydatów historycznych i przywróć właściwą zawartość."
             ]
 
-        # Add backup module candidate (other repo location, not git history)
-        if backup_candidate:
-            backup_str = str(backup_candidate).replace("\\", "/")
-            nlp_lines.append(
-                f"Pełna implementacja istnieje w `{backup_str}` – możliwe źródło referencyjne."
+        return actions, commands, problem_type, summary, nlp_lines
+
+    def _add_backup_candidate(
+        self,
+        backup_candidate: Optional[Path],
+        relative_str: str,
+        actions: List[FileAction],
+        commands: List[ShellCommand],
+        nlp_lines: List[str],
+    ) -> None:
+        """Add backup module candidate to diagnosis."""
+        if not backup_candidate:
+            return
+        backup_str = str(backup_candidate).replace("\\", "/")
+        nlp_lines.append(
+            f"Pełna implementacja istnieje w `{backup_str}` – możliwe źródło referencyjne."
+        )
+        actions.append(
+            FileAction(
+                path=backup_str,
+                action="review",
+                reason="Źródło referencyjne implementacji do skopiowania",
             )
+        )
+        commands.append(
+            ShellCommand(
+                command=f"diff -u {backup_str} {relative_str}",
+                description="Porównaj implementację referencyjną z aktualnym plikiem",
+            )
+        )
+
+    def _add_history_candidates(
+        self,
+        history_candidates: List[Dict],
+        relative_str: str,
+        actions: List[FileAction],
+        commands: List[ShellCommand],
+        nlp_lines: List[str],
+    ) -> None:
+        """Add git history candidates as restore options."""
+        if not history_candidates:
+            return
+        nlp_lines.append(
+            f"Znaleziono {len(history_candidates)} kandydatów w historii git "
+            f"(okres ostatnie {getattr(self.config, 'history_window_days', self.HISTORY_DEFAULT_DAYS)} dni lub "
+            f"{getattr(self.config, 'history_max_iterations', self.HISTORY_DEFAULT_ITERATIONS)} iteracji, sortowane od najnowszego)."
+        )
+        for cand in history_candidates:
+            fp = cand.get("fingerprint") or ""
+            fp_short = (fp[:80] + "…") if len(fp) > 80 else fp
             actions.append(
                 FileAction(
-                    path=backup_str,
-                    action="review",
-                    reason="Źródło referencyjne implementacji do skopiowania",
+                    path=relative_str,
+                    action="modify",
+                    target=f"git:{cand['hash']}:{cand['source_path']}",
+                    reason=(
+                        f"[{cand['date']}] {cand['hash']} • "
+                        f"{cand['line_count']} linii • {cand['source_path']}"
+                        + (f" • {fp_short}" if fp_short else "")
+                    ),
                 )
             )
-            commands.append(
-                ShellCommand(
-                    command=f"diff -u {backup_str} {relative_str}",
-                    description="Porównaj implementację referencyjną z aktualnym plikiem",
-                )
-            )
-
-        # c2004-maskservice-patch-v3: emit git history candidates as actionable
-        # restore options. Each candidate lists hash, date, line count, source
-        # path (in case the file was renamed/moved) and a short content
-        # fingerprint so the user can pick the right version.
-        if history_candidates:
-            nlp_lines.append(
-                f"Znaleziono {len(history_candidates)} kandydatów w historii git "
-                f"(okres ostatnie {getattr(self.config, 'history_window_days', self.HISTORY_DEFAULT_DAYS)} dni lub "
-                f"{getattr(self.config, 'history_max_iterations', self.HISTORY_DEFAULT_ITERATIONS)} iteracji, sortowane od najnowszego)."
-            )
-            for cand in history_candidates:
-                fp = cand.get("fingerprint") or ""
-                fp_short = (fp[:80] + "…") if len(fp) > 80 else fp
-                actions.append(
-                    FileAction(
-                        path=relative_str,
-                        action="modify",
-                        target=f"git:{cand['hash']}:{cand['source_path']}",
-                        reason=(
-                            f"[{cand['date']}] {cand['hash']} • "
-                            f"{cand['line_count']} linii • {cand['source_path']}"
-                            + (f" • {fp_short}" if fp_short else "")
-                        ),
-                    )
-                )
-                commands.append(
-                    ShellCommand(
-                        command=(
-                            f"git show {cand['hash']}:{cand['source_path']} "
-                            f"> {relative_str}"
-                        ),
-                        description=(
-                            f"Przywróć wersję {cand['hash']} z {cand['date']} "
-                            f"({cand['line_count']} linii) jeśli to poprawna treść"
-                        ),
-                    )
-                )
             commands.append(
                 ShellCommand(
                     command=(
-                        f"for h in "
-                        + " ".join(c['hash'] for c in history_candidates[:5])
-                        + f"; do echo \"=== $h ===\"; "
-                        + "git show $h:"
-                        + history_candidates[0]['source_path']
-                        + " | wc -l; done"
+                        f"git show {cand['hash']}:{cand['source_path']} "
+                        f"> {relative_str}"
                     ),
-                    description="Porównaj statystyki wszystkich kandydatów",
+                    description=(
+                        f"Przywróć wersję {cand['hash']} z {cand['date']} "
+                        f"({cand['line_count']} linii) jeśli to poprawna treść"
+                    ),
                 )
             )
+        commands.append(
+            ShellCommand(
+                command=(
+                    f"for h in "
+                    + " ".join(c['hash'] for c in history_candidates[:5])
+                    + f"; do echo \"=== $h ===\"; "
+                    + "git show $h:"
+                    + history_candidates[0]['source_path']
+                    + " | wc -l; done"
+                ),
+                description="Porównaj statystyki wszystkich kandydatów",
+            )
+        )
 
-        confidence = 0.9 if (has_placeholder_text or is_short_stub or empty_render) else 0.7
+    def _diagnose_page_stub(
+        self,
+        page_file: Path,
+        page_token: str,
+        module_name: str,
+    ) -> Optional[Diagnosis]:
+        """Zwraca diagnozę, jeżeli plik strony to stub/placeholder lub uległa skróceniu."""
+        try:
+            text = page_file.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
+
+        line_count = sum(1 for _ in text.splitlines())
+        has_placeholder, is_short_stub, empty_render = self._check_page_stub_indicators(text, line_count)
+
+        try:
+            relative = page_file.relative_to(self.scan_root)
+        except ValueError:
+            relative = page_file
+        relative_str = str(relative).replace("\\", "/")
+
+        history_candidates = self._collect_page_history_candidates(
+            page_token, module_name, page_file,
+        )
+
+        max_historical_lines = max((c["line_count"] for c in history_candidates), default=0)
+        is_content_regression = self._detect_content_regression(
+            line_count, history_candidates, has_placeholder
+        )
+
+        if not (has_placeholder or is_short_stub or empty_render or is_content_regression):
+            return None
+
+        backup_candidate = self._find_backup_page_implementation(page_token, module_name)
+
+        actions, commands, problem_type, summary, nlp_lines = self._build_stub_diagnosis_actions(
+            relative_str, line_count, max_historical_lines,
+            has_placeholder, is_short_stub, empty_render, is_content_regression, page_token
+        )
+
+        self._add_backup_candidate(backup_candidate, relative_str, actions, commands, nlp_lines)
+        self._add_history_candidates(history_candidates, relative_str, actions, commands, nlp_lines)
+
+        confidence = 0.9 if (has_placeholder or is_short_stub or empty_render) else 0.7
 
         return Diagnosis(
             summary=summary,

@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1484-green)
-> **1484** functions | **20** classes | **44** files | CC̄ = 6.5
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1568-green)
+> **1568** functions | **20** classes | **47** files | CC̄ = 6.5
 
 > Auto-generated project documentation from source code analysis.
 
@@ -84,7 +84,10 @@ regres/
     ├── DEFSCAN
     ├── README
         ├── import-error-toon-report
+        ├── connect-test-reports-doctor
     ├── import-error-toon-report
+            ├── c2004-security-settings-baseline
+            ├── c2004-preanalysis-predeploy
         ├── toon
             ├── toon
     ├── regres
@@ -100,9 +103,9 @@ regres/
     ├── defscan
     ├── doctor_orchestrator
     ├── prompt
+        ├── toon
+        ├── toon
     ├── context
-        ├── toon
-        ├── toon
         ├── toon
         ├── toon
     ├── README
@@ -138,6 +141,10 @@ regres/
 ### Functions
 
 - `analyze_from_url()` — —
+- `analyze_dependency_chain()` — —
+- `probe_vite_runtime()` — —
+- `analyze_module_loader_compliance()` — —
+- `analyze_page_registry_compliance()` — —
 - `analyze_page_implementations()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -265,6 +272,7 @@ regres/
 - `render_seed_json()` — —
 - `render_json()` — —
 - `main()` — —
+- `load_config()` — —
 - `toon_quote()` — —
 - `parse_args()` — —
 - `run_typecheck()` — —
@@ -400,6 +408,14 @@ regres/
 - `test_handle_import_errors_without_frontend()` — —
 - `test_handle_defscan_refactor_subprocess_mock()` — —
 - `test_full_workflow_with_all_mocks()` — —
+- `test_load_config_uses_defaults_and_creates_env_file()` — —
+- `test_load_config_priority_env_file_over_default()` — —
+- `test_load_config_priority_environ_over_file()` — —
+- `test_load_config_priority_cli_overrides_environ()` — —
+- `test_load_config_invalid_int_falls_back_to_default()` — —
+- `test_load_config_print_banner_parsing()` — —
+- `test_banner_output_mentions_active_window_and_help()` — —
+- `test_banner_disabled_emits_nothing()` — —
 - `run_doctor_command()` — —
 - `test_doctor_cli_help()` — —
 - `test_doctor_cli_version()` — —
@@ -504,6 +520,14 @@ regres/
 - `test_find_main_location_no_shared()` — —
 - `test_analyze_history_patterns()` — —
 - `test_analyze_history_patterns_no_moves()` — —
+- `test_module_loader_compliance_passes_with_module_class()` — —
+- `test_module_loader_compliance_passes_with_default_export()` — —
+- `test_module_loader_compliance_flags_view_only_export()` — —
+- `test_module_loader_compliance_returns_none_when_entry_missing()` — —
+- `test_page_registry_compliance_passes_when_default_present()` — —
+- `test_page_registry_compliance_flags_empty_registry()` — —
+- `test_page_registry_compliance_flags_default_not_in_registry()` — —
+- `test_page_registry_compliance_returns_none_when_no_index()` — —
 - `test_ts_error_re_matches()` — —
 - `test_ts_error_re_no_match_for_plain_text()` — —
 - `test_missing_module_re()` — —
@@ -575,6 +599,10 @@ regres/
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
 - `analyze_from_url()` — —
+- `analyze_dependency_chain()` — —
+- `probe_vite_runtime()` — —
+- `analyze_module_loader_compliance()` — —
+- `analyze_page_registry_compliance()` — —
 - `analyze_page_implementations()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -775,6 +803,7 @@ regres/
 - `llm_context_packet()` — —
 - `analyze_file()` — —
 - `load_config()` — —
+- `check_version()` — —
 - `toon_quote()` — —
 - `parse_args()` — —
 - `run_typecheck()` — —
@@ -786,11 +815,14 @@ regres/
 - `to_toon_block_legacy()` — —
 - `to_toon_global_payload()` — —
 - `to_toon_compact_per_file()` — —
-- `check_version()` — —
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
 - `analyze_from_url()` — —
+- `analyze_dependency_chain()` — —
+- `probe_vite_runtime()` — —
+- `analyze_module_loader_compliance()` — —
+- `analyze_page_registry_compliance()` — —
 - `analyze_page_implementations()` — —
 - `analyze_import_errors()` — —
 - `analyze_duplicates()` — —
@@ -872,6 +904,14 @@ regres/
 - `test_handle_import_errors_without_frontend()` — —
 - `test_handle_defscan_refactor_subprocess_mock()` — —
 - `test_full_workflow_with_all_mocks()` — —
+- `test_load_config_uses_defaults_and_creates_env_file()` — —
+- `test_load_config_priority_env_file_over_default()` — —
+- `test_load_config_priority_environ_over_file()` — —
+- `test_load_config_priority_cli_overrides_environ()` — —
+- `test_load_config_invalid_int_falls_back_to_default()` — —
+- `test_load_config_print_banner_parsing()` — —
+- `test_banner_output_mentions_active_window_and_help()` — —
+- `test_banner_disabled_emits_nothing()` — —
 - `run_doctor_command()` — —
 - `test_doctor_cli_help()` — —
 - `test_doctor_cli_version()` — —
@@ -976,6 +1016,14 @@ regres/
 - `test_find_main_location_no_shared()` — —
 - `test_analyze_history_patterns()` — —
 - `test_analyze_history_patterns_no_moves()` — —
+- `test_module_loader_compliance_passes_with_module_class()` — —
+- `test_module_loader_compliance_passes_with_default_export()` — —
+- `test_module_loader_compliance_flags_view_only_export()` — —
+- `test_module_loader_compliance_returns_none_when_entry_missing()` — —
+- `test_page_registry_compliance_passes_when_default_present()` — —
+- `test_page_registry_compliance_flags_empty_registry()` — —
+- `test_page_registry_compliance_flags_default_not_in_registry()` — —
+- `test_page_registry_compliance_returns_none_when_no_index()` — —
 - `test_ts_error_re_matches()` — —
 - `test_ts_error_re_no_match_for_plain_text()` — —
 - `test_missing_module_re()` — —
@@ -1050,12 +1098,15 @@ regres/
 
 ## Project Structure
 
+📄 `.regres.connect-test-reports-doctor`
 📄 `.regres.import-error-toon-report`
+📄 `.windsurf.workflows.c2004-preanalysis-predeploy`
+📄 `.windsurf.workflows.c2004-security-settings-baseline`
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (663 functions, 5 classes)
-📄 `SUMR` (233 functions, 5 classes)
+📄 `SUMD` (693 functions, 5 classes)
+📄 `SUMR` (241 functions, 5 classes)
 📄 `TODO`
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
@@ -1072,17 +1123,17 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1523 functions)
+📄 `project.map.toon` (1587 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
 📄 `regres.defscan` (45 functions, 1 classes)
 📄 `regres.doctor`
-📄 `regres.doctor_cli` (9 functions)
+📄 `regres.doctor_cli` (13 functions)
 📄 `regres.doctor_config` (5 functions, 1 classes)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (75 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (86 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (52 functions)
 📄 `regres.regres` (55 functions, 1 classes)

@@ -16,7 +16,7 @@ SUMD - Structured Unified Markdown Descriptor for AI-aware project refactorizati
 ## Metadata
 
 - **name**: `regres`
-- **version**: `0.1.47`
+- **version**: `0.1.52`
 - **python_requires**: `>=3.11`
 - **license**: {'text': 'Apache-2.0'}
 - **ai_model**: `openrouter/qwen/qwen3-coder-next`
@@ -36,7 +36,7 @@ SUMD (description) → DOQL/source (code) → taskfile (automation) → testql (
 
 app {
   name: regres;
-  version: 0.1.47;
+  version: 0.1.52;
 }
 
 interface[type="cli"] {
@@ -172,16 +172,26 @@ environment[name="local"] {
 ```python
 class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def __init__(scan_root, config)  # CC=2
+    def resolve_symlink(path)  # CC=2
+    def _discover_module_path_map()  # CC=16 ⚠
+    def _get_module_path_map()  # CC=2
+    def _get_url_route_module_hints()  # CC=1
+    def build_project_relation_map()  # CC=26 ⚠
+    def _collect_git_relation_changes()  # CC=14 ⚠
+    def _rel_or_abs(path)  # CC=2
     def analyze_from_url(url)  # CC=8
     def analyze_dependency_chain(target_file, max_depth)  # CC=21 ⚠
     def _extract_relative_imports(text)  # CC=5
     def _resolve_relative_import(from_file, raw_import)  # CC=7
+    def _map_workspace_to_frontend(file_path)  # CC=2
+    def _find_symlink_base(file_path)  # CC=5
     def probe_vite_runtime(vite_base, file_rel, timeout)  # CC=11 ⚠
     def analyze_module_loader_compliance(module_path, module_name)  # CC=10 ⚠
     def analyze_page_registry_compliance(module_path, module_name)  # CC=15 ⚠
     def analyze_page_implementations(route_path, module_path, module_name)  # CC=5
-    def _extract_page_token(route_path, module_name)  # CC=7
-    def _find_page_files(module_path, page_token)  # CC=6
+    def analyze_runtime_console(log_path)  # CC=13 ⚠
+    def _extract_page_token(route_path, module_name)  # CC=10 ⚠
+    def _find_page_files(module_path, page_token)  # CC=7
     def _diagnose_page_stub(page_file, page_token, module_name)  # CC=31 ⚠
     def _collect_page_history_candidates(page_token, module_name, current_file, days, iterations)  # CC=23 ⚠
     def _fingerprint_page_content(content)  # CC=8
@@ -206,6 +216,7 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def generate_patch_scripts(out_dir, basename)  # CC=26 ⚠
     def _render_patch_script(diag, diag_idx, cand_idx, total_cands, git_hash, source_path, target_path, reason)  # CC=1
     def _render_generic_patch_script(diag, diag_idx, target_path)  # CC=2
+    def _render_project_relation_map(report)  # CC=5
     def _extract_module_name(path)  # CC=6
     def _resolve_module_path(module_name)  # CC=5
     def _import_exists_in_source(file_path, module_name)  # CC=11 ⚠
@@ -418,29 +429,27 @@ class Definition:  # Pojedyncza definicja (klasa / funkcja / enum / interface / 
     def __repr__()  # CC=1
 ```
 
-### `regres.import_error_toon_report` (`regres/import_error_toon_report.py`)
+### `regres.doctor_cli` (`regres/doctor_cli.py`)
 
 ```python
-def toon_quote(value)  # CC=1, fan=1
-def parse_args()  # CC=1, fan=3
-def run_typecheck(cwd, command)  # CC=7, fan=5
-def normalize_file_rel(raw_file, cwd)  # CC=3, fan=6
-def parse_ts_errors(log_text, cwd, include_codes)  # CC=7, fan=9
-def suggestions_for_error(err)  # CC=9, fan=3
-def grouped_errors(errors)  # CC=2, fan=3
-def metrics(errors)  # CC=3, fan=3
-def to_toon_block_legacy(file_rel, errs, max_errors)  # CC=6, fan=8
-def to_toon_global_payload(report, scan_root, max_files, max_errors_per_file)  # CC=10, fan=15 ⚠
-def to_toon_compact_per_file(grouped, max_files, max_errors)  # CC=7, fan=9
-def render_markdown(report, scan_root, max_files, max_errors_per_file)  # CC=6, fan=14
-def main()  # CC=5, fan=14
-class TsError:
-class ReportData:
+def _append_url_module_not_found_diagnosis(doctor, scan_root, module_name, args_url)  # CC=3, fan=4
+def _run_url_module_analysis(args, doctor, scan_root, normalized_path, module_name, module_path)  # CC=71, fan=40 ⚠
+def _resolve_runtime_log_path(args, scan_root)  # CC=7, fan=6
+def _handle_runtime_log_diagnostics(args, doctor, scan_root)  # CC=6, fan=8
+def _handle_url_mode(args, doctor, scan_root)  # CC=21, fan=23 ⚠
+def _handle_import_errors(args, doctor, scan_root, refresh_fn)  # CC=10, fan=5 ⚠
+def _handle_defscan_refactor(args, doctor)  # CC=4, fan=5
+def _handle_auto_decision_flow(args, doctor, scan_root, refresh_fn)  # CC=18, fan=21 ⚠
+def _save_report(doctor, args)  # CC=20, fan=12 ⚠
+def _render_patches_section(patches)  # CC=10, fan=5 ⚠
+def _refresh_import_error_log(project_root, log_path)  # CC=5, fan=7
+def _build_parser()  # CC=1, fan=2
+def main()  # CC=5, fan=13
 ```
 
 ## Call Graph
 
-*176 nodes · 237 edges · 10 modules · CC̄=1.3*
+*178 nodes · 240 edges · 9 modules · CC̄=1.3*
 
 ### Hubs (by degree)
 
@@ -448,16 +457,16 @@ class ReportData:
 |----------|----|----|-----|-------|
 | `print` *(in docs.DEFSCAN)* | 0 | 132 | 0 | **132** |
 | `render_text` *(in regres.defscan)* | 14 ⚠ | 2 | 55 | **57** |
-| `main` *(in regres.regres_cli)* | 1 | 0 | 53 | **53** |
+| `main` *(in regres.regres_cli)* | 1 | 0 | 54 | **54** |
 | `build_parser` *(in regres.refactor)* | 1 | 1 | 49 | **50** |
 | `render_seed_text` *(in regres.defscan)* | 10 ⚠ | 1 | 42 | **43** |
 | `cmd_hotmap` *(in regres.refactor)* | 16 ⚠ | 0 | 42 | **42** |
-| `_handle_auto_decision_flow` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 36 | **37** |
-| `_run_seed_mode` *(in regres.defscan)* | 17 ⚠ | 1 | 32 | **33** |
+| `_handle_auto_decision_flow` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 41 | **42** |
+| `_handle_url_mode` *(in regres.doctor_cli)* | 21 ⚠ | 1 | 33 | **34** |
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 176 | edges: 237 | modules: 10
+# nodes: 178 | edges: 240 | modules: 9
 # CC̄=1.3
 
 HUBS[20]:
@@ -466,7 +475,7 @@ HUBS[20]:
   regres.defscan.render_text
     CC=14  in:2  out:55  total:57
   regres.regres_cli.main
-    CC=1  in:0  out:53  total:53
+    CC=1  in:0  out:54  total:54
   regres.refactor.build_parser
     CC=1  in:1  out:49  total:50
   regres.defscan.render_seed_text
@@ -474,37 +483,35 @@ HUBS[20]:
   regres.refactor.cmd_hotmap
     CC=16  in:0  out:42  total:42
   regres.doctor_cli._handle_auto_decision_flow
-    CC=18  in:1  out:36  total:37
+    CC=18  in:1  out:41  total:42
+  regres.doctor_cli._handle_url_mode
+    CC=21  in:1  out:33  total:34
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
   regres.defscan.extract_go
     CC=6  in:1  out:32  total:33
-  regres.import_error_toon_report.to_toon_global_payload
-    CC=10  in:1  out:31  total:32
   regres.regres._render_classification_section
     CC=15  in:1  out:31  total:32
+  regres.import_error_toon_report.to_toon_global_payload
+    CC=10  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
   regres.defscan.c
     CC=2  in:30  out:0  total:30
+  regres.regres_cli._extend_if_set
+    CC=3  in:28  out:2  total:30
   regres.regres.trace_name_and_hash_candidates
     CC=13  in:1  out:28  total:29
-  regres.regres_cli._extend_if_set
-    CC=3  in:27  out:2  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
   regres.regres._render_regression_section
     CC=12  in:1  out:26  total:27
   regres.doctor_cli._save_report
     CC=20  in:2  out:25  total:27
-  regres.refactor.cmd_similar
-    CC=14  in:0  out:26  total:26
-  regres.regres.analyze_file
-    CC=4  in:1  out:25  total:26
+  regres.regres_cli._build_doctor_argv
+    CC=1  in:1  out:26  total:27
 
 MODULES:
-  SUMD  [1 funcs]
-    check_version  CC=0  out:0
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
   regres.defscan  [43 funcs]
@@ -518,10 +525,13 @@ MODULES:
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
     _extract_block_ts  CC=12  out:4
-  regres.doctor_cli  [5 funcs]
-    _build_parser  CC=1  out:22
-    _handle_auto_decision_flow  CC=18  out:36
+  regres.doctor_cli  [8 funcs]
+    _build_parser  CC=1  out:23
+    _handle_auto_decision_flow  CC=18  out:41
+    _handle_runtime_log_diagnostics  CC=6  out:8
+    _handle_url_mode  CC=21  out:33
     _refresh_import_error_log  CC=5  out:11
+    _resolve_runtime_log_path  CC=7  out:8
     _save_report  CC=20  out:25
     main  CC=5  out:19
   regres.doctor_config  [4 funcs]
@@ -565,10 +575,10 @@ MODULES:
   regres.regres_cli  [6 funcs]
     _append_if_true  CC=2  out:1
     _build_defscan_argv  CC=1  out:11
-    _build_doctor_argv  CC=1  out:24
+    _build_doctor_argv  CC=1  out:26
     _build_ier_argv  CC=1  out:6
     _extend_if_set  CC=3  out:2
-    main  CC=1  out:53
+    main  CC=1  out:54
   regres.version_check  [10 funcs]
     _find_env_path  CC=3  out:4
     _get_pypi_version  CC=2  out:6
@@ -650,7 +660,7 @@ EDGES:
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 176 | edges: 237 | modules: 10
+# nodes: 178 | edges: 240 | modules: 9
 # CC̄=1.3
 
 HUBS[20]:
@@ -659,7 +669,7 @@ HUBS[20]:
   regres.defscan.render_text
     CC=14  in:2  out:55  total:57
   regres.regres_cli.main
-    CC=1  in:0  out:53  total:53
+    CC=1  in:0  out:54  total:54
   regres.refactor.build_parser
     CC=1  in:1  out:49  total:50
   regres.defscan.render_seed_text
@@ -667,37 +677,35 @@ HUBS[20]:
   regres.refactor.cmd_hotmap
     CC=16  in:0  out:42  total:42
   regres.doctor_cli._handle_auto_decision_flow
-    CC=18  in:1  out:36  total:37
+    CC=18  in:1  out:41  total:42
+  regres.doctor_cli._handle_url_mode
+    CC=21  in:1  out:33  total:34
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
   regres.defscan.extract_go
     CC=6  in:1  out:32  total:33
-  regres.import_error_toon_report.to_toon_global_payload
-    CC=10  in:1  out:31  total:32
   regres.regres._render_classification_section
     CC=15  in:1  out:31  total:32
+  regres.import_error_toon_report.to_toon_global_payload
+    CC=10  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
   regres.defscan.c
     CC=2  in:30  out:0  total:30
+  regres.regres_cli._extend_if_set
+    CC=3  in:28  out:2  total:30
   regres.regres.trace_name_and_hash_candidates
     CC=13  in:1  out:28  total:29
-  regres.regres_cli._extend_if_set
-    CC=3  in:27  out:2  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
   regres.regres._render_regression_section
     CC=12  in:1  out:26  total:27
   regres.doctor_cli._save_report
     CC=20  in:2  out:25  total:27
-  regres.refactor.cmd_similar
-    CC=14  in:0  out:26  total:26
-  regres.regres.analyze_file
-    CC=4  in:1  out:25  total:26
+  regres.regres_cli._build_doctor_argv
+    CC=1  in:1  out:26  total:27
 
 MODULES:
-  SUMD  [1 funcs]
-    check_version  CC=0  out:0
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
   regres.defscan  [43 funcs]
@@ -711,10 +719,13 @@ MODULES:
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
     _extract_block_ts  CC=12  out:4
-  regres.doctor_cli  [5 funcs]
-    _build_parser  CC=1  out:22
-    _handle_auto_decision_flow  CC=18  out:36
+  regres.doctor_cli  [8 funcs]
+    _build_parser  CC=1  out:23
+    _handle_auto_decision_flow  CC=18  out:41
+    _handle_runtime_log_diagnostics  CC=6  out:8
+    _handle_url_mode  CC=21  out:33
     _refresh_import_error_log  CC=5  out:11
+    _resolve_runtime_log_path  CC=7  out:8
     _save_report  CC=20  out:25
     main  CC=5  out:19
   regres.doctor_config  [4 funcs]
@@ -758,10 +769,10 @@ MODULES:
   regres.regres_cli  [6 funcs]
     _append_if_true  CC=2  out:1
     _build_defscan_argv  CC=1  out:11
-    _build_doctor_argv  CC=1  out:24
+    _build_doctor_argv  CC=1  out:26
     _build_ier_argv  CC=1  out:6
     _extend_if_set  CC=3  out:2
-    main  CC=1  out:53
+    main  CC=1  out:54
   regres.version_check  [10 funcs]
     _find_env_path  CC=3  out:4
     _get_pypi_version  CC=2  out:6
@@ -830,17 +841,23 @@ EDGES:
 ### Code Analysis (`project/analysis.toon.yaml`)
 
 ```toon markpact:analysis path=project/analysis.toon.yaml
-# code2llm | 41f 19816L | md:14,python:13,yaml:9,shell:2,txt:1,toml:1 | 2026-04-29
-# CC̄=1.3 | critical:16/1410 | dups:0 | cycles:0
+# code2llm | 44f 21040L | md:17,python:13,yaml:9,shell:2,txt:1,toml:1 | 2026-04-29
+# CC̄=1.3 | critical:19/1485 | dups:0 | cycles:0
 
-HEALTH[18]:
-  🔴 GOD   SUMR.md = 1023L, 5 classes, 226m, max CC=0.0
-  🔴 GOD   SUMD.md = 1231L, 5 classes, 488m, max CC=0.0
+HEALTH[20]:
+  🔴 GOD   SUMR.md = 1049L, 5 classes, 234m, max CC=0.0
+  🔴 GOD   SUMD.md = 1275L, 5 classes, 518m, max CC=0.0
   🟡 CC    _render_classification_section CC=15 (limit:15)
   🟡 CC    iter_files CC=15 (limit:15)
   🟡 CC    wrapper_score CC=15 (limit:15)
   🟡 CC    cmd_hotmap CC=16 (limit:15)
   🟡 CC    _run_seed_mode CC=17 (limit:15)
+  🟡 CC    _run_url_module_analysis CC=71 (limit:15)
+  🟡 CC    _handle_url_mode CC=21 (limit:15)
+  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
+  🟡 CC    _save_report CC=20 (limit:15)
+  🟡 CC    _discover_module_path_map CC=16 (limit:15)
+  🟡 CC    build_project_relation_map CC=26 (limit:15)
   🟡 CC    analyze_dependency_chain CC=21 (limit:15)
   🟡 CC    analyze_page_registry_compliance CC=15 (limit:15)
   🟡 CC    _diagnose_page_stub CC=31 (limit:15)
@@ -848,45 +865,41 @@ HEALTH[18]:
   🟡 CC    generate_patch_scripts CC=26 (limit:15)
   🟡 CC    _diagnose_import_issue CC=15 (limit:15)
   🟡 CC    _render_affected_files CC=22 (limit:15)
-  🟡 CC    _render_dependency_chain CC=28 (limit:15)
-  🟡 CC    _handle_url_mode CC=91 (limit:15)
-  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
-  🟡 CC    _save_report CC=20 (limit:15)
 
 REFACTOR[3]:
   1. split SUMR.md  (god module)
   2. split SUMD.md  (god module)
-  3. split 16 high-CC methods  (CC>15)
+  3. split 18 high-CC methods  (CC>15)
 
-PIPELINES[94]:
+PIPELINES[104]:
   [1] Src [_resolve_single_or_error]: _resolve_single_or_error
       PURITY: 100% pure
   [2] Src [main]: main → find_repo_root
       PURITY: 100% pure
-  [3] Src [cmd_find]: cmd_find → iter_files
+  [3] Src [print_banner_to]: print_banner_to → print
       PURITY: 100% pure
-  [4] Src [cmd_duplicates]: cmd_duplicates → iter_files
+  [4] Src [cmd_find]: cmd_find → iter_files
       PURITY: 100% pure
-  [5] Src [cmd_similar]: cmd_similar → iter_files
+  [5] Src [cmd_duplicates]: cmd_duplicates → iter_files
       PURITY: 100% pure
 
 LAYERS:
-  regres/                         CC̄=6.5    ←in:0  →out:135  !! split
-  │ !! doctor_orchestrator       2683L  1C   75m  CC=31     ←0
+  regres/                         CC̄=6.5    ←in:0  →out:132  !! split
+  │ !! doctor_orchestrator       3190L  1C   86m  CC=31     ←0
   │ !! regres                    1495L  1C   55m  CC=15     ←1
   │ !! defscan                   1261L  1C   45m  CC=17     ←2
   │ !! refactor                  1237L  0C   52m  CC=16     ←2
-  │ !! doctor_cli                 966L  0C    9m  CC=91     ←0
+  │ !! doctor_cli                1054L  0C   13m  CC=71     ←0
   │ import_error_toon_report   372L  2C   13m  CC=10     ←0
   │ doctor_config              263L  1C    5m  CC=14     ←1
-  │ regres_cli                 209L  0C    9m  CC=7      ←0
-  │ version_check              185L  0C   10m  CC=10     ←0
+  │ regres_cli                 211L  0C    9m  CC=7      ←0
+  │ version_check              185L  0C   10m  CC=10     ←3
   │ doctor_models               36L  3C    0m  CC=0.0    ←0
   │ __init__                    20L  0C    0m  CC=0.0    ←0
   │ doctor                       6L  0C    0m  CC=0.0    ←0
   │
   docs/                           CC̄=0.0    ←in:132  →out:0
-  │ !! README.md                 1117L  0C    1m  CC=0.0    ←0
+  │ !! README.md                 1122L  0C    1m  CC=0.0    ←0
   │ REGRES.md                  220L  0C    0m  CC=0.0    ←0
   │ DOCTOR.md                  198L  1C    1m  CC=0.0    ←0
   │ DEFSCAN.md                 164L  0C    1m  CC=0.0    ←7
@@ -894,10 +907,10 @@ LAYERS:
   │ import-error-toon-report.md    76L  0C    0m  CC=0.0    ←0
   │
   ./                              CC̄=0.0    ←in:0  →out:0
-  │ !! SUMD.md                   1231L  5C  488m  CC=0.0    ←3
-  │ !! SUMR.md                   1023L  5C  226m  CC=0.0    ←0
+  │ !! SUMD.md                   1275L  5C  518m  CC=0.0    ←0
+  │ !! SUMR.md                   1049L  5C  234m  CC=0.0    ←0
+  │ !! CHANGELOG.md               529L  0C    0m  CC=0.0    ←0
   │ !! goal.yaml                  512L  0C    0m  CC=0.0    ←0
-  │ CHANGELOG.md               465L  0C    0m  CC=0.0    ←0
   │ README.md                  120L  0C    0m  CC=0.0    ←0
   │ pyproject.toml              54L  0C    0m  CC=0.0    ←0
   │ TODO.md                     47L  0C    0m  CC=0.0    ←0
@@ -906,12 +919,12 @@ LAYERS:
   │ Makefile                     0L  0C    0m  CC=0.0    ←0
   │
   project/                        CC̄=0.0    ←in:0  →out:0
-  │ !! calls.yaml                3320L  0C    0m  CC=0.0    ←0
-  │ !! map.toon.yaml              512L  0C  420m  CC=0.0    ←0
-  │ !! context.md                 507L  0C    0m  CC=0.0    ←0
+  │ !! calls.yaml                3375L  0C    0m  CC=0.0    ←0
+  │ !! map.toon.yaml              541L  0C  442m  CC=0.0    ←0
+  │ !! context.md                 525L  0C    0m  CC=0.0    ←0
   │ README.md                  339L  0C    0m  CC=0.0    ←0
-  │ calls.toon.yaml            170L  0C    0m  CC=0.0    ←0
-  │ analysis.toon.yaml         106L  0C    0m  CC=0.0    ←0
+  │ calls.toon.yaml            176L  0C    0m  CC=0.0    ←0
+  │ analysis.toon.yaml         111L  0C    0m  CC=0.0    ←0
   │ evolution.toon.yaml         82L  0C    0m  CC=0.0    ←0
   │ project.toon.yaml           55L  0C    0m  CC=0.0    ←0
   │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
@@ -919,6 +932,7 @@ LAYERS:
   │
   .regres/                        CC̄=0.0    ←in:0  →out:0
   │ !! import-error-toon-report.md   549L  0C    0m  CC=0.0    ←0
+  │ connect-test-reports-doctor.md   283L  0C    0m  CC=0.0    ←0
   │
   scripts/                        CC̄=0.0    ←in:0  →out:0
   │ import-error-toon-report    11L  0C    0m  CC=0.0    ←0
@@ -926,17 +940,20 @@ LAYERS:
   testql-scenarios/               CC̄=0.0    ←in:0  →out:0
   │ generated-cli-tests.testql.toon.yaml    20L  0C    0m  CC=0.0    ←0
   │
+  .windsurf/                      CC̄=0.0    ←in:0  →out:0
+  │ c2004-preanalysis-predeploy.md    51L  0C    0m  CC=0.0    ←0
+  │ c2004-security-settings-baseline.md    41L  0C    0m  CC=0.0    ←0
+  │
   ── zero ──
      Makefile                                  0L
 
 COUPLING:
-          regres    docs    SUMD
-  regres      ──     132       3  !! fan-out
-    docs    ←132      ──          hub
-    SUMD      ←3              ──
+            docs  regres
+    docs      ──    ←132  hub
+  regres     132      ──  !! fan-out
   CYCLES: none
   HUB: docs/ (fan-in=132)
-  SMELL: regres/ fan-out=135 → split needed
+  SMELL: regres/ fan-out=132 → split needed
 
 EXTERNAL:
   validation: run `vallm batch .` → validation.toon
@@ -946,26 +963,26 @@ EXTERNAL:
 ### Duplication (`project/duplication.toon.yaml`)
 
 ```toon markpact:analysis path=project/duplication.toon.yaml
-# redup/duplication | 0 groups | 13f 8744L | 2026-04-29
+# redup/duplication | 0 groups | 13f 9341L | 2026-04-29
 
 SUMMARY:
   files_scanned: 13
-  total_lines:   8744
+  total_lines:   9341
   dup_groups:    0
   dup_fragments: 0
   saved_lines:   0
-  scan_ms:       2769
+  scan_ms:       4152
 ```
 
 ### Evolution / Churn (`project/evolution.toon.yaml`)
 
 ```toon markpact:analysis path=project/evolution.toon.yaml
-# code2llm/evolution | 1410 func | 15f | 2026-04-29
+# code2llm/evolution | 1485 func | 15f | 2026-04-29
 
 NEXT[10] (ranked by impact):
   [1] !! SPLIT           regres/doctor_orchestrator.py
-      WHY: 2683L, 1 classes, max CC=31
-      EFFORT: ~4h  IMPACT: 83173
+      WHY: 3190L, 1 classes, max CC=31
+      EFFORT: ~4h  IMPACT: 98890
 
   [2] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
@@ -975,45 +992,45 @@ NEXT[10] (ranked by impact):
       WHY: 1261L, 1 classes, max CC=17
       EFFORT: ~4h  IMPACT: 21437
 
-  [4] !! SPLIT-FUNC      _handle_url_mode  CC=91  fan=71
-      WHY: CC=91 exceeds 15
-      EFFORT: ~1h  IMPACT: 6461
+  [4] !! SPLIT-FUNC      _run_url_module_analysis  CC=71  fan=56
+      WHY: CC=71 exceeds 15
+      EFFORT: ~1h  IMPACT: 3976
 
-  [5] !! SPLIT-FUNC      DoctorOrchestrator._diagnose_page_stub  CC=31  fan=24
+  [5] !! SPLIT-FUNC      DoctorOrchestrator.build_project_relation_map  CC=26  fan=37
+      WHY: CC=26 exceeds 15
+      EFFORT: ~1h  IMPACT: 962
+
+  [6] !! SPLIT-FUNC      DoctorOrchestrator._diagnose_page_stub  CC=31  fan=24
       WHY: CC=31 exceeds 15
       EFFORT: ~1h  IMPACT: 744
 
-  [6] !  SPLIT-FUNC      DoctorOrchestrator._collect_page_history_candidates  CC=23  fan=25
+  [7] !  SPLIT-FUNC      DoctorOrchestrator._collect_page_history_candidates  CC=23  fan=25
       WHY: CC=23 exceeds 15
       EFFORT: ~1h  IMPACT: 575
 
-  [7] !! SPLIT-FUNC      DoctorOrchestrator.generate_patch_scripts  CC=26  fan=17
+  [8] !  SPLIT-FUNC      _handle_url_mode  CC=21  fan=23
+      WHY: CC=21 exceeds 15
+      EFFORT: ~1h  IMPACT: 483
+
+  [9] !! SPLIT-FUNC      DoctorOrchestrator.generate_patch_scripts  CC=26  fan=17
       WHY: CC=26 exceeds 15
       EFFORT: ~1h  IMPACT: 442
 
-  [8] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
+  [10] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
       WHY: CC=16 exceeds 15
       EFFORT: ~1h  IMPACT: 384
 
-  [9] !  SPLIT-FUNC      DoctorOrchestrator.analyze_dependency_chain  CC=21  fan=18
-      WHY: CC=21 exceeds 15
-      EFFORT: ~1h  IMPACT: 378
-
-  [10] !  SPLIT-FUNC      _handle_auto_decision_flow  CC=18  fan=17
-      WHY: CC=18 exceeds 15
-      EFFORT: ~1h  IMPACT: 306
-
 
 RISKS[3]:
-  ⚠ Splitting regres/doctor_orchestrator.py may break 75 import paths
+  ⚠ Splitting regres/doctor_orchestrator.py may break 86 import paths
   ⚠ Splitting regres/regres.py may break 55 import paths
   ⚠ Splitting regres/defscan.py may break 45 import paths
 
 METRICS-TARGET:
   CC̄:          1.3 → ≤0.9
-  max-CC:      91 → ≤20
+  max-CC:      71 → ≤20
   god-modules: 5 → 0
-  high-CC(≥15): 16 → ≤8
+  high-CC(≥15): 19 → ≤9
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -1041,7 +1058,7 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.1 → now CC̄=1.3
+  prev CC̄=1.3 → now CC̄=1.3
 ```
 
 ## Intent

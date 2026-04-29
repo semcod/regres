@@ -62,18 +62,15 @@ def _append_url_module_not_found_diagnosis(
     ))
 
 
-def _run_url_module_analysis(
+def _run_page_implementation_analysis(
     args,
     doctor: DoctorOrchestrator,
     scan_root: Path,
     normalized_path: str,
     module_name: str,
     module_path: Path,
-) -> None:
-    # c2004-maskservice-patch-v2: page implementation analysis runs
-    # even in --llm mode so URL-targeted stub/placeholder pages are
-    # always reported as actionable diagnoses, not just hidden inside
-    # an LLM narrative.
+) -> tuple:
+    """Run page implementation analysis and return page token and diagnoses."""
     page_token = doctor._extract_page_token(normalized_path, module_name)
     doctor.add_plan_step(
         name="page implementation analysis",
@@ -103,13 +100,15 @@ def _run_url_module_analysis(
         "problem_types": [d.problem_type for d in page_diagnoses],
     })
     doctor.diagnoses.extend(page_diagnoses)
+    return page_token, page_diagnoses
 
-    # c2004-maskservice-patch-v7: lazy-loader contract check on the
-    # `<name>.module.ts` entry. Without it the host's lazy registry
-    # throws `No Module class found in ./<name>/<name>.module.ts` at
-    # runtime, which is invisible to the Vite HTTP probe (the file
-    # itself returns 200; the error happens during dynamic-import
-    # resolution).
+
+def _run_module_loader_compliance_check(
+    doctor: DoctorOrchestrator,
+    module_path: Path,
+    module_name: str,
+) -> None:
+    """Check module loader compliance for *.module.ts entry files."""
     doctor.add_plan_step(
         name="module loader compliance",
         reason=(
@@ -137,11 +136,309 @@ def _run_url_module_analysis(
     else:
         doctor.update_last_plan_step(outputs={"compliant": True})
 
-    # c2004-maskservice-patch-v8: page-registry compliance check.
-    # Detect empty / misconfigured `pages-index.ts` registries where
-    # `defaultPage` is not present in the registry — root cause of
-    # `BasePageManager.loadPageByKey` infinite recursion (thousands
-    # of "Page '...' not found, using default" warnings).
+
+def _create_import_chain_diagnoses(
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    chains_data: List[Dict[str, Any]],
+    module_name: str,
+) -> None:
+    """Create diagnoses from import chain analysis results."""
+    from .doctor_models import Diagnosis as _Diag, FileAction as _FA, ShellCommand as _SC
+    for entry in chains_data:
+        target_rel = entry["target"]
+        chain = entry["chain"] or []
+        broken = [c for c in chain if not c.get("exists")]
+        stubs = [c for c in chain if c.get("is_page_stub")]
+        if not broken and not stubs:
+            continue
+        nlp_lines = [
+            f"Plik `{target_rel}` zawiera relatywne importy, które nie są zresolwowane "
+            f"({len(broken)} broken, {len(stubs)} stub). Vite zwróci 500 przy próbie "
+            "załadowania strony, dopóki łańcuch nie zostanie naprawiony."
+        ]
+        fa: List[_FA] = [_FA(
+            path=target_rel,
+            action="modify",
+            reason="Imports require rewriting or chained restore.",
+        )]
+        target_path_obj = scan_root / target_rel
+        page_token_for_target = target_path_obj.stem.replace(".page", "")
+        try:
+            history_for_target = doctor._collect_page_history_candidates(
+                page_token_for_target, module_name or "", target_path_obj,
+            )
+        except Exception:
+            history_for_target = []
+        for hc in history_for_target[:8]:
+            fa.append(_FA(
+                path=target_rel,
+                action="modify",
+                target=f"git:{hc['hash']}:{hc['source_path']}",
+                reason=(
+                    f"[{hc.get('date','?')}] {hc['hash']} • "
+                    f"{hc.get('line_count','?')} linii • {hc['source_path']}"
+                    + (f" • {hc['fingerprint']}" if hc.get("fingerprint") else "")
+                ),
+            ))
+        sc: List[_SC] = []
+        for c in broken[:6]:
+            nlp_lines.append(f"- BROKEN `{c['import']}` z `{c['from_file']}`")
+            sc.append(_SC(
+                command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
+                description=f"Import `{c['import']}` nie znaleziony",
+            ))
+            url_hint = doctor._suggest_url_for_path(c["import"])
+            if url_hint:
+                sc.append(_SC(
+                    command=(
+                        f".venv/bin/python -m regres.regres_cli doctor "
+                        f"--scan-root {scan_root} --url '{url_hint}' --all "
+                        f"--git-history --out-md .regres/{Path(c['import']).stem}-doctor.md"
+                    ),
+                    description=f"Następny krok: regres na {url_hint}",
+                ))
+        for c in stubs[:6]:
+            resolved = c.get("resolved_path", "?")
+            nlp_lines.append(f"- STUB `{resolved}` ← `{c['import']}` (placeholder page)")
+            url_hint = doctor._suggest_url_for_path(resolved)
+            if url_hint:
+                sc.append(_SC(
+                    command=(
+                        f".venv/bin/python -m regres.regres_cli doctor "
+                        f"--scan-root {scan_root} --url '{url_hint}' --all "
+                        f"--git-history --out-md .regres/{Path(resolved).stem}-doctor.md"
+                    ),
+                    description=f"Naprawa łańcuchowa: {url_hint}",
+                ))
+        doctor.diagnoses.append(_Diag(
+            summary=(
+                f"Łańcuch importów `{target_rel}` ma {len(broken)} "
+                "niezresolwowanych i " f"{len(stubs)} placeholder linków"
+            ),
+            problem_type="import_resolution_failure",
+            severity="high" if broken else "medium",
+            nlp_description="\n".join(nlp_lines),
+            file_actions=fa,
+            shell_commands=sc,
+            confidence=0.8,
+        ))
+
+
+def _derive_vite_base(args) -> Optional[str]:
+    """Derive Vite base URL from args."""
+    vite_base = getattr(args, "vite_base", None)
+    if not vite_base and args.url:
+        try:
+            from urllib.parse import urlparse as _up
+            _parsed = _up(args.url)
+            if _parsed.scheme and _parsed.netloc:
+                vite_base = f"{_parsed.scheme}://{_parsed.netloc}"
+        except Exception:
+            vite_base = None
+    return vite_base
+
+
+def _run_vite_runtime_probe(
+    args,
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    chain_targets: List[Path],
+    vite_base: str,
+) -> List[Dict[str, Any]]:
+    """Run Vite runtime probe on chain targets."""
+    doctor.add_plan_step(
+        name="vite runtime probe",
+        reason=(
+            "Pobierz każdy plik celu z dev-servera Vite, aby uzyskać "
+            "autorytatywny status runtime (200 OK / 500 z 'Failed to "
+            "resolve import'). To wykrywa błędy w wrapperach i alias-ach, "
+            "których nie widzi sam test istnienia plików."
+        ),
+        command=f"# probing {len(chain_targets)} files via {vite_base}",
+        status="done",
+        inputs={
+            "vite_base": vite_base,
+            "files": [str(p.relative_to(scan_root)) for p in chain_targets],
+        },
+    )
+    vite_results: List[Dict[str, Any]] = []
+    visited_via_vite: set = set()
+    queue: List[Path] = list(chain_targets)
+    max_vite_probes = 20
+    while queue and len(vite_results) < max_vite_probes:
+        current = queue.pop(0)
+        try:
+            current_rel = str(current.relative_to(scan_root)).replace("\\", "/")
+        except ValueError:
+            current_rel = str(current)
+        if current_rel in visited_via_vite:
+            continue
+        visited_via_vite.add(current_rel)
+        result = doctor.probe_vite_runtime(vite_base, current_rel)
+        result["target"] = current_rel
+        vite_results.append(result)
+        if not result["ok"] and result.get("missing_import_from"):
+            mfrom = result["missing_import_from"]
+            mfrom_path = scan_root / mfrom
+            if not mfrom_path.exists():
+                mfrom_path = scan_root / "frontend" / mfrom
+            if mfrom_path.exists() and mfrom_path not in queue:
+                queue.append(mfrom_path)
+    doctor.set_analysis_context("vite_runtime_results", vite_results)
+    broken_via_vite = sum(1 for r in vite_results if not r["ok"])
+    doctor.update_last_plan_step(outputs={
+        "probes": len(vite_results),
+        "broken_via_vite": broken_via_vite,
+    })
+    return vite_results
+
+
+def _create_vite_runtime_diagnoses(
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    vite_results: List[Dict[str, Any]],
+    vite_base: str,
+) -> None:
+    """Create diagnoses from Vite runtime probe results."""
+    from .doctor_models import Diagnosis as _Diag2, FileAction as _FA2, ShellCommand as _SC2
+    for r in vite_results:
+        if r["ok"]:
+            continue
+        if r.get("transport_error"):
+            continue
+        target_rel = r["target"]
+        nlp_lines = [
+            f"Vite zwrócił {r['status']} dla `{r['url']}`.",
+        ]
+        if r.get("error_message"):
+            nlp_lines.append(f"Wiadomość: {r['error_message']}")
+        if r.get("missing_import"):
+            nlp_lines.append(
+                f"Brakujący import: `{r['missing_import']}` z "
+                f"`{r.get('missing_import_from','?')}`"
+            )
+        sc2: List[_SC2] = [_SC2(
+            command=f"curl -s '{r['url']}' | head -40",
+            description="Podgląd surowej odpowiedzi Vite",
+        )]
+        if r.get("missing_import_from"):
+            url_hint = doctor._suggest_url_for_path(r["missing_import_from"])
+            if url_hint:
+                sc2.append(_SC2(
+                    command=(
+                        f".venv/bin/python -m regres.regres_cli doctor "
+                        f"--scan-root {scan_root} --url '{url_hint}' --all "
+                        f"--git-history --vite-base {vite_base}"
+                    ),
+                    description=(
+                        f"Naprawa łańcuchowa: regres na pliku, "
+                        f"który zgłosił błąd ({r['missing_import_from']})"
+                    ),
+                ))
+        doctor.diagnoses.append(_Diag2(
+            summary=(
+                f"Vite runtime: `{target_rel}` zwraca {r['status']}"
+                + (
+                    f" — brakujący import `{r['missing_import']}`"
+                    if r.get("missing_import") else ""
+                )
+            ),
+            problem_type="vite_runtime_failure",
+            severity="critical",
+            nlp_description="\n".join(nlp_lines),
+            file_actions=[_FA2(
+                path=r.get("missing_import_from") or target_rel,
+                action="modify",
+                reason=(
+                    f"Vite nie potrafił zresolwować importu "
+                    f"`{r.get('missing_import','?')}` z tego pliku."
+                ),
+            )],
+            shell_commands=sc2,
+            confidence=0.95,
+        ))
+
+
+def _collect_dependency_chain_targets(
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    page_diagnoses: List,
+    module_path: Path,
+    page_token: str,
+) -> List[Path]:
+    """Collect targets for dependency chain analysis from page diagnoses."""
+    chain_targets: List[Path] = []
+    for diag in page_diagnoses:
+        for action in diag.file_actions:
+            if action.action != "modify":
+                continue
+            if (action.target or "").startswith("git:"):
+                continue
+            candidate = scan_root / action.path
+            if candidate.exists() and candidate not in chain_targets:
+                chain_targets.append(candidate)
+    # Always include the resolved page files even when no diag fired.
+    for page_file in doctor._find_page_files(module_path, page_token or ""):
+        if page_file.exists() and page_file not in chain_targets:
+            chain_targets.append(page_file)
+    return chain_targets
+
+
+def _run_dependency_chain_analysis(
+    args,
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    chain_targets: List[Path],
+) -> List[Dict[str, Any]]:
+    """Run dependency chain analysis on collected targets."""
+    doctor.add_plan_step(
+        name="dependency chain analysis",
+        reason=(
+            "Po wykryciu placeholder/regresji prześledź relatywne importy "
+            "celu, aby znaleźć powiązane pliki wymagające naprawy."
+        ),
+        command=(
+            f"python -m regres.regres_cli doctor --scan-root {scan_root} "
+            f"--url {args.url} --all --git-history"
+        ),
+        status="done",
+        inputs={
+            "targets": [str(p.relative_to(scan_root)) for p in chain_targets],
+            "max_depth": 1,
+        },
+        decision=(
+            "Walk imports of każdego pliku celu (depth=1); zaznacz broken/stub. "
+            "Każdy broken link → następny krok regres na nim."
+        ),
+    )
+    chains_data: List[Dict[str, Any]] = []
+    broken_total = 0
+    stub_total = 0
+    for tgt in chain_targets:
+        chain = doctor.analyze_dependency_chain(tgt, max_depth=1)
+        try:
+            target_rel = str(tgt.relative_to(scan_root)).replace("\\", "/")
+        except ValueError:
+            target_rel = str(tgt)
+        chains_data.append({"target": target_rel, "chain": chain})
+        broken_total += sum(1 for c in chain if not c.get("exists"))
+        stub_total += sum(1 for c in chain if c.get("is_page_stub"))
+    doctor.set_analysis_context("dependency_chains", chains_data)
+    doctor.update_last_plan_step(outputs={
+        "files_analyzed": len(chain_targets),
+        "broken_imports": broken_total,
+        "stub_imports": stub_total,
+    })
+    return chains_data
+
+
+def _run_page_registry_compliance_check(
+    doctor: DoctorOrchestrator,
+    module_path: Path,
+    module_name: str,
+) -> None:
+    """Check page registry compliance for pages-index.ts."""
     doctor.add_plan_step(
         name="page registry compliance",
         reason=(
@@ -163,284 +460,15 @@ def _run_url_module_analysis(
         })
     else:
         doctor.update_last_plan_step(outputs={"compliant": True})
-    doctor.set_analysis_context(
-        "page_implementation_findings",
-        [
-            {
-                "summary": d.summary,
-                "problem_type": d.problem_type,
-                "severity": d.severity,
-                "files": [a.path for a in d.file_actions],
-            }
-            for d in page_diagnoses
-        ],
-    )
 
-    # c2004-maskservice-patch-v5: dependency chain analysis. We walk
-    # imports of:
-    #   (a) any file flagged by page diagnoses (modify action),
-    #   (b) the URL-target page file itself even if no page diagnosis
-    #       fired — to catch cases where the page looks fine content-
-    #       wise but its imports are broken (Vite 500 at runtime).
-    chain_targets: List[Path] = []
-    for diag in page_diagnoses:
-        for action in diag.file_actions:
-            if action.action != "modify":
-                continue
-            if (action.target or "").startswith("git:"):
-                continue
-            candidate = scan_root / action.path
-            if candidate.exists() and candidate not in chain_targets:
-                chain_targets.append(candidate)
-    # Always include the resolved page files even when no diag fired.
-    for page_file in doctor._find_page_files(module_path, page_token or ""):
-        if page_file.exists() and page_file not in chain_targets:
-            chain_targets.append(page_file)
 
-    if chain_targets:
-        doctor.add_plan_step(
-            name="dependency chain analysis",
-            reason=(
-                "Po wykryciu placeholder/regresji prześledź relatywne importy "
-                "celu, aby znaleźć powiązane pliki wymagające naprawy."
-            ),
-            command=(
-                f"python -m regres.regres_cli doctor --scan-root {scan_root} "
-                f"--url {args.url} --all --git-history"
-            ),
-            status="done",
-            inputs={
-                "targets": [str(p.relative_to(scan_root)) for p in chain_targets],
-                "max_depth": 1,
-            },
-            decision=(
-                "Walk imports of każdego pliku celu (depth=1); zaznacz broken/stub. "
-                "Każdy broken link → następny krok regres na nim."
-            ),
-        )
-        chains_data: List[Dict[str, Any]] = []
-        broken_total = 0
-        stub_total = 0
-        for tgt in chain_targets:
-            chain = doctor.analyze_dependency_chain(tgt, max_depth=1)
-            try:
-                target_rel = str(tgt.relative_to(scan_root)).replace("\\", "/")
-            except ValueError:
-                target_rel = str(tgt)
-            chains_data.append({"target": target_rel, "chain": chain})
-            broken_total += sum(1 for c in chain if not c.get("exists"))
-            stub_total += sum(1 for c in chain if c.get("is_page_stub"))
-        doctor.set_analysis_context("dependency_chains", chains_data)
-        doctor.update_last_plan_step(outputs={
-            "files_analyzed": len(chain_targets),
-            "broken_imports": broken_total,
-            "stub_imports": stub_total,
-        })
-
-        # c2004-maskservice-patch-v6: Vite runtime probe. Auto-derive
-        # base URL from --url if --vite-base not explicit. The probe
-        # gives us the AUTHORITATIVE answer about what's broken — much
-        # better than filesystem-only checks because it accounts for
-        # mounts, aliases, wrappers, etc.
-        vite_base = getattr(args, "vite_base", None)
-        if not vite_base and args.url:
-            try:
-                from urllib.parse import urlparse as _up
-                _parsed = _up(args.url)
-                if _parsed.scheme and _parsed.netloc:
-                    vite_base = f"{_parsed.scheme}://{_parsed.netloc}"
-            except Exception:
-                vite_base = None
-
-        if vite_base:
-            doctor.add_plan_step(
-                name="vite runtime probe",
-                reason=(
-                    "Pobierz każdy plik celu z dev-servera Vite, aby uzyskać "
-                    "autorytatywny status runtime (200 OK / 500 z 'Failed to "
-                    "resolve import'). To wykrywa błędy w wrapperach i alias-ach, "
-                    "których nie widzi sam test istnienia plików."
-                ),
-                command=f"# probing {len(chain_targets)} files via {vite_base}",
-                status="done",
-                inputs={
-                    "vite_base": vite_base,
-                    "files": [str(p.relative_to(scan_root)) for p in chain_targets],
-                },
-            )
-            vite_results: List[Dict[str, Any]] = []
-            visited_via_vite: set = set()
-            queue: List[Path] = list(chain_targets)
-            max_vite_probes = 20
-            while queue and len(vite_results) < max_vite_probes:
-                current = queue.pop(0)
-                try:
-                    current_rel = str(current.relative_to(scan_root)).replace("\\", "/")
-                except ValueError:
-                    current_rel = str(current)
-                if current_rel in visited_via_vite:
-                    continue
-                visited_via_vite.add(current_rel)
-                result = doctor.probe_vite_runtime(vite_base, current_rel)
-                result["target"] = current_rel
-                vite_results.append(result)
-                if not result["ok"] and result.get("missing_import_from"):
-                    mfrom = result["missing_import_from"]
-                    mfrom_path = scan_root / mfrom
-                    if not mfrom_path.exists():
-                        mfrom_path = scan_root / "frontend" / mfrom
-                    if mfrom_path.exists() and mfrom_path not in queue:
-                        queue.append(mfrom_path)
-            doctor.set_analysis_context("vite_runtime_results", vite_results)
-            broken_via_vite = sum(1 for r in vite_results if not r["ok"])
-            doctor.update_last_plan_step(outputs={
-                "probes": len(vite_results),
-                "broken_via_vite": broken_via_vite,
-            })
-
-            from .doctor_models import Diagnosis as _Diag2, FileAction as _FA2, ShellCommand as _SC2
-            for r in vite_results:
-                if r["ok"]:
-                    continue
-                if r.get("transport_error"):
-                    continue
-                target_rel = r["target"]
-                nlp_lines = [
-                    f"Vite zwrócił {r['status']} dla `{r['url']}`.",
-                ]
-                if r.get("error_message"):
-                    nlp_lines.append(f"Wiadomość: {r['error_message']}")
-                if r.get("missing_import"):
-                    nlp_lines.append(
-                        f"Brakujący import: `{r['missing_import']}` z "
-                        f"`{r.get('missing_import_from','?')}`"
-                    )
-                sc2: List[_SC2] = [_SC2(
-                    command=f"curl -s '{r['url']}' | head -40",
-                    description="Podgląd surowej odpowiedzi Vite",
-                )]
-                if r.get("missing_import_from"):
-                    url_hint = doctor._suggest_url_for_path(r["missing_import_from"])
-                    if url_hint:
-                        sc2.append(_SC2(
-                            command=(
-                                f".venv/bin/python -m regres.regres_cli doctor "
-                                f"--scan-root {scan_root} --url '{url_hint}' --all "
-                                f"--git-history --vite-base {vite_base}"
-                            ),
-                            description=(
-                                f"Naprawa łańcuchowa: regres na pliku, "
-                                f"który zgłosił błąd ({r['missing_import_from']})"
-                            ),
-                        ))
-                doctor.diagnoses.append(_Diag2(
-                    summary=(
-                        f"Vite runtime: `{target_rel}` zwraca {r['status']}"
-                        + (
-                            f" — brakujący import `{r['missing_import']}`"
-                            if r.get("missing_import") else ""
-                        )
-                    ),
-                    problem_type="vite_runtime_failure",
-                    severity="critical",
-                    nlp_description="\n".join(nlp_lines),
-                    file_actions=[_FA2(
-                        path=r.get("missing_import_from") or target_rel,
-                        action="modify",
-                        reason=(
-                            f"Vite nie potrafił zresolwować importu "
-                            f"`{r.get('missing_import','?')}` z tego pliku."
-                        ),
-                    )],
-                    shell_commands=sc2,
-                    confidence=0.95,
-                ))
-
-        # c2004-maskservice-patch-v5: surface broken imports as their
-        # own diagnoses so they appear in the diagnosis list, get a
-        # severity, and (where the import targets a `.page.ts` file)
-        # become a pointer for the user to invoke regres recursively
-        # on the chained file.
-        from .doctor_models import Diagnosis as _Diag, FileAction as _FA, ShellCommand as _SC
-        for entry in chains_data:
-            target_rel = entry["target"]
-            chain = entry["chain"] or []
-            broken = [c for c in chain if not c.get("exists")]
-            stubs = [c for c in chain if c.get("is_page_stub")]
-            if not broken and not stubs:
-                continue
-            nlp_lines = [
-                f"Plik `{target_rel}` zawiera relatywne importy, które nie są zresolwowane "
-                f"({len(broken)} broken, {len(stubs)} stub). Vite zwróci 500 przy próbie "
-                "załadowania strony, dopóki łańcuch nie zostanie naprawiony."
-            ]
-            fa: List[_FA] = [_FA(
-                path=target_rel,
-                action="modify",
-                reason="Imports require rewriting or chained restore.",
-            )]
-            target_path_obj = scan_root / target_rel
-            page_token_for_target = target_path_obj.stem.replace(".page", "")
-            try:
-                history_for_target = doctor._collect_page_history_candidates(
-                    page_token_for_target, module_name or "", target_path_obj,
-                )
-            except Exception:
-                history_for_target = []
-            for hc in history_for_target[:8]:
-                fa.append(_FA(
-                    path=target_rel,
-                    action="modify",
-                    target=f"git:{hc['hash']}:{hc['source_path']}",
-                    reason=(
-                        f"[{hc.get('date','?')}] {hc['hash']} • "
-                        f"{hc.get('line_count','?')} linii • {hc['source_path']}"
-                        + (f" • {hc['fingerprint']}" if hc.get("fingerprint") else "")
-                    ),
-                ))
-            sc: List[_SC] = []
-            for c in broken[:6]:
-                nlp_lines.append(f"- BROKEN `{c['import']}` z `{c['from_file']}`")
-                sc.append(_SC(
-                    command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
-                    description=f"Import `{c['import']}` nie znaleziony",
-                ))
-                url_hint = doctor._suggest_url_for_path(c["import"])
-                if url_hint:
-                    sc.append(_SC(
-                        command=(
-                            f".venv/bin/python -m regres.regres_cli doctor "
-                            f"--scan-root {scan_root} --url '{url_hint}' --all "
-                            f"--git-history --out-md .regres/{Path(c['import']).stem}-doctor.md"
-                        ),
-                        description=f"Następny krok: regres na {url_hint}",
-                    ))
-            for c in stubs[:6]:
-                resolved = c.get("resolved_path", "?")
-                nlp_lines.append(f"- STUB `{resolved}` ← `{c['import']}` (placeholder page)")
-                url_hint = doctor._suggest_url_for_path(resolved)
-                if url_hint:
-                    sc.append(_SC(
-                        command=(
-                            f".venv/bin/python -m regres.regres_cli doctor "
-                            f"--scan-root {scan_root} --url '{url_hint}' --all "
-                            f"--git-history --out-md .regres/{Path(resolved).stem}-doctor.md"
-                        ),
-                        description=f"Naprawa łańcuchowa: {url_hint}",
-                    ))
-            doctor.diagnoses.append(_Diag(
-                summary=(
-                    f"Łańcuch importów `{target_rel}` ma {len(broken)} "
-                    "niezresolwowanych i " f"{len(stubs)} placeholder linków"
-                ),
-                problem_type="import_resolution_failure",
-                severity="high" if broken else "medium",
-                nlp_description="\n".join(nlp_lines),
-                file_actions=fa,
-                shell_commands=sc,
-                confidence=0.8,
-            ))
-
+def _run_llm_or_targeted_analysis(
+    args,
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    module_path: Path,
+) -> None:
+    """Run LLM report generation or targeted module analysis."""
     if args.llm:
         doctor.add_plan_step(
             name="llm report generation",
@@ -464,6 +492,75 @@ def _run_url_module_analysis(
         )
         diagnoses = doctor.analyze_from_url(args.url)
         doctor.diagnoses.extend(diagnoses)
+
+
+def _run_url_module_analysis(
+    args,
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    normalized_path: str,
+    module_name: str,
+    module_path: Path,
+) -> None:
+    # c2004-maskservice-patch-v2: page implementation analysis runs
+    # even in --llm mode so URL-targeted stub/placeholder pages are
+    # always reported as actionable diagnoses, not just hidden inside
+    # an LLM narrative.
+    page_token, page_diagnoses = _run_page_implementation_analysis(
+        args, doctor, scan_root, normalized_path, module_name, module_path
+    )
+
+    # c2004-maskservice-patch-v7: lazy-loader contract check on the
+    # `<name>.module.ts` entry. Without it the host's lazy registry
+    # throws `No Module class found in ./<name>/<name>.module.ts` at
+    # runtime, which is invisible to the Vite HTTP probe (the file
+    # itself returns 200; the error happens during dynamic-import
+    # resolution).
+    _run_module_loader_compliance_check(doctor, module_path, module_name)
+
+    _run_page_registry_compliance_check(doctor, module_path, module_name)
+    doctor.set_analysis_context(
+        "page_implementation_findings",
+        [
+            {
+                "summary": d.summary,
+                "problem_type": d.problem_type,
+                "severity": d.severity,
+                "files": [a.path for a in d.file_actions],
+            }
+            for d in page_diagnoses
+        ],
+    )
+
+    # c2004-maskservice-patch-v5: dependency chain analysis. We walk
+    # imports of:
+    #   (a) any file flagged by page diagnoses (modify action),
+    #   (b) the URL-target page file itself even if no page diagnosis
+    #       fired — to catch cases where the page looks fine content-
+    #       wise but its imports are broken (Vite 500 at runtime).
+    chain_targets = _collect_dependency_chain_targets(
+        doctor, scan_root, page_diagnoses, module_path, page_token
+    )
+
+    if chain_targets:
+        chains_data = _run_dependency_chain_analysis(
+            args, doctor, scan_root, chain_targets
+        )
+
+        vite_base = _derive_vite_base(args)
+        if vite_base:
+            vite_results = _run_vite_runtime_probe(
+                args, doctor, scan_root, chain_targets, vite_base
+            )
+            _create_vite_runtime_diagnoses(
+                doctor, scan_root, vite_results, vite_base
+            )
+
+        _create_import_chain_diagnoses(
+            doctor, scan_root, chains_data, module_name
+        )
+
+    _run_llm_or_targeted_analysis(args, doctor, scan_root, module_path)
 
 
 def _resolve_runtime_log_path(args, scan_root: Path) -> Optional[Path]:

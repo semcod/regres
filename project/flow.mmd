@@ -13,13 +13,13 @@ flowchart TD
         regres__regres_cli___extend_if_set["_extend_if_set"]
         regres__regres_cli___append_if_true["_append_if_true"]
         regres__regres_cli___dispatch_command["_dispatch_command"]
+        regres__doctor_cli___append_url_module_not_found_diagnosis["_append_url_module_not_found_d"]
+        regres__doctor_cli___run_url_module_analysis["_run_url_module_analysis"]
+        regres__doctor_cli___resolve_runtime_log_path["_resolve_runtime_log_path"]
+        regres__doctor_cli___handle_runtime_log_diagnostics["_handle_runtime_log_diagnostic"]
         regres__doctor_cli___handle_url_mode["_handle_url_mode"]
         regres__doctor_cli___handle_import_errors["_handle_import_errors"]
-        regres__doctor_cli___handle_defscan_refactor["_handle_defscan_refactor"]
-        regres__doctor_cli___handle_auto_decision_flow["_handle_auto_decision_flow"]
-        regres__doctor_cli___save_report["_save_report"]
-        regres__doctor_cli___render_patches_section["_render_patches_section"]
-        ...["+3 more"]
+        ...["+7 more"]
     end
 
     subgraph Core
@@ -34,18 +34,22 @@ flowchart TD
         regres__regres___render_classification_section{{_render_classification_section CC=15}}
         regres__regres__analyze_file["analyze_file"]
         regres__regres__main["main"]
+        regres__doctor_config__DoctorConfig__banner_lines["banner_lines"]
+        regres__doctor_config__DoctorConfig__print_banner_to["print_banner_to"]
         regres__refactor__iter_files{{iter_files CC=15}}
         regres__refactor__wrapper_score{{wrapper_score CC=15}}
-        regres__refactor__cmd_find["cmd_find"]
-        regres__refactor__cmd_duplicates["cmd_duplicates"]
-        ...["+1219 more"]
+        ...["+1286 more"]
     end
 
     subgraph Exporters
-        SUMD__test_exported_member_re["test_exported_member_re"]
-        SUMD__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
+        project__map__toon__test_module_loader_compliance_passes_with_default_export["test_module_loader_compliance_"]
+        project__map__toon__test_module_loader_compliance_flags_view_only_export["test_module_loader_compliance_"]
         project__map__toon__test_exported_member_re["test_exported_member_re"]
         project__map__toon__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
+        SUMD__test_module_loader_compliance_passes_with_default_export["test_module_loader_compliance_"]
+        SUMD__test_module_loader_compliance_flags_view_only_export["test_module_loader_compliance_"]
+        SUMD__test_exported_member_re["test_exported_member_re"]
+        SUMD__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
     end
 
-    class docs__DOCTOR__analyze_custom_metric,regres__regres___resolve_single_or_error,regres__regres__main,regres__refactor__cmd_find,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_diff entry
+    class docs__DOCTOR__analyze_custom_metric,regres__regres___resolve_single_or_error,regres__regres__main,regres__doctor_config__DoctorConfig__banner_lines,regres__doctor_config__DoctorConfig__print_banner_to,regres__refactor__cmd_find,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers entry

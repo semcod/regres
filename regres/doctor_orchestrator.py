@@ -5,6 +5,7 @@ doctor_orchestrator.py — analysis orchestrator and diagnosis generator.
 
 import json
 import hashlib
+import os
 import re
 import subprocess
 import sys
@@ -56,6 +57,21 @@ class DoctorOrchestrator:
         "connect-test/protocol": "connect-test-protocol",
         "connect-devtools-nfo-logs": "connect-devtools",
     }
+
+    @staticmethod
+    def resolve_symlink(path: Path) -> Path:
+        """Resolve a path following symlinks to the actual file location.
+
+        This is important for monorepo structures where files are symlinked
+        from workspace directories into the main build directory.
+        """
+        try:
+            # Use os.path.realpath to follow all symlinks
+            resolved = Path(os.path.realpath(path))
+            return resolved
+        except (OSError, RuntimeError):
+            # Fallback to Path.resolve() if realpath fails
+            return path.resolve()
 
     def _discover_module_path_map(self) -> Dict[str, str]:
         """Discover module roots from filesystem layout.
@@ -498,7 +514,11 @@ class DoctorOrchestrator:
 
         Returns (resolved_path or None, tried_paths_list).
         """
+        # For c2004 monorepo: if file is in a workspace directory (e.g., connect-config/frontend/src/...),
+        # map it to the symlinked frontend location for proper import resolution
+        from_file = self._map_workspace_to_frontend(from_file)
         base = from_file.parent
+
         candidates: List[Path] = []
         if "." in raw_import.rsplit("/", 1)[-1]:
             # Has explicit extension or .ext-like segment; try as-is first.
@@ -515,6 +535,45 @@ class DoctorOrchestrator:
             if cand.exists() and cand.is_file():
                 return cand, tried
         return None, tried
+
+    def _map_workspace_to_frontend(self, file_path: Path) -> Path:
+        """Map a file from a workspace directory to the symlinked frontend location.
+
+        For c2004 structure:
+        - Workspace: connect-config/frontend/src/modules/connect-config/pages/file.ts
+        - Frontend: frontend/src/modules/connect-config/pages/file.ts (symlinked)
+        This mapping ensures relative imports resolve correctly.
+        """
+        path_str = str(file_path)
+        # Pattern: <scan_root>/<module>/frontend/src/modules/<module>/...
+        # Map to: <scan_root>/frontend/src/modules/<module>/...
+        import re
+        pattern = rf'^{re.escape(str(self.scan_root))}/(connect-\w+)/frontend/src/modules/(\1)/(.*)$'
+        match = re.match(pattern, path_str)
+        if match:
+            module_name = match.group(1)
+            rest = match.group(3)
+            # Map to frontend location
+            return self.scan_root / 'frontend' / 'src' / 'modules' / module_name / rest
+        return file_path
+
+    def _find_symlink_base(self, file_path: Path) -> Optional[Path]:
+        """Find if a file is in a symlinked directory and return the symlinked base path.
+
+        For c2004 structure: connect-config/frontend/src/modules/connect-config/pages/file.ts
+        is symlinked to: frontend/src/modules/connect-config/pages/file.ts
+        We want to use the symlinked location as the base for import resolution.
+        """
+        current = file_path.parent
+        # Check up the directory tree for symlinks
+        for _ in range(10):  # Limit depth to avoid infinite loops
+            if current.is_symlink():
+                # Found a symlink - return its parent (the symlinked base)
+                return current.parent
+            current = current.parent
+            if current == self.scan_root or not current.exists():
+                break
+        return None
 
     # c2004-maskservice-patch-v6: Vite runtime probing. Filesystem checks miss
     # cases where (a) the file exists but a Vite alias/mount routes it to a

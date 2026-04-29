@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1465-green)
-> **1465** functions | **19** classes | **43** files | CC̄ = 6.0
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1484-green)
+> **1484** functions | **20** classes | **44** files | CC̄ = 6.5
 
 > Auto-generated project documentation from source code analysis.
 
@@ -71,6 +71,7 @@ regres/
 ├── goal
 ├── Makefile
 ├── SUMD
+├── pyproject
 ├── tree
 ├── TODO
 ├── CHANGELOG
@@ -87,6 +88,7 @@ regres/
         ├── toon
             ├── toon
     ├── regres
+    ├── doctor_config
     ├── doctor_models
     ├── doctor
     ├── version_check
@@ -97,14 +99,13 @@ regres/
     ├── regres_cli
     ├── defscan
     ├── doctor_orchestrator
-├── pyproject
     ├── prompt
     ├── context
         ├── toon
         ├── toon
         ├── toon
-    ├── README
         ├── toon
+    ├── README
     ├── calls
         ├── toon
 ```
@@ -125,6 +126,7 @@ regres/
 - **`ReportData`** — —
 - **`DoctorOrchestrator`** — —
 - **`GitCommit`** — —
+- **`DoctorConfig`** — Resolved runtime configuration for one ``doctor`` invocation.
 - **`FileAction`** — Akcja na pliku.
 - **`ShellCommand`** — Polecenie shell do wykonania.
 - **`Diagnosis`** — Diagnoza problemu i plan naprawy.
@@ -629,6 +631,7 @@ regres/
 - `render_markdown(report)` — —
 - `analyze_file(target_file, scan_root, max_commits, tree_depth)` — —
 - `main()` — —
+- `load_config(scan_root, cli_overrides)` — Build a :class:`DoctorConfig` honoring the resolution order described in
 - `check_version(local_version)` — Check PyPI for a newer version and prompt the user to update.
 - `main()` — Main entry point for doctor CLI.
 - `iter_files(root, extensions, word_filter, case_sensitive)` — —
@@ -771,6 +774,7 @@ regres/
 - `find_last_good_version()` — —
 - `llm_context_packet()` — —
 - `analyze_file()` — —
+- `load_config()` — —
 - `toon_quote()` — —
 - `parse_args()` — —
 - `run_typecheck()` — —
@@ -1050,8 +1054,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (662 functions, 5 classes)
-📄 `SUMR` (232 functions, 5 classes)
+📄 `SUMD` (663 functions, 5 classes)
+📄 `SUMR` (233 functions, 5 classes)
 📄 `TODO`
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
@@ -1068,7 +1072,7 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1518 functions)
+📄 `project.map.toon` (1523 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
@@ -1076,8 +1080,9 @@ regres/
 📄 `regres.defscan` (45 functions, 1 classes)
 📄 `regres.doctor`
 📄 `regres.doctor_cli` (9 functions)
+📄 `regres.doctor_config` (5 functions, 1 classes)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (67 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (75 functions, 1 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (52 functions)
 📄 `regres.regres` (55 functions, 1 classes)

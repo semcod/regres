@@ -4,6 +4,7 @@ doctor_orchestrator.py — analysis orchestrator and diagnosis generator.
 """
 
 import json
+import hashlib
 import re
 import subprocess
 import sys
@@ -29,8 +30,10 @@ class DoctorOrchestrator:
         self.diagnoses: List[Diagnosis] = []
         self.analysis_plan: List[Dict[str, Any]] = []
         self.analysis_context: Dict[str, Any] = {}
+        self._module_path_map_cache: Optional[Dict[str, str]] = None
+        self._project_relation_map_cache: Dict[str, Dict[str, Any]] = {}
 
-    # Mapowanie URL paths do katalogów modułów
+    # Fallback map (dynamic discovery is preferred).
     MODULE_PATH_MAP = {
         "connect-test": "connect-test/frontend/src/modules/connect-test",
         "connect-test-protocol": "connect-test-protocol/frontend/src/modules/connect-test-protocol",
@@ -53,6 +56,271 @@ class DoctorOrchestrator:
         "connect-test/protocol": "connect-test-protocol",
         "connect-devtools-nfo-logs": "connect-devtools",
     }
+
+    def _discover_module_path_map(self) -> Dict[str, str]:
+        """Discover module roots from filesystem layout.
+
+        Priority:
+        1) <repo>/<module>/frontend/src/modules/<module>
+        2) <repo>/frontend/src/modules/<module>
+        3) <repo>/<module>/backend
+        4) hardcoded fallback entries that actually exist
+        """
+        discovered: Dict[str, str] = {}
+
+        def _to_rel(path: Path) -> str:
+            return str(path.relative_to(self.scan_root)).replace("\\", "/")
+
+        # 1) Monorepo module frontend roots: connect-x/frontend/src/modules/connect-x
+        for path in self.scan_root.glob("connect-*/frontend/src/modules/*"):
+            if not path.is_dir():
+                continue
+            module_name = path.name
+            if module_name.startswith("connect-") and module_name not in discovered:
+                discovered[module_name] = _to_rel(path)
+
+        # 2) Flat frontend module roots: frontend/src/modules/connect-x
+        flat_modules = self.scan_root / "frontend" / "src" / "modules"
+        if flat_modules.exists():
+            for path in flat_modules.glob("connect-*"):
+                if path.is_dir() and path.name not in discovered:
+                    discovered[path.name] = _to_rel(path)
+
+        # 3) Backend-only module roots: connect-x/backend
+        for path in self.scan_root.glob("connect-*/backend"):
+            if not path.is_dir():
+                continue
+            module_name = path.parent.name
+            if module_name.startswith("connect-") and module_name not in discovered:
+                discovered[module_name] = _to_rel(path)
+
+        # 4) Compatibility fallback for historical constants
+        for module_name, rel_path in self.MODULE_PATH_MAP.items():
+            if module_name in discovered:
+                continue
+            full_path = self.scan_root / rel_path
+            if full_path.exists():
+                discovered[module_name] = rel_path
+
+        return discovered
+
+    def _get_module_path_map(self) -> Dict[str, str]:
+        if self._module_path_map_cache is None:
+            self._module_path_map_cache = self._discover_module_path_map()
+        return self._module_path_map_cache
+
+    def _get_url_route_module_hints(self) -> Dict[str, str]:
+        return dict(self.URL_ROUTE_MODULE_HINTS)
+
+    def build_project_relation_map(
+        self,
+        *,
+        include_git: bool = False,
+        max_files: int = 1500,
+    ) -> Dict[str, Any]:
+        cache_key = f"git={int(include_git)}|max={max_files}"
+        cached = self._project_relation_map_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        module_map = self._get_module_path_map()
+        relation: Dict[str, Any] = {
+            "scan_root": str(self.scan_root),
+            "modules": {},
+            "route_hints": self._get_url_route_module_hints(),
+            "summary": {},
+            "imports": {
+                "edges": [],
+                "missing": [],
+            },
+            "duplicates": {
+                "by_name": [],
+                "by_content": [],
+            },
+        }
+
+        module_files: List[Path] = []
+        module_nodes: Dict[str, Dict[str, Any]] = {}
+        for module_name, rel_path in module_map.items():
+            full = self.scan_root / rel_path
+            exists = full.exists()
+            file_count = 0
+            if exists and full.is_dir():
+                files = [p for p in full.rglob("*") if p.is_file()]
+                file_count = len(files)
+                module_files.extend(files)
+            module_nodes[module_name] = {
+                "path": rel_path,
+                "exists": exists,
+                "file_count": file_count,
+                "kind": "backend" if rel_path.endswith("/backend") else "frontend",
+            }
+        relation["modules"] = module_nodes
+
+        scoped_files: List[Path] = []
+        seen_files: set = set()
+        for f in module_files:
+            if f.suffix.lower() not in {".ts", ".tsx", ".js", ".jsx", ".json", ".yaml", ".yml"}:
+                continue
+            key = str(f)
+            if key in seen_files:
+                continue
+            seen_files.add(key)
+            scoped_files.append(f)
+            if len(scoped_files) >= max_files:
+                break
+
+        imports_edges: List[Dict[str, str]] = []
+        missing_imports: List[Dict[str, Any]] = []
+        for src_file in scoped_files:
+            if src_file.suffix.lower() not in {".ts", ".tsx", ".js", ".jsx"}:
+                continue
+            try:
+                text = src_file.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            rel_from = self._rel_or_abs(src_file)
+            for raw in self._extract_relative_imports(text):
+                resolved, _tried = self._resolve_relative_import(src_file, raw)
+                if resolved is None:
+                    missing_imports.append({
+                        "from": rel_from,
+                        "import": raw,
+                    })
+                    continue
+                imports_edges.append({
+                    "from": rel_from,
+                    "to": self._rel_or_abs(resolved),
+                    "import": raw,
+                })
+
+        relation["imports"]["edges"] = imports_edges
+        relation["imports"]["missing"] = missing_imports
+
+        name_index: Dict[str, List[str]] = {}
+        content_index: Dict[str, List[str]] = {}
+        for f in scoped_files:
+            rel = self._rel_or_abs(f)
+            name_index.setdefault(f.name.lower(), []).append(rel)
+            try:
+                digest = hashlib.sha1(f.read_bytes()).hexdigest()  # nosec B324
+            except OSError:
+                continue
+            content_index.setdefault(digest, []).append(rel)
+
+        relation["duplicates"]["by_name"] = [
+            {"name": name, "paths": paths}
+            for name, paths in sorted(name_index.items())
+            if len(paths) > 1
+        ]
+        relation["duplicates"]["by_content"] = [
+            {"sha1": sha, "paths": paths}
+            for sha, paths in content_index.items()
+            if len(paths) > 1
+        ]
+
+        if include_git:
+            relation["git"] = self._collect_git_relation_changes()
+
+        relation["summary"] = {
+            "module_count": len(module_nodes),
+            "module_existing_count": sum(1 for v in module_nodes.values() if v["exists"]),
+            "scanned_files": len(scoped_files),
+            "imports_edges": len(imports_edges),
+            "missing_imports": len(missing_imports),
+            "duplicate_names": len(relation["duplicates"]["by_name"]),
+            "duplicate_contents": len(relation["duplicates"]["by_content"]),
+            "truncated": len(module_files) > len(scoped_files),
+            "include_git": include_git,
+        }
+
+        self._project_relation_map_cache[cache_key] = relation
+        return relation
+
+    def _collect_git_relation_changes(self) -> Dict[str, Any]:
+        if not (self.scan_root / ".git").exists():
+            return {
+                "available": False,
+                "reason": "not_a_git_repo",
+                "renames": [],
+                "touch_counts": {},
+            }
+
+        days = int(getattr(self.config, "history_window_days", self.HISTORY_DEFAULT_DAYS))
+        max_iterations = int(getattr(self.config, "history_max_iterations", self.HISTORY_DEFAULT_ITERATIONS))
+        cmd = [
+            "git",
+            "log",
+            f"--since={days}.days",
+            "--name-status",
+            "--format=%H|%ct",
+            "--",
+            ".",
+        ]
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=str(self.scan_root),
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            return {
+                "available": False,
+                "reason": "git_unavailable",
+                "renames": [],
+                "touch_counts": {},
+            }
+
+        if proc.returncode != 0:
+            return {
+                "available": False,
+                "reason": "git_log_failed",
+                "renames": [],
+                "touch_counts": {},
+            }
+
+        renames: List[Dict[str, str]] = []
+        touch_counts: Dict[str, int] = {}
+        commit_count = 0
+        for line in proc.stdout.splitlines():
+            if not line.strip():
+                continue
+            if "|" in line and len(line.split("|", 1)[0]) >= 7:
+                commit_count += 1
+                if commit_count > max_iterations:
+                    break
+                continue
+            if line.startswith("R"):
+                parts = line.split("\t")
+                if len(parts) >= 3:
+                    renames.append({
+                        "from": parts[1],
+                        "to": parts[2],
+                    })
+                    touch_counts[parts[1]] = touch_counts.get(parts[1], 0) + 1
+                    touch_counts[parts[2]] = touch_counts.get(parts[2], 0) + 1
+                continue
+            if "\t" in line:
+                status, path = line.split("\t", 1)
+                if status and path:
+                    touch_counts[path] = touch_counts.get(path, 0) + 1
+
+        return {
+            "available": True,
+            "window_days": days,
+            "max_iterations": max_iterations,
+            "commits_scanned": min(commit_count, max_iterations),
+            "renames": renames[:200],
+            "touch_counts": dict(sorted(touch_counts.items(), key=lambda kv: kv[1], reverse=True)[:500]),
+        }
+
+    def _rel_or_abs(self, path: Path) -> str:
+        try:
+            return str(path.relative_to(self.scan_root)).replace("\\", "/")
+        except ValueError:
+            return str(path)
 
     # ------------------------------------------------------------------
     # Public analysis API
@@ -1354,6 +1622,7 @@ class DoctorOrchestrator:
         lines.extend(self._render_decision_workflow(report))
         lines.extend(self._render_affected_files(report))
         lines.extend(self._render_dependency_chain(report))
+        lines.extend(self._render_project_relation_map(report))
         lines.extend(self._render_structure_snapshot(report))
         lines.extend(self._render_preliminary_refactor_proposals(report))
 
@@ -1801,24 +2070,58 @@ class DoctorOrchestrator:
         lines.append("")
         return lines
 
+    def _render_project_relation_map(self, report: Dict[str, Any]) -> List[str]:
+        relation = report.get("analysis_context", {}).get("project_relation_map")
+        if not relation:
+            return []
+        summary = relation.get("summary", {})
+        lines: List[str] = ["## Project Relation Map", ""]
+        lines.append(
+            "- modules: "
+            f"{summary.get('module_existing_count', 0)}/{summary.get('module_count', 0)} existing"
+        )
+        lines.append(
+            "- scanned files: "
+            f"{summary.get('scanned_files', 0)}"
+            + (" (truncated)" if summary.get("truncated") else "")
+        )
+        lines.append(f"- import edges: {summary.get('imports_edges', 0)}")
+        lines.append(f"- missing imports: {summary.get('missing_imports', 0)}")
+        lines.append(f"- duplicate names: {summary.get('duplicate_names', 0)}")
+        lines.append(f"- duplicate contents: {summary.get('duplicate_contents', 0)}")
+
+        git_info = relation.get("git")
+        if git_info:
+            if git_info.get("available"):
+                lines.append(
+                    "- git layer: "
+                    f"{git_info.get('commits_scanned', 0)} commits, "
+                    f"{len(git_info.get('renames', []))} renames"
+                )
+            else:
+                lines.append(f"- git layer: unavailable ({git_info.get('reason', 'unknown')})")
+        lines.append("")
+        return lines
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
     def _extract_module_name(self, path: str) -> Optional[str]:
         normalized_path = path.strip('/')
-        for route_prefix, mapped_module in self.URL_ROUTE_MODULE_HINTS.items():
+        for route_prefix, mapped_module in self._get_url_route_module_hints().items():
             if normalized_path.startswith(route_prefix):
                 return mapped_module
 
-        for possible_module in self.MODULE_PATH_MAP.keys():
-            if path.startswith(possible_module):
+        module_names = sorted(self._get_module_path_map().keys(), key=len, reverse=True)
+        for possible_module in module_names:
+            if normalized_path.startswith(possible_module):
                 return possible_module
         parts = path.split('/')
         return parts[0] if parts else None
 
     def _resolve_module_path(self, module_name: str) -> Optional[str]:
-        module_path = self.MODULE_PATH_MAP.get(module_name)
+        module_path = self._get_module_path_map().get(module_name)
         if module_path and (self.scan_root / module_path).exists():
             return module_path
         for possible_path in [

@@ -1,7 +1,9 @@
 flowchart TD
+    SUMD["SUMD<br/>488 funcs"]
     docs__DEFSCAN["docs.DEFSCAN<br/>1 funcs"]
     regres__defscan["regres.defscan<br/>45 funcs"]
     regres__doctor_cli["regres.doctor_cli<br/>9 funcs"]
+    regres__doctor_config["regres.doctor_config<br/>5 funcs"]
     regres__import_error_toon_report["regres.import_error_toon_report<br/>13 funcs"]
     regres__refactor["regres.refactor<br/>52 funcs"]
     regres__regres["regres.regres<br/>55 funcs"]
@@ -13,6 +15,8 @@ flowchart TD
     regres__version_check ==>|6| docs__DEFSCAN
     regres__import_error_toon_report -->|3| docs__DEFSCAN
     regres__regres -->|1| docs__DEFSCAN
-    regres__doctor_cli -->|1| regres__version_check
-    regres__import_error_toon_report -->|1| regres__version_check
-    regres__regres_cli -->|1| regres__version_check
+    regres__import_error_toon_report -->|1| SUMD
+    regres__regres_cli -->|1| SUMD
+    regres__doctor_cli -->|1| SUMD
+    regres__doctor_cli -->|1| regres__doctor_config
+    regres__doctor_config -->|1| docs__DEFSCAN

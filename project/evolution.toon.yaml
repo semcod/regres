@@ -1,9 +1,9 @@
-# code2llm/evolution | 1395 func | 14f | 2026-04-28
+# code2llm/evolution | 1410 func | 15f | 2026-04-29
 
 NEXT[10] (ranked by impact):
   [1] !! SPLIT           regres/doctor_orchestrator.py
-      WHY: 2089L, 1 classes, max CC=31
-      EFFORT: ~4h  IMPACT: 64759
+      WHY: 2683L, 1 classes, max CC=31
+      EFFORT: ~4h  IMPACT: 83173
 
   [2] !! SPLIT           regres/regres.py
       WHY: 1495L, 1 classes, max CC=15
@@ -13,17 +13,17 @@ NEXT[10] (ranked by impact):
       WHY: 1261L, 1 classes, max CC=17
       EFFORT: ~4h  IMPACT: 21437
 
-  [4] !! SPLIT-FUNC      _handle_url_mode  CC=26  fan=29
-      WHY: CC=26 exceeds 15
-      EFFORT: ~1h  IMPACT: 754
+  [4] !! SPLIT-FUNC      _handle_url_mode  CC=91  fan=71
+      WHY: CC=91 exceeds 15
+      EFFORT: ~1h  IMPACT: 6461
 
-  [5] !! SPLIT-FUNC      DoctorOrchestrator._diagnose_page_stub  CC=31  fan=23
+  [5] !! SPLIT-FUNC      DoctorOrchestrator._diagnose_page_stub  CC=31  fan=24
       WHY: CC=31 exceeds 15
-      EFFORT: ~1h  IMPACT: 713
+      EFFORT: ~1h  IMPACT: 744
 
-  [6] !  SPLIT-FUNC      DoctorOrchestrator._collect_page_history_candidates  CC=23  fan=24
+  [6] !  SPLIT-FUNC      DoctorOrchestrator._collect_page_history_candidates  CC=23  fan=25
       WHY: CC=23 exceeds 15
-      EFFORT: ~1h  IMPACT: 552
+      EFFORT: ~1h  IMPACT: 575
 
   [7] !! SPLIT-FUNC      DoctorOrchestrator.generate_patch_scripts  CC=26  fan=17
       WHY: CC=26 exceeds 15
@@ -33,25 +33,25 @@ NEXT[10] (ranked by impact):
       WHY: CC=16 exceeds 15
       EFFORT: ~1h  IMPACT: 384
 
-  [9] !  SPLIT-FUNC      _handle_auto_decision_flow  CC=18  fan=17
+  [9] !  SPLIT-FUNC      DoctorOrchestrator.analyze_dependency_chain  CC=21  fan=18
+      WHY: CC=21 exceeds 15
+      EFFORT: ~1h  IMPACT: 378
+
+  [10] !  SPLIT-FUNC      _handle_auto_decision_flow  CC=18  fan=17
       WHY: CC=18 exceeds 15
       EFFORT: ~1h  IMPACT: 306
 
-  [10] !  SPLIT-FUNC      _save_report  CC=20  fan=13
-      WHY: CC=20 exceeds 15
-      EFFORT: ~1h  IMPACT: 260
-
 
 RISKS[3]:
-  ⚠ Splitting regres/doctor_orchestrator.py may break 67 import paths
+  ⚠ Splitting regres/doctor_orchestrator.py may break 75 import paths
   ⚠ Splitting regres/regres.py may break 55 import paths
   ⚠ Splitting regres/defscan.py may break 45 import paths
 
 METRICS-TARGET:
-  CC̄:          1.1 → ≤0.8
-  max-CC:      31 → ≤15
+  CC̄:          1.3 → ≤0.9
+  max-CC:      91 → ≤20
   god-modules: 5 → 0
-  high-CC(≥15): 13 → ≤6
+  high-CC(≥15): 16 → ≤8
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -79,4 +79,4 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.2 → now CC̄=1.1
+  prev CC̄=1.1 → now CC̄=1.3

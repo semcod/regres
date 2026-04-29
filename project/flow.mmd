@@ -4,21 +4,21 @@ flowchart TD
     classDef entry fill:#4dabf7,stroke:#1971c2,color:#fff
 
     subgraph CLI
-        regres__doctor_cli___handle_url_mode["_handle_url_mode"]
-        regres__doctor_cli___handle_import_errors["_handle_import_errors"]
-        regres__doctor_cli___handle_defscan_refactor["_handle_defscan_refactor"]
-        regres__doctor_cli___handle_auto_decision_flow["_handle_auto_decision_flow"]
-        regres__doctor_cli___save_report["_save_report"]
-        regres__doctor_cli___render_patches_section["_render_patches_section"]
-        regres__doctor_cli___refresh_import_error_log["_refresh_import_error_log"]
-        regres__doctor_cli___build_parser["_build_parser"]
-        regres__doctor_cli__main["main"]
         regres__regres_cli__main["main"]
         regres__regres_cli___build_regres_argv["_build_regres_argv"]
         regres__regres_cli___build_refactor_argv["_build_refactor_argv"]
         regres__regres_cli___build_defscan_argv["_build_defscan_argv"]
         regres__regres_cli___build_doctor_argv["_build_doctor_argv"]
         regres__regres_cli___build_ier_argv["_build_ier_argv"]
+        regres__regres_cli___extend_if_set["_extend_if_set"]
+        regres__regres_cli___append_if_true["_append_if_true"]
+        regres__regres_cli___dispatch_command["_dispatch_command"]
+        regres__doctor_cli___handle_url_mode["_handle_url_mode"]
+        regres__doctor_cli___handle_import_errors["_handle_import_errors"]
+        regres__doctor_cli___handle_defscan_refactor["_handle_defscan_refactor"]
+        regres__doctor_cli___handle_auto_decision_flow["_handle_auto_decision_flow"]
+        regres__doctor_cli___save_report["_save_report"]
+        regres__doctor_cli___render_patches_section["_render_patches_section"]
         ...["+3 more"]
     end
 
@@ -38,14 +38,14 @@ flowchart TD
         regres__refactor__wrapper_score{{wrapper_score CC=15}}
         regres__refactor__cmd_find["cmd_find"]
         regres__refactor__cmd_duplicates["cmd_duplicates"]
-        ...["+1207 more"]
+        ...["+1219 more"]
     end
 
     subgraph Exporters
-        project__map__toon__test_exported_member_re["test_exported_member_re"]
-        project__map__toon__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
         SUMD__test_exported_member_re["test_exported_member_re"]
         SUMD__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
+        project__map__toon__test_exported_member_re["test_exported_member_re"]
+        project__map__toon__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
     end
 
-    class docs__DOCTOR__analyze_custom_metric,regres__regres___resolve_single_or_error,regres__regres__main,regres__doctor_cli___handle_url_mode,regres__doctor_cli___handle_import_errors,regres__doctor_cli___handle_defscan_refactor,regres__doctor_cli___handle_auto_decision_flow,regres__doctor_cli___save_report,regres__doctor_cli___render_patches_section,regres__doctor_cli___refresh_import_error_log entry
+    class docs__DOCTOR__analyze_custom_metric,regres__regres___resolve_single_or_error,regres__regres__main,regres__refactor__cmd_find,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers,regres__refactor__cmd_dead,regres__refactor__cmd_diff entry

@@ -21,12 +21,12 @@ Regression/import diagnostics helpers with TOON reports
 ## Metadata
 
 - **name**: `regres`
-- **version**: `0.1.29`
+- **version**: `0.1.47`
 - **python_requires**: `>=3.11`
-- **license**: Apache-2.0
+- **license**: {'text': 'Apache-2.0'}
 - **ai_model**: `openrouter/qwen/qwen3-coder-next`
 - **ecosystem**: SUMD + DOQL + testql + taskfile
-- **generated_from**: pyproject.toml, Makefile, testql(1), app.doql.less, goal.yaml, src(10 mod), project/(2 analysis files)
+- **generated_from**: pyproject.toml, Makefile, testql(1), app.doql.less, goal.yaml, src(11 mod), project/(2 analysis files)
 
 ## Architecture
 
@@ -41,7 +41,7 @@ SUMD (description) → DOQL/source (code) → taskfile (automation) → testql (
 
 app {
   name: regres;
-  version: 0.1.29;
+  version: 0.1.47;
 }
 
 interface[type="cli"] {
@@ -157,6 +157,7 @@ environment[name="local"] {
 - `regres.defscan`
 - `regres.doctor`
 - `regres.doctor_cli`
+- `regres.doctor_config`
 - `regres.doctor_models`
 - `regres.doctor_orchestrator`
 - `regres.import_error_toon_report`
@@ -206,7 +207,7 @@ ASSERT_EXIT_CODE 0
 ```yaml
 project:
   name: regres
-  version: 0.1.29
+  version: 0.1.47
   env: local
 ```
 
@@ -247,33 +248,35 @@ pip install -e .[dev]
 ### `project/map.toon.yaml`
 
 ```toon markpact:analysis path=project/map.toon.yaml
-# regres | 25f 10213L | python:22,shell:2,less:1 | 2026-04-28
-# stats: 430 func | 8 cls | 25 mod | CC̄=4.1 | critical:39 | cycles:0
-# alerts[5]: CC _handle_url_mode=26; CC _save_report=20; CC _handle_auto_decision_flow=18; CC _run_seed_mode=17; CC cmd_hotmap=16
-# hotspots[5]: _handle_url_mode fan=29; cmd_hotmap fan=23; analyze_file fan=22; trace_name_and_hash_candidates fan=21; _handle_auto_decision_flow fan=17
+# regres | 27f 11791L | python:24,shell:2,less:1 | 2026-04-29
+# stats: 452 func | 9 cls | 27 mod | CC̄=4.3 | critical:43 | cycles:0
+# alerts[5]: CC _handle_url_mode=91; CC _save_report=20; CC _handle_auto_decision_flow=18; CC _run_seed_mode=17; CC cmd_hotmap=16
+# hotspots[5]: _handle_url_mode fan=52; cmd_hotmap fan=23; analyze_file fan=22; trace_name_and_hash_candidates fan=21; _handle_auto_decision_flow fan=17
 # evolution: baseline
 # Keys: M=modules, D=details, i=imports, e=exports, c=classes, f=functions, m=methods
-M[25]:
+M[27]:
   app.doql.less,114
   project.sh,41
   regres/__init__.py,21
   regres/defscan.py,1261
   regres/doctor.py,7
-  regres/doctor_cli.py,568
+  regres/doctor_cli.py,967
+  regres/doctor_config.py,264
   regres/doctor_models.py,37
-  regres/doctor_orchestrator.py,2090
+  regres/doctor_orchestrator.py,2684
   regres/import_error_toon_report.py,373
   regres/refactor.py,1237
   regres/regres.py,1495
-  regres/regres_cli.py,196
-  regres/version_check.py,152
+  regres/regres_cli.py,210
+  regres/version_check.py,186
   scripts/import-error-toon-report.py,12
   tests/test_defscan.py,138
   tests/test_doctor.py,59
   tests/test_doctor_cli.py,464
+  tests/test_doctor_config.py,144
   tests/test_doctor_e2e.py,486
   tests/test_doctor_models.py,248
-  tests/test_doctor_orchestrator.py,566
+  tests/test_doctor_orchestrator.py,695
   tests/test_import_error_toon_report.py,201
   tests/test_refactor.py,151
   tests/test_regres.py,121
@@ -339,6 +342,12 @@ D:
     _refresh_import_error_log(project_root;log_path)
     _build_parser()
     main()
+  regres/doctor_config.py:
+    e: _parse_env_file,_ensure_env_file,load_config,DoctorConfig
+    DoctorConfig: banner_lines(0),print_banner_to(1)  # Resolved runtime configuration for one ``doctor`` invocation
+    _parse_env_file(path)
+    _ensure_env_file(scan_root)
+    load_config(scan_root;cli_overrides)
   regres/doctor_models.py:
     e: FileAction,ShellCommand,Diagnosis
     FileAction:  # Akcja na pliku.
@@ -346,7 +355,7 @@ D:
     Diagnosis:  # Diagnoza problemu i plan naprawy.
   regres/doctor_orchestrator.py:
     e: DoctorOrchestrator
-    DoctorOrchestrator: __init__(1),analyze_from_url(1),analyze_page_implementations(3),_extract_page_token(2),_find_page_files(2),_diagnose_page_stub(3),_collect_page_history_candidates(5),_fingerprint_page_content(1),_find_backup_page_implementation(2),_build_missing_page_diagnosis(4),_filter_actionable_diagnoses(1),_build_url_fallback_diagnosis(2),analyze_import_errors(1),analyze_duplicates(1),analyze_git_history(1),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),generate_report(0),render_markdown(1),reset_analysis_plan(0),add_plan_step(8),update_last_plan_step(0),set_analysis_context(2),summarize_affected_files(0),generate_patch_scripts(2),_render_patch_script(8),_render_generic_patch_script(3),_extract_module_name(1),_resolve_module_path(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_validate_errors(2),_extract_missing_modules(1),_diagnose_import_issue(2),_diagnose_duplicate(1),_find_main_location(1),_analyze_history_patterns(2),_apply_file_action(3),_apply_shell_command(3),_build_header(2),_build_section(2),_build_nlp_diagnosis(1),_build_proposed_fixes(1),_build_shell_commands(1),_build_playbook(1),_build_summary(1),_collect_all_diagnoses(1),_normalize_diagnoses(1),_render_decision_workflow(1),_fmt_plan_value(1),_render_affected_files(1),_build_candidate_patch_index(1),_render_structure_snapshot(1),_render_preliminary_refactor_proposals(1),collect_structure_snapshot(1),collect_preliminary_refactor_proposals(0),_render_step_by_step_playbook(2),_render_analyze_step(2),_render_apply_step(2),_render_validate_step(1),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1)  # Orchestrator analizy i generator akcji.
+    DoctorOrchestrator: __init__(2),analyze_from_url(1),analyze_dependency_chain(2),_extract_relative_imports(1),_resolve_relative_import(2),probe_vite_runtime(3),analyze_module_loader_compliance(2),analyze_page_registry_compliance(2),analyze_page_implementations(3),_extract_page_token(2),_find_page_files(2),_diagnose_page_stub(3),_collect_page_history_candidates(5),_fingerprint_page_content(1),_find_backup_page_implementation(2),_build_missing_page_diagnosis(4),_filter_actionable_diagnoses(1),_build_url_fallback_diagnosis(2),analyze_import_errors(1),analyze_duplicates(1),analyze_git_history(1),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),generate_report(0),render_markdown(1),reset_analysis_plan(0),add_plan_step(8),update_last_plan_step(0),set_analysis_context(2),summarize_affected_files(0),generate_patch_scripts(2),_render_patch_script(8),_render_generic_patch_script(3),_extract_module_name(1),_resolve_module_path(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_validate_errors(2),_extract_missing_modules(1),_diagnose_import_issue(2),_diagnose_duplicate(1),_find_main_location(1),_analyze_history_patterns(2),_apply_file_action(3),_apply_shell_command(3),_build_header(2),_build_section(2),_build_nlp_diagnosis(1),_build_proposed_fixes(1),_build_shell_commands(1),_build_playbook(1),_build_summary(1),_collect_all_diagnoses(1),_normalize_diagnoses(1),_render_decision_workflow(1),_fmt_plan_value(1),_render_affected_files(1),_build_candidate_patch_index(1),_render_dependency_chain(1),_suggest_url_for_path(1),_render_structure_snapshot(1),_render_preliminary_refactor_proposals(1),collect_structure_snapshot(1),collect_preliminary_refactor_proposals(0),_render_step_by_step_playbook(2),_render_analyze_step(2),_render_apply_step(2),_render_validate_step(1),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1)  # Orchestrator analizy i generator akcji.
   regres/import_error_toon_report.py:
     e: toon_quote,parse_args,run_typecheck,normalize_file_rel,parse_ts_errors,suggestions_for_error,grouped_errors,metrics,to_toon_block_legacy,to_toon_global_payload,to_toon_compact_per_file,render_markdown,main,TsError,ReportData
     TsError:
@@ -569,6 +578,17 @@ D:
     test_handle_import_errors_without_frontend(tmp_path)
     test_handle_defscan_refactor_subprocess_mock(tmp_path)
     test_full_workflow_with_all_mocks(tmp_path)
+  tests/test_doctor_config.py:
+    e: _clear_regres_env,test_load_config_uses_defaults_and_creates_env_file,test_load_config_priority_env_file_over_default,test_load_config_priority_environ_over_file,test_load_config_priority_cli_overrides_environ,test_load_config_invalid_int_falls_back_to_default,test_load_config_print_banner_parsing,test_banner_output_mentions_active_window_and_help,test_banner_disabled_emits_nothing
+    _clear_regres_env(monkeypatch)
+    test_load_config_uses_defaults_and_creates_env_file(tmp_path;monkeypatch)
+    test_load_config_priority_env_file_over_default(tmp_path;monkeypatch)
+    test_load_config_priority_environ_over_file(tmp_path;monkeypatch)
+    test_load_config_priority_cli_overrides_environ(tmp_path;monkeypatch)
+    test_load_config_invalid_int_falls_back_to_default(tmp_path;monkeypatch)
+    test_load_config_print_banner_parsing(tmp_path;monkeypatch;raw;expected)
+    test_banner_output_mentions_active_window_and_help(tmp_path;monkeypatch)
+    test_banner_disabled_emits_nothing(tmp_path;monkeypatch)
   tests/test_doctor_e2e.py:
     e: run_doctor_command,test_doctor_cli_help,test_doctor_cli_version,test_url_mode_module_not_found,test_url_mode_with_existing_module,test_url_mode_with_markdown_output,test_url_mode_both_outputs,test_import_error_with_log_file,test_import_error_with_nonexistent_log,test_defscan_with_report_file,test_all_mode_basic,test_all_mode_with_markdown,test_patch_generation_with_dir,test_no_patches_flag,test_invalid_scan_root,test_concurrent_runs,test_real_world_scenario_missing_imports,test_real_world_scenario_module_analysis,test_analysis_plan_structure,test_diagnosis_structure
     run_doctor_command(args;cwd)
@@ -627,7 +647,7 @@ D:
     test_diagnosis_immutability_of_lists()
     test_diagnosis_with_none_confidence()
   tests/test_doctor_orchestrator.py:
-    e: test_init_sets_scan_root,test_module_path_map_non_empty,test_module_path_map_contains_all_modules,test_reset_analysis_plan,test_add_plan_step_basic,test_add_plan_step_with_status,test_add_plan_step_with_details,test_set_analysis_context,test_analyze_from_url_valid_module,test_analyze_from_url_invalid_url,test_analyze_from_url_module_not_exists,test_analyze_import_errors_missing_log,test_analyze_import_errors_with_valid_log,test_analyze_import_errors_empty_log,test_analyze_duplicates_missing_report,test_analyze_duplicates_valid_report,test_analyze_duplicates_invalid_json,test_analyze_git_history_no_git,test_analyze_git_history_with_git,test_analyze_git_history_timeout,test_analyze_with_defscan_subprocess_failure,test_analyze_with_defscan_timeout,test_analyze_with_refactor_subprocess_failure,test_analyze_with_refactor_with_wrappers,test_apply_fixes_empty,test_apply_fixes_with_modify_action,test_apply_fixes_with_delete_action,test_apply_fixes_with_shell_command,test_apply_fixes_error_handling,test_generate_report_empty,test_generate_report_with_diagnoses,test_generate_report_with_analysis_plan,test_generate_report_with_analysis_context,test_render_markdown_empty,test_render_markdown_with_diagnoses,test_render_markdown_with_file_actions,test_render_markdown_with_shell_commands,test_render_markdown_severity_emojis,test_render_markdown_with_decision_workflow,test_generate_llm_diagnosis,test_generate_llm_diagnosis_sections,test_extract_module_name,test_resolve_module_path,test_import_exists_in_source,test_import_exists_in_source_commented,test_resolve_alias_target,test_parse_ts_errors,test_validate_errors,test_extract_missing_modules,test_find_main_location,test_find_main_location_no_shared,test_analyze_history_patterns,test_analyze_history_patterns_no_moves
+    e: test_init_sets_scan_root,test_module_path_map_non_empty,test_module_path_map_contains_all_modules,test_reset_analysis_plan,test_add_plan_step_basic,test_add_plan_step_with_status,test_add_plan_step_with_details,test_set_analysis_context,test_analyze_from_url_valid_module,test_analyze_from_url_invalid_url,test_analyze_from_url_module_not_exists,test_analyze_import_errors_missing_log,test_analyze_import_errors_with_valid_log,test_analyze_import_errors_empty_log,test_analyze_duplicates_missing_report,test_analyze_duplicates_valid_report,test_analyze_duplicates_invalid_json,test_analyze_git_history_no_git,test_analyze_git_history_with_git,test_analyze_git_history_timeout,test_analyze_with_defscan_subprocess_failure,test_analyze_with_defscan_timeout,test_analyze_with_refactor_subprocess_failure,test_analyze_with_refactor_with_wrappers,test_apply_fixes_empty,test_apply_fixes_with_modify_action,test_apply_fixes_with_delete_action,test_apply_fixes_with_shell_command,test_apply_fixes_error_handling,test_generate_report_empty,test_generate_report_with_diagnoses,test_generate_report_with_analysis_plan,test_generate_report_with_analysis_context,test_render_markdown_empty,test_render_markdown_with_diagnoses,test_render_markdown_with_file_actions,test_render_markdown_with_shell_commands,test_render_markdown_severity_emojis,test_render_markdown_with_decision_workflow,test_generate_llm_diagnosis,test_generate_llm_diagnosis_sections,test_extract_module_name,test_resolve_module_path,test_import_exists_in_source,test_import_exists_in_source_commented,test_resolve_alias_target,test_parse_ts_errors,test_validate_errors,test_extract_missing_modules,test_find_main_location,test_find_main_location_no_shared,test_analyze_history_patterns,test_analyze_history_patterns_no_moves,_make_module_entry,test_module_loader_compliance_passes_with_module_class,test_module_loader_compliance_passes_with_default_export,test_module_loader_compliance_flags_view_only_export,test_module_loader_compliance_returns_none_when_entry_missing,_make_pages_index,test_page_registry_compliance_passes_when_default_present,test_page_registry_compliance_flags_empty_registry,test_page_registry_compliance_flags_default_not_in_registry,test_page_registry_compliance_returns_none_when_no_index
     test_init_sets_scan_root()
     test_module_path_map_non_empty()
     test_module_path_map_contains_all_modules()
@@ -681,6 +701,16 @@ D:
     test_find_main_location_no_shared()
     test_analyze_history_patterns()
     test_analyze_history_patterns_no_moves()
+    _make_module_entry(tmp_path;module_name;body)
+    test_module_loader_compliance_passes_with_module_class(tmp_path)
+    test_module_loader_compliance_passes_with_default_export(tmp_path)
+    test_module_loader_compliance_flags_view_only_export(tmp_path)
+    test_module_loader_compliance_returns_none_when_entry_missing(tmp_path)
+    _make_pages_index(tmp_path;module_name;body)
+    test_page_registry_compliance_passes_when_default_present(tmp_path)
+    test_page_registry_compliance_flags_empty_registry(tmp_path)
+    test_page_registry_compliance_flags_default_not_in_registry(tmp_path)
+    test_page_registry_compliance_returns_none_when_no_index(tmp_path)
   tests/test_import_error_toon_report.py:
     e: test_ts_error_re_matches,test_ts_error_re_no_match_for_plain_text,test_missing_module_re,test_exported_member_re,test_toon_quote_escapes,test_parse_ts_errors_basic,test_parse_ts_errors_filters_code,test_parse_ts_errors_empty,test_suggestions_ts2307_alias,test_suggestions_ts2307_relative,test_suggestions_ts2305,test_suggestions_unknown_code,test_grouped_errors,test_metrics,test_metrics_empty,test_to_toon_block_legacy,test_to_toon_global_payload,test_to_toon_compact_per_file,test_ts_error_dataclass,test_report_data
     test_ts_error_re_matches()
@@ -769,8 +799,14 @@ D:
 
 ```python
 class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
-    def __init__(scan_root)  # CC=1
+    def __init__(scan_root, config)  # CC=2
     def analyze_from_url(url)  # CC=8
+    def analyze_dependency_chain(target_file, max_depth)  # CC=21 ⚠
+    def _extract_relative_imports(text)  # CC=5
+    def _resolve_relative_import(from_file, raw_import)  # CC=7
+    def probe_vite_runtime(vite_base, file_rel, timeout)  # CC=11 ⚠
+    def analyze_module_loader_compliance(module_path, module_name)  # CC=10 ⚠
+    def analyze_page_registry_compliance(module_path, module_name)  # CC=15 ⚠
     def analyze_page_implementations(route_path, module_path, module_name)  # CC=5
     def _extract_page_token(route_path, module_name)  # CC=7
     def _find_page_files(module_path, page_token)  # CC=6
@@ -824,6 +860,8 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def _fmt_plan_value(value)  # CC=7
     def _render_affected_files(report)  # CC=22 ⚠
     def _build_candidate_patch_index(report)  # CC=11 ⚠
+    def _render_dependency_chain(report)  # CC=28 ⚠
+    def _suggest_url_for_path(raw_or_path)  # CC=3
     def _render_structure_snapshot(report)  # CC=2
     def _render_preliminary_refactor_proposals(report)  # CC=3
     def collect_structure_snapshot(max_entries)  # CC=7
@@ -1030,57 +1068,57 @@ class ReportData:
 
 ## Call Graph
 
-*172 nodes · 234 edges · 8 modules · CC̄=1.1*
+*176 nodes · 237 edges · 10 modules · CC̄=1.3*
 
 ### Hubs (by degree)
 
 | Function | CC | in | out | total |
 |----------|----|----|-----|-------|
-| `print` *(in docs.DEFSCAN)* | 0 | 131 | 0 | **131** |
+| `print` *(in docs.DEFSCAN)* | 0 | 132 | 0 | **132** |
 | `render_text` *(in regres.defscan)* | 14 ⚠ | 2 | 55 | **57** |
-| `_handle_url_mode` *(in regres.doctor_cli)* | 26 ⚠ | 1 | 50 | **51** |
+| `main` *(in regres.regres_cli)* | 1 | 0 | 53 | **53** |
 | `build_parser` *(in regres.refactor)* | 1 | 1 | 49 | **50** |
-| `main` *(in regres.regres_cli)* | 1 | 0 | 48 | **48** |
 | `render_seed_text` *(in regres.defscan)* | 10 ⚠ | 1 | 42 | **43** |
 | `cmd_hotmap` *(in regres.refactor)* | 16 ⚠ | 0 | 42 | **42** |
 | `_handle_auto_decision_flow` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 36 | **37** |
+| `_run_seed_mode` *(in regres.defscan)* | 17 ⚠ | 1 | 32 | **33** |
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 172 | edges: 234 | modules: 8
-# CC̄=1.1
+# nodes: 176 | edges: 237 | modules: 10
+# CC̄=1.3
 
 HUBS[20]:
   docs.DEFSCAN.print
-    CC=0  in:131  out:0  total:131
+    CC=0  in:132  out:0  total:132
   regres.defscan.render_text
     CC=14  in:2  out:55  total:57
-  regres.doctor_cli._handle_url_mode
-    CC=26  in:1  out:50  total:51
+  regres.regres_cli.main
+    CC=1  in:0  out:53  total:53
   regres.refactor.build_parser
     CC=1  in:1  out:49  total:50
-  regres.regres_cli.main
-    CC=1  in:0  out:48  total:48
   regres.defscan.render_seed_text
     CC=10  in:1  out:42  total:43
   regres.refactor.cmd_hotmap
     CC=16  in:0  out:42  total:42
   regres.doctor_cli._handle_auto_decision_flow
     CC=18  in:1  out:36  total:37
-  regres.defscan.extract_go
-    CC=6  in:1  out:32  total:33
   regres.defscan._run_seed_mode
     CC=17  in:1  out:32  total:33
-  regres.regres._render_classification_section
-    CC=15  in:1  out:31  total:32
+  regres.defscan.extract_go
+    CC=6  in:1  out:32  total:33
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
+  regres.regres._render_classification_section
+    CC=15  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
   regres.defscan.c
     CC=2  in:30  out:0  total:30
   regres.regres.trace_name_and_hash_candidates
     CC=13  in:1  out:28  total:29
+  regres.regres_cli._extend_if_set
+    CC=3  in:27  out:2  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
   regres.regres._render_regression_section
@@ -1093,6 +1131,8 @@ HUBS[20]:
     CC=4  in:1  out:25  total:26
 
 MODULES:
+  SUMD  [1 funcs]
+    check_version  CC=0  out:0
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
   regres.defscan  [43 funcs]
@@ -1106,13 +1146,17 @@ MODULES:
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
     _extract_block_ts  CC=12  out:4
-  regres.doctor_cli  [6 funcs]
-    _build_parser  CC=1  out:17
+  regres.doctor_cli  [5 funcs]
+    _build_parser  CC=1  out:22
     _handle_auto_decision_flow  CC=18  out:36
-    _handle_url_mode  CC=26  out:50
     _refresh_import_error_log  CC=5  out:11
     _save_report  CC=20  out:25
-    main  CC=2  out:11
+    main  CC=5  out:19
+  regres.doctor_config  [4 funcs]
+    print_banner_to  CC=4  out:2
+    _ensure_env_file  CC=4  out:7
+    _parse_env_file  CC=11  out:9
+    load_config  CC=14  out:11
   regres.import_error_toon_report  [10 funcs]
     grouped_errors  CC=2  out:3
     main  CC=5  out:20
@@ -1149,10 +1193,10 @@ MODULES:
   regres.regres_cli  [6 funcs]
     _append_if_true  CC=2  out:1
     _build_defscan_argv  CC=1  out:11
-    _build_doctor_argv  CC=1  out:14
+    _build_doctor_argv  CC=1  out:24
     _build_ier_argv  CC=1  out:6
     _extend_if_set  CC=3  out:2
-    main  CC=1  out:48
+    main  CC=1  out:53
   regres.version_check  [10 funcs]
     _find_env_path  CC=3  out:4
     _get_pypi_version  CC=2  out:6
@@ -1162,7 +1206,7 @@ MODULES:
     _save_last_check  CC=1  out:5
     _save_skip_preference  CC=1  out:2
     _should_check  CC=5  out:5
-    _write_env  CC=2  out:5
+    _write_env  CC=10  out:19
     check_version  CC=7  out:17
 
 EDGES:

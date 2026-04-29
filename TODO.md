@@ -37,3 +37,11 @@
 ### Refactor
 - [ ] `doctor_cli.py::_handle_url_mode` ma ~360 linii — wyodrębnić: `_run_chain_analysis`, `_run_vite_probe`, `_run_loader_compliance`.
 - [ ] Pull `MODULE_PATH_MAP` do osobnego pliku konfiguracyjnego (YAML) — projekt-specific.
+
+nie działa:
+ http://localhost:8100/connect-config-labels?font=default&theme=dark&role=admin&lang=pl&size=100
+napraw z uzyciem paczki regres w celu analizy powiazan bilbiotek, z uwzglednieniem historii git 
+i duplikatow nazw i zawartosci w systemie plikow:
+ /home/tom/github/semcod/regres/README.md
+sparwdz czy strona po przywroceniu, naprawie, ma komunikacje z backendem
+jesli paczka regres nie działa poprawnie to ją popraw i reuzyj nowa wersje

@@ -45,11 +45,13 @@ class DoctorOrchestrator:
         "connect-id": "connect-id/frontend/src/modules/connect-id",
         "connect-template": "connect-template/frontend/src/modules/connect-template",
         "connect-workshop": "connect-workshop/frontend/src/modules/connect-workshop",
+        "connect-devtools": "connect-devtools/frontend/src/modules/connect-devtools",
     }
 
     URL_ROUTE_MODULE_HINTS = {
         "connect-test/protocol-steps": "connect-test-protocol",
         "connect-test/protocol": "connect-test-protocol",
+        "connect-devtools-nfo-logs": "connect-devtools",
     }
 
     # ------------------------------------------------------------------

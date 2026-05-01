@@ -84,41 +84,51 @@ class DoctorOrchestrator:
         """
         discovered: Dict[str, str] = {}
 
-        def _to_rel(path: Path) -> str:
-            return str(path.relative_to(self.scan_root)).replace("\\", "/")
+        self._discover_monorepo_frontend_roots(discovered)
+        self._discover_flat_frontend_roots(discovered)
+        self._discover_backend_only_roots(discovered)
+        self._apply_fallback_entries(discovered)
 
-        # 1) Monorepo module frontend roots: connect-x/frontend/src/modules/connect-x
+        return discovered
+
+    def _to_rel_path(self, path: Path) -> str:
+        """Convert path to relative string with forward slashes."""
+        return str(path.relative_to(self.scan_root)).replace("\\", "/")
+
+    def _discover_monorepo_frontend_roots(self, discovered: Dict[str, str]) -> None:
+        """Discover monorepo module frontend roots: connect-x/frontend/src/modules/connect-x"""
         for path in self.scan_root.glob("connect-*/frontend/src/modules/*"):
             if not path.is_dir():
                 continue
             module_name = path.name
             if module_name.startswith("connect-") and module_name not in discovered:
-                discovered[module_name] = _to_rel(path)
+                discovered[module_name] = self._to_rel_path(path)
 
-        # 2) Flat frontend module roots: frontend/src/modules/connect-x
+    def _discover_flat_frontend_roots(self, discovered: Dict[str, str]) -> None:
+        """Discover flat frontend module roots: frontend/src/modules/connect-x"""
         flat_modules = self.scan_root / "frontend" / "src" / "modules"
         if flat_modules.exists():
             for path in flat_modules.glob("connect-*"):
                 if path.is_dir() and path.name not in discovered:
-                    discovered[path.name] = _to_rel(path)
+                    discovered[path.name] = self._to_rel_path(path)
 
-        # 3) Backend-only module roots: connect-x/backend
+    def _discover_backend_only_roots(self, discovered: Dict[str, str]) -> None:
+        """Discover backend-only module roots: connect-x/backend"""
         for path in self.scan_root.glob("connect-*/backend"):
             if not path.is_dir():
                 continue
             module_name = path.parent.name
             if module_name.startswith("connect-") and module_name not in discovered:
-                discovered[module_name] = _to_rel(path)
+                discovered[module_name] = self._to_rel_path(path)
 
-        # 4) Compatibility fallback for historical constants
+    def _apply_fallback_entries(self, discovered: Dict[str, str]) -> None:
+        """Apply hardcoded fallback entries that actually exist on disk."""
         for module_name, rel_path in self.MODULE_PATH_MAP.items():
             if module_name in discovered:
                 continue
             full_path = self.scan_root / rel_path
             if full_path.exists():
                 discovered[module_name] = rel_path
-
-        return discovered
 
     def _get_module_path_map(self) -> Dict[str, str]:
         if self._module_path_map_cache is None:
@@ -887,67 +897,82 @@ class DoctorOrchestrator:
         module_path: Path,
         module_name: str,
     ) -> Optional[Diagnosis]:
-        """Detect empty/misconfigured page registries that would recurse forever.
-
-        Reads `<module_path>/pages-index.ts`. If a `defaultPage` is configured
-        but the referenced page registry literal does not contain that key,
-        emits a `page_registry_default_missing` diagnosis. This is the static
-        precursor to the runtime warning loop "Page 'X' not found, using
-        default" repeated thousands of times.
-        """
+        """Detect empty/misconfigured page registries that would recurse forever."""
         entry = module_path / "pages-index.ts"
+        text = self._read_registry_file(entry)
+        if text is None:
+            return None
+
+        default_page = self._extract_default_page(text)
+        if not default_page:
+            return None
+
+        registry_name = self._extract_registry_name(text)
+        keys = self._extract_registry_keys(text, registry_name)
+
+        if self._is_default_page_present(default_page, keys):
+            return None
+
+        rel = self._get_relative_path(entry)
+        return self._build_registry_diagnosis(rel, default_page, registry_name, keys)
+
+    def _read_registry_file(self, entry: Path) -> Optional[str]:
+        """Read and return the registry file content, or None if not readable."""
         if not entry.exists() or not entry.is_file():
             return None
         try:
-            text = entry.read_text(encoding="utf-8")
+            return entry.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             return None
+
+    def _extract_default_page(self, text: str) -> Optional[str]:
+        """Extract defaultPage value from registry text."""
         m_default = self._PAGES_INDEX_DEFAULT_PAGE_RE.search(text)
-        if not m_default:
-            return None
-        default_page = m_default.group(1)
+        return m_default.group(1) if m_default else None
+
+    def _extract_registry_name(self, text: str) -> Optional[str]:
+        """Extract registry variable name from text."""
         m_ref = self._PAGES_INDEX_PAGES_REF_RE.search(text)
-        registry_name = m_ref.group(1) if m_ref else None
-        # Extract keys from the named registry block, if we can find it.
-        keys: List[str] = []
-        if registry_name:
-            block_re = re.compile(
-                rf"(?:export\s+)?const\s+{re.escape(registry_name)}\s*"
-                r"(?::\s*[^=]+)?=\s*\{(.*?)\};",
-                re.DOTALL,
-            )
-            mblock = block_re.search(text)
-            if mblock:
-                block_body = mblock.group(1)
-                # Drop block-comments and line-comments so commented-out keys
-                # (a frequent footgun in this codebase) are NOT counted.
-                block_body = re.sub(r"/\*.*?\*/", "", block_body, flags=re.DOTALL)
-                block_body = re.sub(r"//[^\n]*", "", block_body)
-                keys = self._REGISTRY_KEY_RE.findall(block_body)
-        if default_page in keys:
-            return None
-        try:
-            rel = str(entry.relative_to(self.scan_root)).replace("\\", "/")
-        except ValueError:
-            rel = str(entry)
-        nlp = (
-            f"`{rel}` konfiguruje `defaultPage: '{default_page}'`, ale rejestr stron "
-            + (
-                f"`{registry_name}` zawiera tylko: {keys or '(brak — wszystkie wpisy zakomentowane)'}"
-                if registry_name else
-                f"nie został znaleziony statycznie (sprawdź ręcznie)."
-            )
-            + "\n\nSkutek runtime: `BasePageManager.loadPageByKey` nie znajduje strony, "
-            "wpada w fallback do `defaultPage`, który **też** nie istnieje — i rekurencyjnie "
-            "woła sam siebie. W konsoli pojawiają się tysiące powtarzających się ostrzeżeń "
-            "`Page '...' not found, using default` z głębokim stosem `base-page-manager.ts:67`.\n\n"
-            "Naprawa minimalna:\n"
-            f"1. Dodaj do `{registry_name or 'pages-index.ts registry'}` wpis "
-            f"dla `'{default_page}'` (choćby placeholder).\n"
-            "2. Lub zmień `defaultPage` na klucz, który **istnieje** w rejestrze.\n"
-            "3. Upewnij się, że `BasePageManager` ma guard przed nieskończoną rekurencją "
-            "(jeśli `defaultPage` też nie istnieje → render error page, nie recurse).\n"
+        return m_ref.group(1) if m_ref else None
+
+    def _extract_registry_keys(self, text: str, registry_name: Optional[str]) -> List[str]:
+        """Extract keys from the named registry block."""
+        if not registry_name:
+            return []
+        block_re = re.compile(
+            rf"(?:export\s+)?const\s+{re.escape(registry_name)}\s*"
+            r"(?::\s*[^=]+)?=\s*\{(.*?)\};",
+            re.DOTALL,
         )
+        mblock = block_re.search(text)
+        if not mblock:
+            return []
+        block_body = mblock.group(1)
+        # Drop block-comments and line-comments so commented-out keys are NOT counted
+        block_body = re.sub(r"/\*.*?\*/", "", block_body, flags=re.DOTALL)
+        block_body = re.sub(r"//[^\n]*", "", block_body)
+        return self._REGISTRY_KEY_RE.findall(block_body)
+
+    def _is_default_page_present(self, default_page: str, keys: List[str]) -> bool:
+        """Check if default_page exists in the list of registry keys."""
+        return default_page in keys
+
+    def _get_relative_path(self, entry: Path) -> str:
+        """Get relative path string from scan_root."""
+        try:
+            return str(entry.relative_to(self.scan_root)).replace("\\", "/")
+        except ValueError:
+            return str(entry)
+
+    def _build_registry_diagnosis(
+        self,
+        rel: str,
+        default_page: str,
+        registry_name: Optional[str],
+        keys: List[str],
+    ) -> Diagnosis:
+        """Build a diagnosis for misconfigured page registry."""
+        nlp = self._build_registry_nlp(rel, default_page, registry_name, keys)
         return Diagnosis(
             summary=(
                 f"`{rel}`: defaultPage `'{default_page}'` nieobecny w rejestrze "
@@ -975,6 +1000,34 @@ class DoctorOrchestrator:
                 ),
             ],
             confidence=0.9,
+        )
+
+    def _build_registry_nlp(
+        self,
+        rel: str,
+        default_page: str,
+        registry_name: Optional[str],
+        keys: List[str],
+    ) -> str:
+        """Build the NLP description for registry compliance diagnosis."""
+        keys_info = (
+            f"`{registry_name}` zawiera tylko: {keys or '(brak — wszystkie wpisy zakomentowane)'}"
+            if registry_name else
+            f"nie został znaleziony statycznie (sprawdź ręcznie)."
+        )
+        return (
+            f"`{rel}` konfiguruje `defaultPage: '{default_page}'`, ale rejestr stron "
+            + keys_info
+            + "\n\nSkutek runtime: `BasePageManager.loadPageByKey` nie znajduje strony, "
+            "wpada w fallback do `defaultPage`, który **też** nie istnieje — i rekurencyjnie "
+            "woła sam siebie. W konsoli pojawiają się tysiące powtarzających się ostrzeżeń "
+            "`Page '...' not found, using default` z głębokim stosem `base-page-manager.ts:67`.\n\n"
+            "Naprawa minimalna:\n"
+            f"1. Dodaj do `{registry_name or 'pages-index.ts registry'}` wpis "
+            f"dla `'{default_page}'` (choćby placeholder).\n"
+            "2. Lub zmień `defaultPage` na klucz, który **istnieje** w rejestrze.\n"
+            "3. Upewnij się, że `BasePageManager` ma guard przed nieskończoną rekurencją "
+            "(jeśli `defaultPage` też nie istnieje → render error page, nie recurse).\n"
         )
 
     def analyze_page_implementations(
@@ -2624,57 +2677,12 @@ class DoctorOrchestrator:
 
         for module in missing_modules:
             if module.startswith("@c2004/"):
-                alias = module.replace("@c2004/", "")
-                resolved = self._resolve_alias_target(module)
-                if resolved:
-                    actions.append(FileAction(
-                        path=file_path,
-                        action="modify",
-                        reason=f"Zmień import `{module}` na relatywną ścieżkę do `{resolved}` (lub dodaj alias w vite.config.ts)"
-                    ))
-                    concrete_fixes.append(f"`{module}` → `../{resolved}` (dostosuj głębokość)")
-                else:
-                    actions.append(FileAction(
-                        path=file_path,
-                        action="modify",
-                        reason=f"Zmień import `{module}` na poprawną ścieżkę (plik nie istnieje pod żadnym znanym aliasem)"
-                    ))
-                commands.append(ShellCommand(
-                    command=f"grep -n '{module}' {file_path}",
-                    description=f"Znajdź import {module} w pliku"
-                ))
+                self._handle_c2004_alias_import(module, file_path, actions, commands, concrete_fixes)
             elif module.startswith("./") or module.startswith("../"):
-                source_dir = (self.scan_root / file_path).parent
-                target = source_dir / module
-                ext_checks = [".ts", ".tsx", ".js", ""]
-                found = any((target.with_suffix(ext) if ext else target).exists() for ext in ext_checks)
-                if not found:
-                    actions.append(FileAction(
-                        path=file_path,
-                        action="modify",
-                        reason=f"Ścieżka `{module}` nie istnieje względem `{file_path}`"
-                    ))
-                    commands.append(ShellCommand(
-                        command=f"ls -la {(source_dir / module).parent} 2>/dev/null || echo 'Brak katalogu'",
-                        description=f"Sprawdź czy katalog dla {module} istnieje"
-                    ))
-                else:
-                    actions.append(FileAction(
-                        path=file_path,
-                        action="modify",
-                        reason=f"Plik `{module}` istnieje, ale brakuje w nim eksportu – sprawdź nazwę symbolu"
-                    ))
+                self._handle_relative_import(module, file_path, actions, commands)
 
-        nlp_desc = (
-            f"W pliku `{file_path}` wykryto błędy importów dla modułów: {', '.join(missing_modules)}. "
-            + (f"Sugerowane poprawki: {', '.join(concrete_fixes)}. " if concrete_fixes else "")
-            + "Należy sprawdzić konfigurację ścieżek w tsconfig.json / vite.config.ts oraz upewnić się, "
-            "że wszystkie wymagane moduły są dostępne w monorepo."
-        )
-
-        severity = "high" if len(missing_modules) > 3 else "medium"
-        if not concrete_fixes and not any(a.action == "modify" for a in actions):
-            severity = "low"
+        nlp_desc = self._build_import_nlp_description(file_path, missing_modules, concrete_fixes)
+        severity = self._determine_import_severity(missing_modules, concrete_fixes, actions)
 
         return Diagnosis(
             summary=f"Błędy importów w {file_path}",
@@ -2685,6 +2693,84 @@ class DoctorOrchestrator:
             shell_commands=commands,
             confidence=0.85 if concrete_fixes else 0.6
         )
+
+    def _handle_c2004_alias_import(
+        self,
+        module: str,
+        file_path: str,
+        actions: List[FileAction],
+        commands: List[ShellCommand],
+        concrete_fixes: List[str],
+    ) -> None:
+        """Handle @c2004/ alias imports."""
+        resolved = self._resolve_alias_target(module)
+        if resolved:
+            actions.append(FileAction(
+                path=file_path,
+                action="modify",
+                reason=f"Zmień import `{module}` na relatywną ścieżkę do `{resolved}` (lub dodaj alias w vite.config.ts)"
+            ))
+            concrete_fixes.append(f"`{module}` → `../{resolved}` (dostosuj głębokość)")
+        else:
+            actions.append(FileAction(
+                path=file_path,
+                action="modify",
+                reason=f"Zmień import `{module}` na poprawną ścieżkę (plik nie istnieje pod żadnym znanym aliasem)"
+            ))
+        commands.append(ShellCommand(
+            command=f"grep -n '{module}' {file_path}",
+            description=f"Znajdź import {module} w pliku"
+        ))
+
+    def _handle_relative_import(
+        self,
+        module: str,
+        file_path: str,
+        actions: List[FileAction],
+        commands: List[ShellCommand],
+    ) -> None:
+        """Handle relative path imports."""
+        source_dir = (self.scan_root / file_path).parent
+        target = source_dir / module
+        ext_checks = [".ts", ".tsx", ".js", ""]
+        found = any((target.with_suffix(ext) if ext else target).exists() for ext in ext_checks)
+        if not found:
+            actions.append(FileAction(
+                path=file_path,
+                action="modify",
+                reason=f"Ścieżka `{module}` nie istnieje względem `{file_path}`"
+            ))
+            commands.append(ShellCommand(
+                command=f"ls -la {(source_dir / module).parent} 2>/dev/null || echo 'Brak katalogu'",
+                description=f"Sprawdź czy katalog dla {module} istnieje"
+            ))
+        else:
+            actions.append(FileAction(
+                path=file_path,
+                action="modify",
+                reason=f"Plik `{module}` istnieje, ale brakuje w nim eksportu – sprawdź nazwę symbolu"
+            ))
+
+    def _build_import_nlp_description(
+        self, file_path: str, missing_modules: List[str], concrete_fixes: List[str]
+    ) -> str:
+        """Build NLP description for import diagnosis."""
+        fixes_part = f"Sugerowane poprawki: {', '.join(concrete_fixes)}. " if concrete_fixes else ""
+        return (
+            f"W pliku `{file_path}` wykryto błędy importów dla modułów: {', '.join(missing_modules)}. "
+            + fixes_part
+            + "Należy sprawdzić konfigurację ścieżek w tsconfig.json / vite.config.ts oraz upewnić się, "
+            "że wszystkie wymagane moduły są dostępne w monorepo."
+        )
+
+    def _determine_import_severity(
+        self, missing_modules: List[str], concrete_fixes: List[str], actions: List[FileAction]
+    ) -> str:
+        """Determine severity level for import diagnosis."""
+        severity = "high" if len(missing_modules) > 3 else "medium"
+        if not concrete_fixes and not any(a.action == "modify" for a in actions):
+            severity = "low"
+        return severity
 
     def _diagnose_duplicate(self, duplicate_data: Dict[str, Any]) -> Diagnosis:
         """Diagnozuje problem z duplikatami."""
@@ -2974,72 +3060,102 @@ class DoctorOrchestrator:
         return s
 
     def _render_affected_files(self, report: Dict[str, Any]) -> List[str]:
+        """Render affected files section of the report."""
         affected = report.get("affected_files", []) or []
         lines = ["## Affected Files", ""]
         if not affected:
             lines.append("Brak plików do zmiany — diagnozy nie proponują modyfikacji.")
             lines.append("")
             return lines
+
         lines.append(
             f"Pliki, które zostałyby zmienione przez sugestie regres ({len(affected)} unikalnych):"
         )
         lines.append("")
         patch_index = self._build_candidate_patch_index(report)
+
         for entry in affected:
-            actions = entry.get("actions", []) or []
-            diag_summary = "; ".join(entry.get("diagnoses", []) or [])
-            target_path = entry["path"]
-            lines.append(f"### `{target_path}`")
-            if diag_summary:
-                lines.append(f"_Diagnozy:_ {diag_summary}")
-            lines.append("")
-            direct = [a for a in actions if not (a.get("target") or "").startswith("git:")]
-            git_cands = [a for a in actions if (a.get("target") or "").startswith("git:")]
-            if direct:
-                lines.append("**Bezpośrednie akcje:**")
-                for a in direct:
-                    extra = f" → `{a['target']}`" if a.get("target") else ""
-                    lines.append(f"- `{a['action']}`{extra} — {a.get('reason', '')}")
-                lines.append("")
-            if git_cands:
-                lines.append(f"**Kandydaci z historii git ({len(git_cands)}, od najnowszego):**")
-                lines.append("")
-                for a in git_cands:
-                    target_spec = a.get("target", "")
-                    parts = target_spec.split(":", 2)
-                    if len(parts) != 3:
-                        lines.append(f"- `{target_spec}` — {a.get('reason', '')}")
-                        continue
-                    _, h, src = parts
-                    patch_path = patch_index.get((target_path, h))
-                    lines.append(f"#### Kandydat `{h}` ← `{src}`")
-                    lines.append(f"_{a.get('reason', '')}_")
-                    lines.append("")
-                    lines.append("**Sprawdź zanim zastosujesz:**")
-                    lines.append("```bash")
-                    lines.append(f"# 1) Podgląd zdalnej zawartości (60 linii) i diff vs current:")
-                    if patch_path:
-                        lines.append(f"bash {patch_path} --preview")
-                    else:
-                        lines.append(
-                            f'git show {h}:{src} | sed -n "1,60p"\n'
-                            f'diff -u <(git show {h}:{src}) {target_path}'
-                        )
-                    lines.append("")
-                    lines.append(f"# 2) Pełen unified diff:")
-                    if patch_path:
-                        lines.append(f"bash {patch_path} --diff")
-                    else:
-                        lines.append(f"diff -u <(git show {h}:{src}) {target_path}")
-                    lines.append("")
-                    lines.append(f"# 3) Zastosuj (backup + restore + auto-rewrite import paths):")
-                    if patch_path:
-                        lines.append(f"bash {patch_path}")
-                    else:
-                        lines.append(f"git show {h}:{src} > {target_path}")
-                    lines.append("```")
-                    lines.append("")
+            lines.extend(self._render_affected_file_entry(entry, patch_index))
+
         return lines
+
+    def _render_affected_file_entry(
+        self, entry: Dict[str, Any], patch_index: Dict[tuple, str]
+    ) -> List[str]:
+        """Render a single affected file entry."""
+        actions = entry.get("actions", []) or []
+        diag_summary = "; ".join(entry.get("diagnoses", []) or [])
+        target_path = entry["path"]
+        lines = [f"### `{target_path}`"]
+
+        if diag_summary:
+            lines.append(f"_Diagnozy:_ {diag_summary}")
+        lines.append("")
+
+        direct = [a for a in actions if not (a.get("target") or "").startswith("git:")]
+        git_cands = [a for a in actions if (a.get("target") or "").startswith("git:")]
+
+        lines.extend(self._render_direct_actions(direct))
+        lines.extend(self._render_git_candidates(git_cands, target_path, patch_index))
+
+        return lines
+
+    def _render_direct_actions(self, direct: List[Dict]) -> List[str]:
+        """Render direct actions for a file."""
+        if not direct:
+            return []
+        lines = ["**Bezpośrednie akcje:**"]
+        for a in direct:
+            extra = f" → `{a['target']}`" if a.get("target") else ""
+            lines.append(f"- `{a['action']}`{extra} — {a.get('reason', '')}")
+        lines.append("")
+        return lines
+
+    def _render_git_candidates(
+        self, git_cands: List[Dict], target_path: str, patch_index: Dict[tuple, str]
+    ) -> List[str]:
+        """Render git history candidates for a file."""
+        if not git_cands:
+            return []
+        lines = [f"**Kandydaci z historii git ({len(git_cands)}, od najnowszego):**", ""]
+        for a in git_cands:
+            lines.extend(self._render_git_candidate(a, target_path, patch_index))
+        return lines
+
+    def _render_git_candidate(
+        self, action: Dict, target_path: str, patch_index: Dict[tuple, str]
+    ) -> List[str]:
+        """Render a single git history candidate entry."""
+        target_spec = action.get("target", "")
+        parts = target_spec.split(":", 2)
+        if len(parts) != 3:
+            return [f"- `{target_spec}` — {action.get('reason', '')}"]
+
+        _, h, src = parts
+        patch_path = patch_index.get((target_path, h))
+
+        # Build the commands based on whether patch_path is available
+        preview_cmd = f"bash {patch_path} --preview" if patch_path else f'git show {h}:{src} | sed -n "1,60p"'
+        diff_cmd = f"bash {patch_path} --diff" if patch_path else f'diff -u <(git show {h}:{src}) {target_path}'
+        apply_cmd = f"bash {patch_path}" if patch_path else f'git show {h}:{src} > {target_path}'
+
+        return [
+            f"#### Kandydat `{h}` ← `{src}`",
+            f"_{action.get('reason', '')}_",
+            "",
+            "**Sprawdź zanim zastosujesz:**",
+            "```bash",
+            "# 1) Podgląd zdalnej zawartości (60 linii) i diff vs current:",
+            preview_cmd,
+            "",
+            "# 2) Pełen unified diff:",
+            diff_cmd,
+            "",
+            "# 3) Zastosuj (backup + restore + auto-rewrite import paths):",
+            apply_cmd,
+            "```",
+            "",
+        ]
 
     def _build_candidate_patch_index(
         self, report: Dict[str, Any],

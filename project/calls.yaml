@@ -1,94 +1,10 @@
 project: /home/tom/github/semcod/regres
 generated_from: code2llm call graph analysis
 stats:
-  total_nodes: 196
-  total_edges: 260
-  modules_count: 9
+  total_nodes: 250
+  total_edges: 331
+  modules_count: 10
 nodes:
-  regres.doctor_cli._apply_fixes_if_requested:
-    name: _apply_fixes_if_requested
-    module: regres.doctor_cli
-    line: 768
-    cyclomatic_complexity: 5
-    calls_out: 6
-    calls_in: 1
-  regres.doctor_cli._run_llm_or_targeted_analysis:
-    name: _run_llm_or_targeted_analysis
-    module: regres.doctor_cli
-    line: 465
-    cyclomatic_complexity: 3
-    calls_out: 9
-    calls_in: 1
-  regres.refactor.similarity_ratio:
-    name: similarity_ratio
-    module: regres.refactor
-    line: 198
-    cyclomatic_complexity: 3
-    calls_out: 2
-    calls_in: 4
-  regres.refactor.main:
-    name: main
-    module: regres.refactor
-    line: 1211
-    cyclomatic_complexity: 2
-    calls_out: 7
-    calls_in: 0
-  regres.defscan.render_seed_json:
-    name: render_seed_json
-    module: regres.defscan
-    line: 889
-    cyclomatic_complexity: 3
-    calls_out: 10
-    calls_in: 1
-  regres.regres.search_missing_in_history:
-    name: search_missing_in_history
-    module: regres.regres
-    line: 321
-    cyclomatic_complexity: 7
-    calls_out: 12
-    calls_in: 1
-  regres.import_error_toon_report.parse_ts_errors:
-    name: parse_ts_errors
-    module: regres.import_error_toon_report
-    line: 97
-    cyclomatic_complexity: 7
-    calls_out: 17
-    calls_in: 1
-  regres.doctor_cli._run_module_loader_compliance_check:
-    name: _run_module_loader_compliance_check
-    module: regres.doctor_cli
-    line: 106
-    cyclomatic_complexity: 2
-    calls_out: 5
-    calls_in: 1
-  regres.defscan._def_key:
-    name: _def_key
-    module: regres.defscan
-    line: 614
-    cyclomatic_complexity: 1
-    calls_out: 0
-    calls_in: 5
-  regres.regres.parse_numstat_block:
-    name: parse_numstat_block
-    module: regres.regres
-    line: 826
-    cyclomatic_complexity: 5
-    calls_out: 7
-    calls_in: 1
-  regres.refactor.line_count:
-    name: line_count
-    module: regres.refactor
-    line: 194
-    cyclomatic_complexity: 2
-    calls_out: 1
-    calls_in: 4
-  regres.regres.find_current_locations:
-    name: find_current_locations
-    module: regres.regres
-    line: 476
-    cyclomatic_complexity: 6
-    calls_out: 8
-    calls_in: 3
   regres.doctor_cli._append_url_module_not_found_diagnosis:
     name: _append_url_module_not_found_diagnosis
     module: regres.doctor_cli
@@ -96,454 +12,6 @@ nodes:
     cyclomatic_complexity: 3
     calls_out: 4
     calls_in: 2
-  regres.refactor._render_duplicate_symbols:
-    name: _render_duplicate_symbols
-    module: regres.refactor
-    line: 464
-    cyclomatic_complexity: 6
-    calls_out: 9
-    calls_in: 1
-  regres.refactor._toon_files_section:
-    name: _toon_files_section
-    module: regres.refactor
-    line: 845
-    cyclomatic_complexity: 4
-    calls_out: 14
-    calls_in: 1
-  regres.regres._render_last_good_section:
-    name: _render_last_good_section
-    module: regres.regres
-    line: 1261
-    cyclomatic_complexity: 3
-    calls_out: 3
-    calls_in: 1
-  regres.refactor.cmd_diff:
-    name: cmd_diff
-    module: regres.refactor
-    line: 621
-    cyclomatic_complexity: 7
-    calls_out: 31
-    calls_in: 0
-  regres.defscan.extract_rust:
-    name: extract_rust
-    module: regres.defscan
-    line: 428
-    cyclomatic_complexity: 4
-    calls_out: 16
-    calls_in: 1
-  regres.defscan.render_seed_text:
-    name: render_seed_text
-    module: regres.defscan
-    line: 808
-    cyclomatic_complexity: 10
-    calls_out: 42
-    calls_in: 1
-  regres.doctor_cli._run_vite_runtime_probe:
-    name: _run_vite_runtime_probe
-    module: regres.doctor_cli
-    line: 242
-    cyclomatic_complexity: 13
-    calls_out: 23
-    calls_in: 1
-  regres.defscan._analyse_and_sort_groups:
-    name: _analyse_and_sort_groups
-    module: regres.defscan
-    line: 1095
-    cyclomatic_complexity: 3
-    calls_out: 5
-    calls_in: 1
-  regres.doctor_cli._create_import_chain_diagnoses:
-    name: _create_import_chain_diagnoses
-    module: regres.doctor_cli
-    line: 140
-    cyclomatic_complexity: 18
-    calls_out: 32
-    calls_in: 1
-  regres.refactor._find_md5_duplicates:
-    name: _find_md5_duplicates
-    module: regres.refactor
-    line: 940
-    cyclomatic_complexity: 4
-    calls_out: 8
-    calls_in: 1
-  regres.doctor_cli._handle_module_resolution:
-    name: _handle_module_resolution
-    module: regres.doctor_cli
-    line: 716
-    cyclomatic_complexity: 4
-    calls_out: 8
-    calls_in: 1
-  regres.regres.analyze_file:
-    name: analyze_file
-    module: regres.regres
-    line: 1351
-    cyclomatic_complexity: 4
-    calls_out: 25
-    calls_in: 1
-  regres.import_error_toon_report.main:
-    name: main
-    module: regres.import_error_toon_report
-    line: 344
-    cyclomatic_complexity: 5
-    calls_out: 20
-    calls_in: 0
-  regres.doctor_cli._record_url_discovery_step:
-    name: _record_url_discovery_step
-    module: regres.doctor_cli
-    line: 655
-    cyclomatic_complexity: 5
-    calls_out: 2
-    calls_in: 1
-  regres.regres.classify_problem:
-    name: classify_problem
-    module: regres.regres
-    line: 590
-    cyclomatic_complexity: 6
-    calls_out: 18
-    calls_in: 1
-  regres.refactor._toon_meta_section:
-    name: _toon_meta_section
-    module: regres.refactor
-    line: 834
-    cyclomatic_complexity: 4
-    calls_out: 4
-    calls_in: 1
-  regres.regres._analyze_import_problems:
-    name: _analyze_import_problems
-    module: regres.regres
-    line: 522
-    cyclomatic_complexity: 7
-    calls_out: 9
-    calls_in: 1
-  regres.defscan._count_similarity_levels:
-    name: _count_similarity_levels
-    module: regres.defscan
-    line: 1204
-    cyclomatic_complexity: 5
-    calls_out: 0
-    calls_in: 1
-  regres.regres_cli._build_ier_argv:
-    name: _build_ier_argv
-    module: regres.regres_cli
-    line: 175
-    cyclomatic_complexity: 1
-    calls_out: 6
-    calls_in: 1
-  regres.defscan.sim:
-    name: sim
-    module: regres.defscan
-    line: 143
-    cyclomatic_complexity: 3
-    calls_out: 2
-    calls_in: 2
-  regres.regres_cli._append_if_true:
-    name: _append_if_true
-    module: regres.regres_cli
-    line: 191
-    cyclomatic_complexity: 2
-    calls_out: 1
-    calls_in: 9
-  regres.version_check._write_env:
-    name: _write_env
-    module: regres.version_check
-    line: 41
-    cyclomatic_complexity: 10
-    calls_out: 19
-    calls_in: 2
-  regres.refactor._render_file_symbols:
-    name: _render_file_symbols
-    module: regres.refactor
-    line: 479
-    cyclomatic_complexity: 10
-    calls_out: 12
-    calls_in: 1
-  regres.regres._render_name_hash_section:
-    name: _render_name_hash_section
-    module: regres.regres
-    line: 1145
-    cyclomatic_complexity: 5
-    calls_out: 10
-    calls_in: 1
-  regres.refactor._deps_filter_by_word:
-    name: _deps_filter_by_word
-    module: regres.refactor
-    line: 752
-    cyclomatic_complexity: 6
-    calls_out: 7
-    calls_in: 1
-  regres.doctor_cli._setup_url_analysis_context:
-    name: _setup_url_analysis_context
-    module: regres.doctor_cli
-    line: 690
-    cyclomatic_complexity: 2
-    calls_out: 8
-    calls_in: 1
-  regres.defscan._run_focus_mode:
-    name: _run_focus_mode
-    module: regres.defscan
-    line: 1108
-    cyclomatic_complexity: 11
-    calls_out: 23
-    calls_in: 1
-  regres.regres._check_absolute_path:
-    name: _check_absolute_path
-    module: regres.regres
-    line: 64
-    cyclomatic_complexity: 4
-    calls_out: 4
-    calls_in: 1
-  regres.import_error_toon_report.grouped_errors:
-    name: grouped_errors
-    module: regres.import_error_toon_report
-    line: 142
-    cyclomatic_complexity: 2
-    calls_out: 3
-    calls_in: 2
-  regres.regres.trace_name_and_hash_candidates:
-    name: trace_name_and_hash_candidates
-    module: regres.regres
-    line: 736
-    cyclomatic_complexity: 13
-    calls_out: 28
-    calls_in: 1
-  regres.defscan._extract_block_ts:
-    name: _extract_block_ts
-    module: regres.defscan
-    line: 269
-    cyclomatic_complexity: 12
-    calls_out: 4
-    calls_in: 4
-  regres.defscan._match_anchored_pattern:
-    name: _match_anchored_pattern
-    module: regres.defscan
-    line: 486
-    cyclomatic_complexity: 5
-    calls_out: 6
-    calls_in: 1
-  regres.version_check._find_env_path:
-    name: _find_env_path
-    module: regres.version_check
-    line: 16
-    cyclomatic_complexity: 3
-    calls_out: 4
-    calls_in: 2
-  regres.refactor._deps_print_all:
-    name: _deps_print_all
-    module: regres.refactor
-    line: 778
-    cyclomatic_complexity: 4
-    calls_out: 4
-    calls_in: 1
-  regres.regres.resolve_local_import:
-    name: resolve_local_import
-    module: regres.regres
-    line: 186
-    cyclomatic_complexity: 8
-    calls_out: 13
-    calls_in: 3
-  regres.doctor_cli._save_report:
-    name: _save_report
-    module: regres.doctor_cli
-    line: 921
-    cyclomatic_complexity: 20
-    calls_out: 25
-    calls_in: 2
-  regres.defscan._run_seed_mode:
-    name: _run_seed_mode
-    module: regres.defscan
-    line: 1012
-    cyclomatic_complexity: 17
-    calls_out: 32
-    calls_in: 1
-  regres.import_error_toon_report.normalize_file_rel:
-    name: normalize_file_rel
-    module: regres.import_error_toon_report
-    line: 87
-    cyclomatic_complexity: 3
-    calls_out: 8
-    calls_in: 1
-  regres.regres._search_by_name_suffix:
-    name: _search_by_name_suffix
-    module: regres.regres
-    line: 82
-    cyclomatic_complexity: 10
-    calls_out: 16
-    calls_in: 1
-  regres.regres.file_lineage:
-    name: file_lineage
-    module: regres.regres
-    line: 841
-    cyclomatic_complexity: 9
-    calls_out: 12
-    calls_in: 1
-  regres.regres.analyze_regression:
-    name: analyze_regression
-    module: regres.regres
-    line: 362
-    cyclomatic_complexity: 11
-    calls_out: 10
-    calls_in: 1
-  regres.defscan._advance_past_string:
-    name: _advance_past_string
-    module: regres.defscan
-    line: 245
-    cyclomatic_complexity: 4
-    calls_out: 1
-    calls_in: 1
-  regres.regres._render_lineage_section:
-    name: _render_lineage_section
-    module: regres.regres
-    line: 1226
-    cyclomatic_complexity: 2
-    calls_out: 3
-    calls_in: 1
-  regres.regres.resolve_import_historical:
-    name: resolve_import_historical
-    module: regres.regres
-    line: 922
-    cyclomatic_complexity: 7
-    calls_out: 22
-    calls_in: 1
-  regres.defscan.render_seed_markdown:
-    name: render_seed_markdown
-    module: regres.defscan
-    line: 857
-    cyclomatic_complexity: 7
-    calls_out: 19
-    calls_in: 1
-  regres.refactor._build_symbol_index:
-    name: _build_symbol_index
-    module: regres.refactor
-    line: 428
-    cyclomatic_complexity: 5
-    calls_out: 6
-    calls_in: 1
-  regres.import_error_toon_report.to_toon_compact_per_file:
-    name: to_toon_compact_per_file
-    module: regres.import_error_toon_report
-    line: 254
-    cyclomatic_complexity: 7
-    calls_out: 15
-    calls_in: 1
-  regres.defscan.compare_seed_to_all:
-    name: compare_seed_to_all
-    module: regres.defscan
-    line: 623
-    cyclomatic_complexity: 10
-    calls_out: 10
-    calls_in: 1
-  regres.regres.changed_files_for_commit:
-    name: changed_files_for_commit
-    module: regres.regres
-    line: 895
-    cyclomatic_complexity: 3
-    calls_out: 4
-    calls_in: 1
-  regres.refactor.cmd_hotmap:
-    name: cmd_hotmap
-    module: regres.refactor
-    line: 663
-    cyclomatic_complexity: 16
-    calls_out: 42
-    calls_in: 0
-  regres.regres.render_markdown:
-    name: render_markdown
-    module: regres.regres
-    line: 1328
-    cyclomatic_complexity: 1
-    calls_out: 20
-    calls_in: 1
-  regres.version_check.check_version:
-    name: check_version
-    module: regres.version_check
-    line: 133
-    cyclomatic_complexity: 7
-    calls_out: 17
-    calls_in: 3
-  regres.refactor.cmd_wrappers:
-    name: cmd_wrappers
-    module: regres.refactor
-    line: 532
-    cyclomatic_complexity: 9
-    calls_out: 19
-    calls_in: 0
-  regres.regres.resolve_target_file:
-    name: resolve_target_file
-    module: regres.regres
-    line: 111
-    cyclomatic_complexity: 13
-    calls_out: 23
-    calls_in: 1
-  regres.version_check._get_pypi_version:
-    name: _get_pypi_version
-    module: regres.version_check
-    line: 82
-    cyclomatic_complexity: 2
-    calls_out: 6
-    calls_in: 1
-  regres.defscan._get_decorators:
-    name: _get_decorators
-    module: regres.defscan
-    line: 167
-    cyclomatic_complexity: 3
-    calls_out: 3
-    calls_in: 3
-  regres.refactor.cmd_duplicates:
-    name: cmd_duplicates
-    module: regres.refactor
-    line: 368
-    cyclomatic_complexity: 10
-    calls_out: 20
-    calls_in: 0
-  regres.regres.safe_read_text:
-    name: safe_read_text
-    module: regres.regres
-    line: 155
-    cyclomatic_complexity: 2
-    calls_out: 2
-    calls_in: 8
-  regres.doctor_cli._record_module_not_found_step:
-    name: _record_module_not_found_step
-    module: regres.doctor_cli
-    line: 744
-    cyclomatic_complexity: 1
-    calls_out: 1
-    calls_in: 1
-  regres.regres_cli.main:
-    name: main
-    module: regres.regres_cli
-    line: 37
-    cyclomatic_complexity: 1
-    calls_out: 54
-    calls_in: 0
-  regres.doctor_cli._refresh_import_error_log:
-    name: _refresh_import_error_log
-    module: regres.doctor_cli
-    line: 1020
-    cyclomatic_complexity: 5
-    calls_out: 11
-    calls_in: 0
-  regres.regres._render_duplicates_section:
-    name: _render_duplicates_section
-    module: regres.regres
-    line: 1197
-    cyclomatic_complexity: 5
-    calls_out: 12
-    calls_in: 1
-  docs.DEFSCAN.print:
-    name: print
-    module: docs.DEFSCAN
-    line: 138
-    cyclomatic_complexity: 0
-    calls_out: 0
-    calls_in: 132
-  regres.defscan._short_path:
-    name: _short_path
-    module: regres.defscan
-    line: 700
-    cyclomatic_complexity: 2
-    calls_out: 3
-    calls_in: 12
   regres.regres_cli._build_doctor_argv:
     name: _build_doctor_argv
     module: regres.regres_cli
@@ -551,68 +19,82 @@ nodes:
     cyclomatic_complexity: 1
     calls_out: 26
     calls_in: 1
+  regres.refactor._check_import_density:
+    name: _check_import_density
+    module: regres.refactor
+    line: 349
+    cyclomatic_complexity: 7
+    calls_out: 10
+    calls_in: 1
+  regres.version_check._save_skip_preference:
+    name: _save_skip_preference
+    module: regres.version_check
+    line: 127
+    cyclomatic_complexity: 1
+    calls_out: 2
+    calls_in: 2
   regres.refactor.build_parser:
     name: build_parser
     module: regres.refactor
-    line: 1114
+    line: 1200
     cyclomatic_complexity: 1
     calls_out: 49
     calls_in: 1
-  regres.doctor_config._parse_env_file:
-    name: _parse_env_file
-    module: regres.doctor_config
-    line: 155
-    cyclomatic_complexity: 11
-    calls_out: 9
-    calls_in: 1
-  regres.refactor.cmd_report:
-    name: cmd_report
-    module: regres.refactor
-    line: 1080
-    cyclomatic_complexity: 6
-    calls_out: 18
-    calls_in: 0
-  regres.regres._render_metrics_section:
-    name: _render_metrics_section
+  regres.regres._determine_primary_type:
+    name: _determine_primary_type
     module: regres.regres
-    line: 1167
-    cyclomatic_complexity: 1
-    calls_out: 1
-    calls_in: 1
-  regres.defscan._normalize:
-    name: _normalize
-    module: regres.defscan
-    line: 125
-    cyclomatic_complexity: 1
-    calls_out: 8
-    calls_in: 1
-  regres.refactor.normalize_code:
-    name: normalize_code
-    module: regres.refactor
-    line: 204
-    cyclomatic_complexity: 1
-    calls_out: 6
-    calls_in: 5
-  regres.defscan.extract_typescript:
-    name: extract_typescript
-    module: regres.defscan
-    line: 342
-    cyclomatic_complexity: 11
-    calls_out: 17
-    calls_in: 1
-  regres.defscan._print_pair_summary:
-    name: _print_pair_summary
-    module: regres.defscan
-    line: 1218
+    line: 580
     cyclomatic_complexity: 2
+    calls_out: 3
+    calls_in: 1
+  regres.refactor.cmd_cluster:
+    name: cmd_cluster
+    module: regres.refactor
+    line: 810
+    cyclomatic_complexity: 12
+    calls_out: 25
+    calls_in: 0
+  regres.refactor._toon_files_section:
+    name: _toon_files_section
+    module: regres.refactor
+    line: 931
+    cyclomatic_complexity: 4
+    calls_out: 14
+    calls_in: 1
+  regres.defscan.render_text:
+    name: render_text
+    module: regres.defscan
+    line: 707
+    cyclomatic_complexity: 14
+    calls_out: 55
+    calls_in: 2
+  regres.refactor._is_valid_file:
+    name: _is_valid_file
+    module: regres.refactor
+    line: 159
+    cyclomatic_complexity: 7
     calls_out: 5
     calls_in: 1
-  regres.doctor_cli._handle_auto_decision_flow:
-    name: _handle_auto_decision_flow
+  regres.regres.safe_read_text:
+    name: safe_read_text
+    module: regres.regres
+    line: 155
+    cyclomatic_complexity: 2
+    calls_out: 2
+    calls_in: 8
+  regres.refactor._render_file_symbols:
+    name: _render_file_symbols
+    module: regres.refactor
+    line: 523
+    cyclomatic_complexity: 10
+    calls_out: 12
+    calls_in: 1
+  regres.doctor_cli._resolve_patches_dir:
+    name: _resolve_patches_dir
     module: regres.doctor_cli
-    line: 815
-    cyclomatic_complexity: 18
-    calls_out: 41
+    line: 1081
+    cyclomatic_complexity: 3
+    calls_out: 3
     calls_in: 1
   regres.defscan._match_unanchored_pattern:
     name: _match_unanchored_pattern
@@ -621,26 +103,530 @@ nodes:
     cyclomatic_complexity: 7
     calls_out: 6
     calls_in: 1
-  regres.defscan.extract_file:
-    name: extract_file
+  regres.doctor_cli._setup_analysis_context:
+    name: _setup_analysis_context
+    module: regres.doctor_cli
+    line: 911
+    cyclomatic_complexity: 2
+    calls_out: 7
+    calls_in: 1
+  regres.regres.find_last_working_commit:
+    name: find_last_working_commit
+    module: regres.regres
+    line: 292
+    cyclomatic_complexity: 8
+    calls_out: 1
+    calls_in: 1
+  regres.defscan._compare_seed_similarity:
+    name: _compare_seed_similarity
     module: regres.defscan
-    line: 447
+    line: 1079
+    cyclomatic_complexity: 2
+    calls_out: 1
+    calls_in: 1
+  regres.defscan._run_seed_mode:
+    name: _run_seed_mode
+    module: regres.defscan
+    line: 1012
+    cyclomatic_complexity: 2
+    calls_out: 11
+    calls_in: 1
+  regres.regres._render_evolution_section:
+    name: _render_evolution_section
+    module: regres.regres
+    line: 1262
     cyclomatic_complexity: 6
+    calls_out: 10
+    calls_in: 1
+  regres.doctor_cli._build_shell_commands_for_chain:
+    name: _build_shell_commands_for_chain
+    module: regres.doctor_cli
+    line: 242
+    cyclomatic_complexity: 1
+    calls_out: 4
+    calls_in: 1
+  regres.regres.references_in_recent_commits:
+    name: references_in_recent_commits
+    module: regres.regres
+    line: 901
+    cyclomatic_complexity: 2
+    calls_out: 2
+    calls_in: 1
+  regres.refactor._collect_and_normalize_files:
+    name: _collect_and_normalize_files
+    module: regres.refactor
+    line: 727
+    cyclomatic_complexity: 5
+    calls_out: 8
+    calls_in: 1
+  regres.refactor._check_barrel_export:
+    name: _check_barrel_export
+    module: regres.refactor
+    line: 368
+    cyclomatic_complexity: 2
+    calls_out: 2
+    calls_in: 1
+  regres.refactor.cmd_deps:
+    name: cmd_deps
+    module: regres.refactor
+    line: 873
+    cyclomatic_complexity: 6
+    calls_out: 12
+    calls_in: 0
+  regres.defscan.sim:
+    name: sim
+    module: regres.defscan
+    line: 143
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 2
+  regres.doctor_cli._derive_output_basename:
+    name: _derive_output_basename
+    module: regres.doctor_cli
+    line: 1064
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 1
+  regres.import_error_toon_report.to_toon_global_payload:
+    name: to_toon_global_payload
+    module: regres.import_error_toon_report
+    line: 187
+    cyclomatic_complexity: 10
+    calls_out: 31
+    calls_in: 1
+  regres.defscan._build_argument_parser:
+    name: _build_argument_parser
+    module: regres.defscan
+    line: 965
+    cyclomatic_complexity: 1
+    calls_out: 18
+    calls_in: 1
+  regres.refactor._format_imports:
+    name: _format_imports
+    module: regres.refactor
+    line: 902
+    cyclomatic_complexity: 4
+    calls_out: 8
+    calls_in: 1
+  regres.defscan.c:
+    name: c
+    module: regres.defscan
+    line: 82
+    cyclomatic_complexity: 2
+    calls_out: 0
+    calls_in: 30
+  regres.defscan.main:
+    name: main
+    module: regres.defscan
+    line: 1270
+    cyclomatic_complexity: 8
+    calls_out: 13
+    calls_in: 0
+  regres.doctor_cli._save_markdown_report:
+    name: _save_markdown_report
+    module: regres.doctor_cli
+    line: 1113
+    cyclomatic_complexity: 2
     calls_out: 6
     calls_in: 1
-  regres.defscan._run_default_mode:
-    name: _run_default_mode
-    module: regres.defscan
-    line: 1159
-    cyclomatic_complexity: 12
-    calls_out: 22
-    calls_in: 1
-  regres.refactor._find_duplicate_symbols:
-    name: _find_duplicate_symbols
+  regres.refactor._sanitize:
+    name: _sanitize
     module: regres.refactor
-    line: 980
+    line: 897
+    cyclomatic_complexity: 1
+    calls_out: 5
+    calls_in: 3
+  regres.regres._search_by_name_suffix:
+    name: _search_by_name_suffix
+    module: regres.regres
+    line: 82
+    cyclomatic_complexity: 10
+    calls_out: 16
+    calls_in: 1
+  regres.refactor._count_similar_pairs:
+    name: _count_similar_pairs
+    module: regres.refactor
+    line: 746
+    cyclomatic_complexity: 6
+    calls_out: 11
+    calls_in: 1
+  regres.refactor._deps_print_all:
+    name: _deps_print_all
+    module: regres.refactor
+    line: 864
+    cyclomatic_complexity: 4
+    calls_out: 4
+    calls_in: 1
+  regres.refactor.read_text:
+    name: read_text
+    module: regres.refactor
+    line: 183
+    cyclomatic_complexity: 2
+    calls_out: 1
+    calls_in: 14
+  regres.refactor._check_file_length:
+    name: _check_file_length
+    module: regres.refactor
+    line: 340
+    cyclomatic_complexity: 4
+    calls_out: 5
+    calls_in: 1
+  regres.regres._render_recommendations:
+    name: _render_recommendations
+    module: regres.regres
+    line: 1367
+    cyclomatic_complexity: 3
+    calls_out: 5
+    calls_in: 1
+  regres.doctor_cli._refresh_import_log:
+    name: _refresh_import_log
+    module: regres.doctor_cli
+    line: 972
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 1
+  regres.refactor.main:
+    name: main
+    module: regres.refactor
+    line: 1297
+    cyclomatic_complexity: 2
+    calls_out: 7
+    calls_in: 0
+  regres.regres.sha256_of_file:
+    name: sha256_of_file
+    module: regres.regres
+    line: 162
+    cyclomatic_complexity: 2
+    calls_out: 6
+    calls_in: 5
+  regres.defscan.analyse_group:
+    name: analyse_group
+    module: regres.defscan
+    line: 668
+    cyclomatic_complexity: 3
+    calls_out: 8
+    calls_in: 2
+  regres.doctor_cli._get_import_log_path:
+    name: _get_import_log_path
+    module: regres.doctor_cli
+    line: 965
+    cyclomatic_complexity: 2
+    calls_out: 1
+    calls_in: 1
+  regres.doctor_cli._handle_module_resolution:
+    name: _handle_module_resolution
+    module: regres.doctor_cli
+    line: 791
+    cyclomatic_complexity: 4
+    calls_out: 8
+    calls_in: 1
+  regres.refactor.iter_files:
+    name: iter_files
+    module: regres.refactor
+    line: 144
+    cyclomatic_complexity: 7
+    calls_out: 4
+    calls_in: 12
+  regres.refactor._find_name_clusters:
+    name: _find_name_clusters
+    module: regres.refactor
+    line: 1034
+    cyclomatic_complexity: 4
+    calls_out: 10
+    calls_in: 1
+  regres.regres._render_references_section:
+    name: _render_references_section
+    module: regres.regres
+    line: 1207
+    cyclomatic_complexity: 3
+    calls_out: 5
+    calls_in: 1
+  regres.regres._render_evidence:
+    name: _render_evidence
+    module: regres.regres
+    line: 1118
+    cyclomatic_complexity: 3
+    calls_out: 4
+    calls_in: 1
+  regres.doctor_cli._format_history_reason:
+    name: _format_history_reason
+    module: regres.doctor_cli
+    line: 233
+    cyclomatic_complexity: 2
+    calls_out: 3
+    calls_in: 1
+  regres.doctor_cli._derive_vite_base:
+    name: _derive_vite_base
+    module: regres.doctor_cli
+    line: 303
+    cyclomatic_complexity: 6
+    calls_out: 2
+    calls_in: 1
+  regres.import_error_toon_report.to_toon_compact_per_file:
+    name: to_toon_compact_per_file
+    module: regres.import_error_toon_report
+    line: 254
+    cyclomatic_complexity: 7
+    calls_out: 15
+    calls_in: 1
+  regres.defscan._get_decorators:
+    name: _get_decorators
+    module: regres.defscan
+    line: 167
+    cyclomatic_complexity: 3
+    calls_out: 3
+    calls_in: 3
+  regres.defscan.render_json:
+    name: render_json
+    module: regres.defscan
+    line: 926
+    cyclomatic_complexity: 7
+    calls_out: 12
+    calls_in: 2
+  regres.defscan._analyse_and_sort_groups:
+    name: _analyse_and_sort_groups
+    module: regres.defscan
+    line: 1130
+    cyclomatic_complexity: 3
+    calls_out: 5
+    calls_in: 1
+  regres.regres.search_missing_in_history:
+    name: search_missing_in_history
+    module: regres.regres
+    line: 321
+    cyclomatic_complexity: 7
+    calls_out: 12
+    calls_in: 1
+  regres.refactor._calculate_hotmap:
+    name: _calculate_hotmap
+    module: regres.refactor
+    line: 773
+    cyclomatic_complexity: 2
+    calls_out: 6
+    calls_in: 1
+  regres.regres._render_duplicates_section:
+    name: _render_duplicates_section
+    module: regres.regres
+    line: 1222
     cyclomatic_complexity: 5
+    calls_out: 12
+    calls_in: 1
+  regres.doctor_cli._run_dependency_chain_analysis:
+    name: _run_dependency_chain_analysis
+    module: regres.doctor_cli
+    line: 463
+    cyclomatic_complexity: 8
+    calls_out: 16
+    calls_in: 1
+  regres.refactor._find_md5_duplicates:
+    name: _find_md5_duplicates
+    module: regres.refactor
+    line: 1026
+    cyclomatic_complexity: 4
+    calls_out: 8
+    calls_in: 1
+  regres.doctor_cli._build_regres_command:
+    name: _build_regres_command
+    module: regres.doctor_cli
+    line: 294
+    cyclomatic_complexity: 1
+    calls_out: 1
+    calls_in: 2
+  regres.refactor.normalize_code:
+    name: normalize_code
+    module: regres.refactor
+    line: 216
+    cyclomatic_complexity: 1
+    calls_out: 6
+    calls_in: 5
+  regres.refactor._save_report:
+    name: _save_report
+    module: regres.refactor
+    line: 1148
+    cyclomatic_complexity: 3
     calls_out: 9
+    calls_in: 1
+  regres.doctor_cli._resolve_module_from_url:
+    name: _resolve_module_from_url
+    module: regres.doctor_cli
+    line: 703
+    cyclomatic_complexity: 8
+    calls_out: 7
+    calls_in: 1
+  regres.import_error_toon_report.parse_ts_errors:
+    name: parse_ts_errors
+    module: regres.import_error_toon_report
+    line: 97
+    cyclomatic_complexity: 7
+    calls_out: 17
+    calls_in: 1
+  regres.defscan._scan_seed_definitions:
+    name: _scan_seed_definitions
+    module: regres.defscan
+    line: 1065
+    cyclomatic_complexity: 5
+    calls_out: 2
+    calls_in: 1
+  regres.defscan._path_ignored_by_gitignore:
+    name: _path_ignored_by_gitignore
+    module: regres.defscan
+    line: 514
+    cyclomatic_complexity: 7
+    calls_out: 9
+    calls_in: 1
+  regres.defscan._short_path:
+    name: _short_path
+    module: regres.defscan
+    line: 700
+    cyclomatic_complexity: 2
+    calls_out: 3
+    calls_in: 12
+  regres.refactor.count_word:
+    name: count_word
+    module: regres.refactor
+    line: 199
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 2
+  regres.doctor_cli._resolve_runtime_log_path:
+    name: _resolve_runtime_log_path
+    module: regres.doctor_cli
+    line: 641
+    cyclomatic_complexity: 7
+    calls_out: 8
+    calls_in: 1
+  regres.regres_cli._build_defscan_argv:
+    name: _build_defscan_argv
+    module: regres.regres_cli
+    line: 134
+    cyclomatic_complexity: 1
+    calls_out: 11
+    calls_in: 1
+  regres.regres.reverse_references:
+    name: reverse_references
+    module: regres.regres
+    line: 663
+    cyclomatic_complexity: 10
+    calls_out: 14
+    calls_in: 1
+  regres.refactor.cmd_wrappers:
+    name: cmd_wrappers
+    module: regres.refactor
+    line: 576
+    cyclomatic_complexity: 9
+    calls_out: 19
+    calls_in: 0
+  regres.import_error_toon_report.toon_quote:
+    name: toon_quote
+    module: regres.import_error_toon_report
+    line: 49
+    cyclomatic_complexity: 1
+    calls_out: 3
+    calls_in: 12
+  regres.defscan._print_seed_header:
+    name: _print_seed_header
+    module: regres.defscan
+    line: 1044
+    cyclomatic_complexity: 1
+    calls_out: 4
+    calls_in: 1
+  regres.defscan.render_seed_json:
+    name: render_seed_json
+    module: regres.defscan
+    line: 889
+    cyclomatic_complexity: 3
+    calls_out: 10
+    calls_in: 1
+  regres.refactor.cmd_dead:
+    name: cmd_dead
+    module: regres.refactor
+    line: 614
+    cyclomatic_complexity: 14
+    calls_out: 28
+    calls_in: 0
+  regres.doctor_cli._record_url_discovery_step:
+    name: _record_url_discovery_step
+    module: regres.doctor_cli
+    line: 730
+    cyclomatic_complexity: 5
+    calls_out: 2
+    calls_in: 1
+  regres.doctor_cli._apply_fixes_if_requested:
+    name: _apply_fixes_if_requested
+    module: regres.doctor_cli
+    line: 843
+    cyclomatic_complexity: 5
+    calls_out: 6
+    calls_in: 1
+  regres.defscan.load_gitignore:
+    name: load_gitignore
+    module: regres.defscan
+    line: 467
+    cyclomatic_complexity: 7
+    calls_out: 8
+    calls_in: 2
+  regres.import_error_toon_report.render_markdown:
+    name: render_markdown
+    module: regres.import_error_toon_report
+    line: 280
+    cyclomatic_complexity: 6
+    calls_out: 23
+    calls_in: 1
+  regres.refactor.line_count:
+    name: line_count
+    module: regres.refactor
+    line: 206
+    cyclomatic_complexity: 2
+    calls_out: 1
+    calls_in: 4
+  regres.regres.changed_files_for_commit:
+    name: changed_files_for_commit
+    module: regres.regres
+    line: 895
+    cyclomatic_complexity: 3
+    calls_out: 4
+    calls_in: 1
+  regres.doctor_cli._setup_url_analysis_context:
+    name: _setup_url_analysis_context
+    module: regres.doctor_cli
+    line: 765
+    cyclomatic_complexity: 2
+    calls_out: 8
+    calls_in: 1
+  regres.doctor_cli._build_file_actions_for_chain:
+    name: _build_file_actions_for_chain
+    module: regres.doctor_cli
+    line: 199
+    cyclomatic_complexity: 4
+    calls_out: 6
+    calls_in: 1
+  regres.defscan._match_anchored_pattern:
+    name: _match_anchored_pattern
+    module: regres.defscan
+    line: 486
+    cyclomatic_complexity: 5
+    calls_out: 6
+    calls_in: 1
+  regres.refactor.to_json_toon:
+    name: to_json_toon
+    module: regres.refactor
+    line: 989
+    cyclomatic_complexity: 1
+    calls_out: 16
+    calls_in: 1
+  regres.defscan._extract_function_definition:
+    name: _extract_function_definition
+    module: regres.defscan
+    line: 210
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 1
+  regres.doctor_cli._run_import_analysis:
+    name: _run_import_analysis
+    module: regres.doctor_cli
+    line: 942
+    cyclomatic_complexity: 5
+    calls_out: 5
     calls_in: 1
   regres.version_check._parse_version:
     name: _parse_version
@@ -649,40 +635,145 @@ nodes:
     cyclomatic_complexity: 3
     calls_out: 4
     calls_in: 2
-  regres.regres._render_references_section:
-    name: _render_references_section
+  regres.doctor_cli._create_single_chain_diagnosis:
+    name: _create_single_chain_diagnosis
+    module: regres.doctor_cli
+    line: 155
+    cyclomatic_complexity: 9
+    calls_out: 9
+    calls_in: 1
+  regres.refactor.cmd_report:
+    name: cmd_report
+    module: regres.refactor
+    line: 1166
+    cyclomatic_complexity: 6
+    calls_out: 18
+    calls_in: 0
+  regres.regres.find_current_locations:
+    name: find_current_locations
     module: regres.regres
-    line: 1182
+    line: 476
+    cyclomatic_complexity: 6
+    calls_out: 8
+    calls_in: 3
+  regres.refactor.extract_symbols_ast:
+    name: extract_symbols_ast
+    module: regres.refactor
+    line: 259
+    cyclomatic_complexity: 10
+    calls_out: 11
+    calls_in: 1
+  regres.version_check._should_check:
+    name: _should_check
+    module: regres.version_check
+    line: 106
+    cyclomatic_complexity: 5
+    calls_out: 5
+    calls_in: 1
+  regres.version_check._is_newer:
+    name: _is_newer
+    module: regres.version_check
+    line: 102
+    cyclomatic_complexity: 1
+    calls_out: 2
+    calls_in: 1
+  regres.doctor_config.load_config:
+    name: load_config
+    module: regres.doctor_config
+    line: 212
+    cyclomatic_complexity: 14
+    calls_out: 11
+    calls_in: 1
+  regres.regres.check_imports_at_commit:
+    name: check_imports_at_commit
+    module: regres.regres
+    line: 252
+    cyclomatic_complexity: 8
+    calls_out: 18
+    calls_in: 2
+  regres.version_check._find_env_path:
+    name: _find_env_path
+    module: regres.version_check
+    line: 16
+    cyclomatic_complexity: 3
+    calls_out: 4
+    calls_in: 2
+  regres.refactor._deps_filter_by_word:
+    name: _deps_filter_by_word
+    module: regres.refactor
+    line: 838
+    cyclomatic_complexity: 6
+    calls_out: 7
+    calls_in: 1
+  regres.doctor_cli._collect_affected_files:
+    name: _collect_affected_files
+    module: regres.doctor_cli
+    line: 1004
+    cyclomatic_complexity: 4
+    calls_out: 3
+    calls_in: 1
+  regres.regres.classify_problem:
+    name: classify_problem
+    module: regres.regres
+    line: 590
+    cyclomatic_complexity: 6
+    calls_out: 18
+    calls_in: 1
+  regres.doctor_cli._run_additional_scans:
+    name: _run_additional_scans
+    module: regres.doctor_cli
+    line: 1014
+    cyclomatic_complexity: 4
+    calls_out: 12
+    calls_in: 1
+  regres.refactor._build_symbol_index:
+    name: _build_symbol_index
+    module: regres.refactor
+    line: 472
+    cyclomatic_complexity: 5
+    calls_out: 6
+    calls_in: 1
+  regres.regres._render_regression_section:
+    name: _render_regression_section
+    module: regres.regres
+    line: 1301
+    cyclomatic_complexity: 3
+    calls_out: 8
+    calls_in: 1
+  regres.defscan._get_body:
+    name: _get_body
+    module: regres.defscan
+    line: 156
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 3
+  regres.refactor.extract_imports:
+    name: extract_imports
+    module: regres.refactor
+    line: 245
+    cyclomatic_complexity: 5
+    calls_out: 6
+    calls_in: 3
+  regres.refactor.similarity_ratio:
+    name: similarity_ratio
+    module: regres.refactor
+    line: 210
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 4
+  regres.doctor_cli._build_commands_for_stubs:
+    name: _build_commands_for_stubs
+    module: regres.doctor_cli
+    line: 276
     cyclomatic_complexity: 3
     calls_out: 5
     calls_in: 1
-  regres.refactor.cmd_deps:
-    name: cmd_deps
+  regres.refactor.cmd_similar:
+    name: cmd_similar
     module: regres.refactor
-    line: 787
-    cyclomatic_complexity: 6
-    calls_out: 12
-    calls_in: 0
-  regres.refactor.read_text:
-    name: read_text
-    module: regres.refactor
-    line: 171
-    cyclomatic_complexity: 2
-    calls_out: 1
-    calls_in: 14
-  regres.regres.content_metrics:
-    name: content_metrics
-    module: regres.regres
-    line: 170
-    cyclomatic_complexity: 5
-    calls_out: 16
-    calls_in: 1
-  regres.refactor.cmd_cluster:
-    name: cmd_cluster
-    module: regres.refactor
-    line: 724
-    cyclomatic_complexity: 12
-    calls_out: 25
+    line: 434
+    cyclomatic_complexity: 14
+    calls_out: 26
     calls_in: 0
   regres.defscan._extract_class_definitions:
     name: _extract_class_definitions
@@ -691,41 +782,83 @@ nodes:
     cyclomatic_complexity: 5
     calls_out: 11
     calls_in: 1
-  regres.doctor_cli._derive_vite_base:
-    name: _derive_vite_base
-    module: regres.doctor_cli
-    line: 228
-    cyclomatic_complexity: 6
-    calls_out: 2
-    calls_in: 1
-  regres.regres._analyze_evolution:
-    name: _analyze_evolution
-    module: regres.regres
-    line: 548
-    cyclomatic_complexity: 12
-    calls_out: 4
-    calls_in: 1
-  regres.refactor._sanitize:
-    name: _sanitize
+  regres.refactor._check_dynamic_import:
+    name: _check_dynamic_import
     module: regres.refactor
-    line: 811
-    cyclomatic_complexity: 1
-    calls_out: 5
-    calls_in: 3
-  regres.import_error_toon_report.metrics:
-    name: metrics
-    module: regres.import_error_toon_report
-    line: 149
+    line: 376
     cyclomatic_complexity: 3
-    calls_out: 5
-    calls_in: 2
-  regres.defscan.analyse_group:
-    name: analyse_group
-    module: regres.defscan
-    line: 668
+    calls_out: 1
+    calls_in: 1
+  regres.doctor_cli._handle_auto_decision_flow:
+    name: _handle_auto_decision_flow
+    module: regres.doctor_cli
+    line: 890
     cyclomatic_complexity: 3
     calls_out: 8
-    calls_in: 2
+    calls_in: 1
+  regres.regres._classify_import_problem:
+    name: _classify_import_problem
+    module: regres.regres
+    line: 487
+    cyclomatic_complexity: 4
+    calls_out: 4
+    calls_in: 1
+  regres.defscan._def_key:
+    name: _def_key
+    module: regres.defscan
+    line: 614
+    cyclomatic_complexity: 1
+    calls_out: 0
+    calls_in: 5
+  regres.refactor.cmd_diff:
+    name: cmd_diff
+    module: regres.refactor
+    line: 665
+    cyclomatic_complexity: 7
+    calls_out: 31
+    calls_in: 0
+  regres.doctor_cli._handle_url_mode:
+    name: _handle_url_mode
+    module: regres.doctor_cli
+    line: 685
+    cyclomatic_complexity: 1
+    calls_out: 8
+    calls_in: 1
+  regres.import_error_toon_report.parse_args:
+    name: parse_args
+    module: regres.import_error_toon_report
+    line: 54
+    cyclomatic_complexity: 1
+    calls_out: 11
+    calls_in: 1
+  regres.regres._check_relative_paths:
+    name: _check_relative_paths
+    module: regres.regres
+    line: 72
+    cyclomatic_complexity: 4
+    calls_out: 5
+    calls_in: 1
+  regres.regres.exact_and_near_duplicates:
+    name: exact_and_near_duplicates
+    module: regres.regres
+    line: 684
+    cyclomatic_complexity: 8
+    calls_out: 24
+    calls_in: 1
+  regres.defscan.compare_seed_to_all:
+    name: compare_seed_to_all
+    module: regres.defscan
+    line: 623
+    cyclomatic_complexity: 10
+    calls_out: 10
+    calls_in: 1
+  regres.regres._dedupe_paths:
+    name: _dedupe_paths
+    module: regres.regres
+    line: 52
+    cyclomatic_complexity: 3
+    calls_out: 6
+    calls_in: 3
   regres.regres.extract_local_imports:
     name: extract_local_imports
     module: regres.regres
@@ -740,152 +873,47 @@ nodes:
     cyclomatic_complexity: 14
     calls_out: 15
     calls_in: 5
-  regres.regres.dependency_tree:
-    name: dependency_tree
-    module: regres.regres
-    line: 634
-    cyclomatic_complexity: 1
-    calls_out: 15
-    calls_in: 1
-  regres.regres.references_in_recent_commits:
-    name: references_in_recent_commits
-    module: regres.regres
-    line: 901
-    cyclomatic_complexity: 2
-    calls_out: 2
-    calls_in: 1
-  regres.regres._render_evolution_section:
-    name: _render_evolution_section
-    module: regres.regres
-    line: 1237
-    cyclomatic_complexity: 6
-    calls_out: 10
-    calls_in: 1
-  regres.defscan.Definition.__init__:
-    name: __init__
-    module: regres.defscan
-    line: 103
-    cyclomatic_complexity: 3
-    calls_out: 2
-    calls_in: 0
-  regres.refactor.get_symbols:
-    name: get_symbols
-    module: regres.refactor
-    line: 287
-    cyclomatic_complexity: 3
-    calls_out: 4
-    calls_in: 4
-  regres.regres._dedupe_paths:
-    name: _dedupe_paths
-    module: regres.regres
-    line: 52
-    cyclomatic_complexity: 3
-    calls_out: 6
-    calls_in: 3
-  regres.doctor_config.DoctorConfig.print_banner_to:
-    name: print_banner_to
-    module: regres.doctor_config
-    line: 140
-    cyclomatic_complexity: 4
-    calls_out: 2
-    calls_in: 0
-  regres.version_check._read_env:
-    name: _read_env
-    module: regres.version_check
-    line: 26
-    cyclomatic_complexity: 6
-    calls_out: 9
-    calls_in: 3
-  regres.doctor_cli._resolve_module_from_url:
-    name: _resolve_module_from_url
-    module: regres.doctor_cli
-    line: 628
-    cyclomatic_complexity: 8
-    calls_out: 7
-    calls_in: 1
-  regres.defscan.extract_python:
-    name: extract_python
-    module: regres.defscan
-    line: 223
-    cyclomatic_complexity: 5
-    calls_out: 12
-    calls_in: 1
-  regres.regres.reverse_references:
-    name: reverse_references
-    module: regres.regres
-    line: 663
-    cyclomatic_complexity: 10
-    calls_out: 14
-    calls_in: 1
-  regres.regres.check_imports_at_commit:
-    name: check_imports_at_commit
-    module: regres.regres
-    line: 252
-    cyclomatic_complexity: 8
-    calls_out: 18
-    calls_in: 2
   regres.regres._render_classification_section:
     name: _render_classification_section
     module: regres.regres
     line: 1095
-    cyclomatic_complexity: 15
-    calls_out: 31
+    cyclomatic_complexity: 2
+    calls_out: 6
     calls_in: 1
-  regres.doctor_cli.main:
+  regres.refactor._file_contains_word:
+    name: _file_contains_word
+    module: regres.refactor
+    line: 172
+    cyclomatic_complexity: 4
+    calls_out: 3
+    calls_in: 1
+  regres.doctor_cli._print_report_to_stdout:
+    name: _print_report_to_stdout
+    module: regres.doctor_cli
+    line: 1139
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 1
+  regres.import_error_toon_report.main:
     name: main
-    module: regres.doctor_cli
-    line: 1162
-    cyclomatic_complexity: 5
-    calls_out: 19
-    calls_in: 0
-  regres.regres_cli._build_defscan_argv:
-    name: _build_defscan_argv
-    module: regres.regres_cli
-    line: 134
-    cyclomatic_complexity: 1
-    calls_out: 11
-    calls_in: 1
-  regres.regres.track_filename_history:
-    name: track_filename_history
-    module: regres.regres
-    line: 451
-    cyclomatic_complexity: 10
-    calls_out: 9
-    calls_in: 1
-  regres.refactor.rel:
-    name: rel
-    module: regres.refactor
-    line: 220
-    cyclomatic_complexity: 2
-    calls_out: 3
-    calls_in: 15
-  regres.refactor._render_cross_lang_symbols:
-    name: _render_cross_lang_symbols
-    module: regres.refactor
-    line: 449
-    cyclomatic_complexity: 6
-    calls_out: 8
-    calls_in: 1
-  regres.import_error_toon_report.toon_quote:
-    name: toon_quote
     module: regres.import_error_toon_report
-    line: 49
-    cyclomatic_complexity: 1
-    calls_out: 3
-    calls_in: 12
-  regres.doctor_cli._run_page_implementation_analysis:
-    name: _run_page_implementation_analysis
-    module: regres.doctor_cli
-    line: 65
-    cyclomatic_complexity: 2
-    calls_out: 9
-    calls_in: 1
-  regres.doctor_cli._run_url_module_analysis:
-    name: _run_url_module_analysis
-    module: regres.doctor_cli
-    line: 497
+    line: 344
     cyclomatic_complexity: 5
-    calls_out: 11
+    calls_out: 20
+    calls_in: 0
+  regres.doctor_cli._record_module_not_found_step:
+    name: _record_module_not_found_step
+    module: regres.doctor_cli
+    line: 819
+    cyclomatic_complexity: 1
+    calls_out: 1
+    calls_in: 1
+  regres.regres._render_lineage_section:
+    name: _render_lineage_section
+    module: regres.regres
+    line: 1251
+    cyclomatic_complexity: 2
+    calls_out: 3
     calls_in: 1
   regres.regres_cli._extend_if_set:
     name: _extend_if_set
@@ -894,362 +922,103 @@ nodes:
     cyclomatic_complexity: 3
     calls_out: 2
     calls_in: 28
-  regres.refactor.extract_symbols_ast:
-    name: extract_symbols_ast
-    module: regres.refactor
-    line: 247
-    cyclomatic_complexity: 10
-    calls_out: 11
+  regres.version_check._get_pypi_version:
+    name: _get_pypi_version
+    module: regres.version_check
+    line: 82
+    cyclomatic_complexity: 2
+    calls_out: 6
     calls_in: 1
+  regres.regres.dependency_tree:
+    name: dependency_tree
+    module: regres.regres
+    line: 634
+    cyclomatic_complexity: 1
+    calls_out: 15
+    calls_in: 1
+  regres.refactor.cmd_find:
+    name: cmd_find
+    module: regres.refactor
+    line: 388
+    cyclomatic_complexity: 5
+    calls_out: 19
+    calls_in: 0
   regres.defscan._build_focus_groups:
     name: _build_focus_groups
     module: regres.defscan
-    line: 1075
+    line: 1110
     cyclomatic_complexity: 8
     calls_out: 6
     calls_in: 1
-  regres.doctor_cli._resolve_runtime_log_path:
-    name: _resolve_runtime_log_path
-    module: regres.doctor_cli
-    line: 566
+  regres.defscan.render_seed_markdown:
+    name: render_seed_markdown
+    module: regres.defscan
+    line: 857
     cyclomatic_complexity: 7
-    calls_out: 8
+    calls_out: 19
     calls_in: 1
-  regres.regres._render_regression_section:
-    name: _render_regression_section
+  regres.regres._render_import_problems:
+    name: _render_import_problems
     module: regres.regres
-    line: 1276
-    cyclomatic_complexity: 12
-    calls_out: 26
-    calls_in: 1
-  regres.refactor._save_report:
-    name: _save_report
-    module: regres.refactor
-    line: 1062
-    cyclomatic_complexity: 3
+    line: 1129
+    cyclomatic_complexity: 5
     calls_out: 9
     calls_in: 1
-  regres.refactor._find_external_importers:
-    name: _find_external_importers
-    module: regres.refactor
-    line: 1007
-    cyclomatic_complexity: 7
-    calls_out: 8
-    calls_in: 1
-  regres.refactor.wrapper_score:
-    name: wrapper_score
-    module: regres.refactor
-    line: 300
-    cyclomatic_complexity: 15
-    calls_out: 20
-    calls_in: 2
-  regres.regres.exact_and_near_duplicates:
-    name: exact_and_near_duplicates
-    module: regres.regres
-    line: 684
-    cyclomatic_complexity: 8
-    calls_out: 24
-    calls_in: 1
-  regres.refactor.cmd_dead:
-    name: cmd_dead
-    module: regres.refactor
-    line: 570
-    cyclomatic_complexity: 14
-    calls_out: 28
-    calls_in: 0
-  regres.defscan.classify_similarity:
-    name: classify_similarity
+  regres.defscan.extract_typescript:
+    name: extract_typescript
     module: regres.defscan
-    line: 682
-    cyclomatic_complexity: 5
-    calls_out: 0
-    calls_in: 6
-  regres.doctor_cli._run_dependency_chain_analysis:
-    name: _run_dependency_chain_analysis
-    module: regres.doctor_cli
-    line: 388
-    cyclomatic_complexity: 8
-    calls_out: 16
-    calls_in: 1
-  regres.import_error_toon_report.to_toon_global_payload:
-    name: to_toon_global_payload
-    module: regres.import_error_toon_report
-    line: 187
-    cyclomatic_complexity: 10
-    calls_out: 31
-    calls_in: 1
-  regres.import_error_toon_report.render_markdown:
-    name: render_markdown
-    module: regres.import_error_toon_report
-    line: 280
-    cyclomatic_complexity: 6
-    calls_out: 23
-    calls_in: 1
-  regres.refactor.cmd_similar:
-    name: cmd_similar
-    module: regres.refactor
-    line: 390
-    cyclomatic_complexity: 14
-    calls_out: 26
-    calls_in: 0
-  regres.regres.find_repo_root:
-    name: find_repo_root
-    module: regres.regres
-    line: 42
-    cyclomatic_complexity: 4
-    calls_out: 3
-    calls_in: 2
-  regres.regres._determine_primary_type:
-    name: _determine_primary_type
-    module: regres.regres
-    line: 580
-    cyclomatic_complexity: 2
-    calls_out: 3
-    calls_in: 1
-  regres.refactor.extract_symbols_regex:
-    name: extract_symbols_regex
-    module: regres.refactor
-    line: 269
-    cyclomatic_complexity: 7
-    calls_out: 11
-    calls_in: 1
-  regres.doctor_cli._collect_dependency_chain_targets:
-    name: _collect_dependency_chain_targets
-    module: regres.doctor_cli
-    line: 363
-    cyclomatic_complexity: 12
-    calls_out: 6
-    calls_in: 1
-  regres.defscan.c:
-    name: c
-    module: regres.defscan
-    line: 82
-    cyclomatic_complexity: 2
-    calls_out: 0
-    calls_in: 30
-  regres.refactor._toon_similar_pairs_section:
-    name: _toon_similar_pairs_section
-    module: regres.refactor
-    line: 877
-    cyclomatic_complexity: 7
-    calls_out: 12
-    calls_in: 1
-  regres.version_check._should_check:
-    name: _should_check
-    module: regres.version_check
-    line: 106
-    cyclomatic_complexity: 5
-    calls_out: 5
-    calls_in: 1
-  regres.refactor._format_preview:
-    name: _format_preview
-    module: regres.refactor
-    line: 824
-    cyclomatic_complexity: 4
-    calls_out: 3
-    calls_in: 1
-  regres.doctor_config._ensure_env_file:
-    name: _ensure_env_file
-    module: regres.doctor_config
-    line: 181
-    cyclomatic_complexity: 4
-    calls_out: 10
-    calls_in: 1
-  regres.refactor._toon_clusters_section:
-    name: _toon_clusters_section
-    module: regres.refactor
-    line: 864
-    cyclomatic_complexity: 3
-    calls_out: 7
-    calls_in: 1
-  regres.regres.run_git:
-    name: run_git
-    module: regres.regres
-    line: 36
-    cyclomatic_complexity: 1
-    calls_out: 2
-    calls_in: 6
-  regres.refactor._find_name_clusters:
-    name: _find_name_clusters
-    module: regres.refactor
-    line: 948
-    cyclomatic_complexity: 4
-    calls_out: 10
-    calls_in: 1
-  regres.import_error_toon_report.parse_args:
-    name: parse_args
-    module: regres.import_error_toon_report
-    line: 54
-    cyclomatic_complexity: 1
-    calls_out: 11
-    calls_in: 1
-  regres.defscan._lineno_at:
-    name: _lineno_at
-    module: regres.defscan
-    line: 338
-    cyclomatic_complexity: 1
-    calls_out: 1
-    calls_in: 4
-  regres.refactor._collect_file_infos:
-    name: _collect_file_infos
-    module: regres.refactor
-    line: 914
-    cyclomatic_complexity: 6
-    calls_out: 14
-    calls_in: 1
-  regres.doctor_cli._handle_url_mode:
-    name: _handle_url_mode
-    module: regres.doctor_cli
-    line: 610
-    cyclomatic_complexity: 1
-    calls_out: 8
-    calls_in: 1
-  regres.defscan.render_text:
-    name: render_text
-    module: regres.defscan
-    line: 707
-    cyclomatic_complexity: 14
-    calls_out: 55
-    calls_in: 2
-  regres.refactor.iter_files:
-    name: iter_files
-    module: regres.refactor
-    line: 144
-    cyclomatic_complexity: 15
-    calls_out: 10
-    calls_in: 12
-  regres.refactor.extract_imports:
-    name: extract_imports
-    module: regres.refactor
-    line: 233
-    cyclomatic_complexity: 5
-    calls_out: 6
-    calls_in: 3
-  regres.defscan.load_gitignore:
-    name: load_gitignore
-    module: regres.defscan
-    line: 467
-    cyclomatic_complexity: 7
-    calls_out: 8
-    calls_in: 2
-  regres.defscan.main:
-    name: main
-    module: regres.defscan
-    line: 1235
-    cyclomatic_complexity: 8
-    calls_out: 13
-    calls_in: 0
-  regres.regres._check_relative_paths:
-    name: _check_relative_paths
-    module: regres.regres
-    line: 72
-    cyclomatic_complexity: 4
-    calls_out: 5
-    calls_in: 1
-  regres.doctor_config.load_config:
-    name: load_config
-    module: regres.doctor_config
-    line: 212
-    cyclomatic_complexity: 14
-    calls_out: 11
-    calls_in: 1
-  regres.version_check._save_skip_preference:
-    name: _save_skip_preference
-    module: regres.version_check
-    line: 127
-    cyclomatic_complexity: 1
-    calls_out: 2
-    calls_in: 2
-  regres.defscan.extract_go:
-    name: extract_go
-    module: regres.defscan
-    line: 392
-    cyclomatic_complexity: 6
-    calls_out: 32
-    calls_in: 1
-  regres.version_check._is_newer:
-    name: _is_newer
-    module: regres.version_check
-    line: 102
-    cyclomatic_complexity: 1
-    calls_out: 2
-    calls_in: 1
-  regres.defscan._should_skip_file:
-    name: _should_skip_file
-    module: regres.defscan
-    line: 543
+    line: 342
     cyclomatic_complexity: 11
-    calls_out: 8
-    calls_in: 1
-  regres.doctor_cli._handle_runtime_log_diagnostics:
-    name: _handle_runtime_log_diagnostics
-    module: regres.doctor_cli
-    line: 585
-    cyclomatic_complexity: 6
-    calls_out: 8
-    calls_in: 2
-  regres.regres.analyze_evolution:
-    name: analyze_evolution
-    module: regres.regres
-    line: 983
-    cyclomatic_complexity: 10
     calls_out: 17
     calls_in: 1
-  regres.regres._classify_import_problem:
-    name: _classify_import_problem
-    module: regres.regres
-    line: 487
-    cyclomatic_complexity: 4
-    calls_out: 4
-    calls_in: 1
-  regres.defscan._get_body:
-    name: _get_body
-    module: regres.defscan
-    line: 156
-    cyclomatic_complexity: 2
-    calls_out: 4
-    calls_in: 3
-  regres.refactor.count_word:
-    name: count_word
+  regres.refactor.cmd_duplicates:
+    name: cmd_duplicates
     module: regres.refactor
-    line: 187
-    cyclomatic_complexity: 2
-    calls_out: 4
-    calls_in: 2
+    line: 412
+    cyclomatic_complexity: 10
+    calls_out: 20
+    calls_in: 0
   regres.refactor.cmd_symbols:
     name: cmd_symbols
     module: regres.refactor
-    line: 499
+    line: 543
     cyclomatic_complexity: 12
     calls_out: 19
     calls_in: 0
-  regres.refactor.name_prefix:
-    name: name_prefix
-    module: regres.refactor
-    line: 227
-    cyclomatic_complexity: 2
-    calls_out: 4
-    calls_in: 2
-  regres.defscan.render_json:
-    name: render_json
-    module: regres.defscan
-    line: 926
+  regres.regres.resolve_import_historical:
+    name: resolve_import_historical
+    module: regres.regres
+    line: 922
     cyclomatic_complexity: 7
-    calls_out: 12
-    calls_in: 2
-  regres.refactor.to_json_toon:
-    name: to_json_toon
-    module: regres.refactor
-    line: 903
-    cyclomatic_complexity: 1
-    calls_out: 16
+    calls_out: 22
     calls_in: 1
-  regres.refactor._format_imports:
-    name: _format_imports
+  regres.regres._analyze_evolution:
+    name: _analyze_evolution
+    module: regres.regres
+    line: 548
+    cyclomatic_complexity: 12
+    calls_out: 4
+    calls_in: 1
+  regres.import_error_toon_report.metrics:
+    name: metrics
+    module: regres.import_error_toon_report
+    line: 149
+    cyclomatic_complexity: 3
+    calls_out: 5
+    calls_in: 2
+  regres.refactor.get_symbols:
+    name: get_symbols
     module: regres.refactor
-    line: 816
+    line: 299
+    cyclomatic_complexity: 3
+    calls_out: 4
+    calls_in: 4
+  regres.refactor._render_hotmap_output:
+    name: _render_hotmap_output
+    module: regres.refactor
+    line: 788
     cyclomatic_complexity: 4
-    calls_out: 8
+    calls_out: 11
     calls_in: 1
   regres.regres.to_rel:
     name: to_rel
@@ -1258,68 +1027,12 @@ nodes:
     cyclomatic_complexity: 1
     calls_out: 3
     calls_in: 8
-  regres.refactor.cmd_find:
-    name: cmd_find
-    module: regres.refactor
-    line: 344
-    cyclomatic_complexity: 5
-    calls_out: 19
-    calls_in: 0
-  regres.regres.find_last_working_commit:
-    name: find_last_working_commit
-    module: regres.regres
-    line: 292
-    cyclomatic_complexity: 8
-    calls_out: 1
-    calls_in: 1
-  regres.doctor_cli._run_page_registry_compliance_check:
-    name: _run_page_registry_compliance_check
+  regres.doctor_cli._run_page_implementation_analysis:
+    name: _run_page_implementation_analysis
     module: regres.doctor_cli
-    line: 436
+    line: 65
     cyclomatic_complexity: 2
-    calls_out: 5
-    calls_in: 1
-  regres.refactor._find_similar_pairs:
-    name: _find_similar_pairs
-    module: regres.refactor
-    line: 960
-    cyclomatic_complexity: 7
-    calls_out: 15
-    calls_in: 1
-  regres.defscan._build_argument_parser:
-    name: _build_argument_parser
-    module: regres.defscan
-    line: 965
-    cyclomatic_complexity: 1
-    calls_out: 18
-    calls_in: 1
-  regres.doctor_cli._record_module_resolution_step:
-    name: _record_module_resolution_step
-    module: regres.doctor_cli
-    line: 755
-    cyclomatic_complexity: 3
-    calls_out: 1
-    calls_in: 1
-  regres.regres.sha256_of_file:
-    name: sha256_of_file
-    module: regres.regres
-    line: 162
-    cyclomatic_complexity: 2
-    calls_out: 6
-    calls_in: 5
-  regres.defscan._path_ignored_by_gitignore:
-    name: _path_ignored_by_gitignore
-    module: regres.defscan
-    line: 514
-    cyclomatic_complexity: 7
     calls_out: 9
-    calls_in: 1
-  regres.defscan._extract_function_definition:
-    name: _extract_function_definition
-    module: regres.defscan
-    line: 210
-    cyclomatic_complexity: 2
-    calls_out: 4
     calls_in: 1
   regres.defscan._collect_class_method_ids:
     name: _collect_class_method_ids
@@ -1328,27 +1041,188 @@ nodes:
     cyclomatic_complexity: 5
     calls_out: 6
     calls_in: 1
-  regres.version_check._save_last_check:
-    name: _save_last_check
-    module: regres.version_check
-    line: 121
+  regres.regres.content_metrics:
+    name: content_metrics
+    module: regres.regres
+    line: 170
+    cyclomatic_complexity: 5
+    calls_out: 16
+    calls_in: 1
+  regres.regres.run_git:
+    name: run_git
+    module: regres.regres
+    line: 36
     cyclomatic_complexity: 1
+    calls_out: 2
+    calls_in: 6
+  regres.doctor_config.DoctorConfig.print_banner_to:
+    name: print_banner_to
+    module: regres.doctor_config
+    line: 140
+    cyclomatic_complexity: 4
+    calls_out: 2
+    calls_in: 0
+  regres.doctor_config._ensure_env_file:
+    name: _ensure_env_file
+    module: regres.doctor_config
+    line: 181
+    cyclomatic_complexity: 4
+    calls_out: 10
+    calls_in: 1
+  regres.doctor_cli._run_prescans:
+    name: _run_prescans
+    module: regres.doctor_cli
+    line: 923
+    cyclomatic_complexity: 1
+    calls_out: 6
+    calls_in: 1
+  regres.doctor_cli._generate_and_attach_patches:
+    name: _generate_and_attach_patches
+    module: regres.doctor_cli
+    line: 1089
+    cyclomatic_complexity: 4
+    calls_out: 2
+    calls_in: 1
+  regres.refactor._find_similar_pairs:
+    name: _find_similar_pairs
+    module: regres.refactor
+    line: 1046
+    cyclomatic_complexity: 7
+    calls_out: 15
+    calls_in: 1
+  regres.regres._analyze_import_problems:
+    name: _analyze_import_problems
+    module: regres.regres
+    line: 522
+    cyclomatic_complexity: 7
+    calls_out: 9
+    calls_in: 1
+  regres.refactor._format_preview:
+    name: _format_preview
+    module: regres.refactor
+    line: 910
+    cyclomatic_complexity: 4
+    calls_out: 3
+    calls_in: 1
+  regres.doctor_cli._run_regress_history_phase:
+    name: _run_regress_history_phase
+    module: regres.doctor_cli
+    line: 986
+    cyclomatic_complexity: 3
     calls_out: 5
     calls_in: 1
-  regres.regres.file_content_at_commit:
-    name: file_content_at_commit
-    module: regres.regres
-    line: 915
+  docs.DEFSCAN.print:
+    name: print
+    module: docs.DEFSCAN
+    line: 138
+    cyclomatic_complexity: 0
+    calls_out: 0
+    calls_in: 132
+  regres.doctor_cli._save_report:
+    name: _save_report
+    module: regres.doctor_cli
+    line: 1044
+    cyclomatic_complexity: 5
+    calls_out: 8
+    calls_in: 2
+  regres.regres_cli._build_ier_argv:
+    name: _build_ier_argv
+    module: regres.regres_cli
+    line: 175
+    cyclomatic_complexity: 1
+    calls_out: 6
+    calls_in: 1
+  regres.defscan._resolve_seed_params:
+    name: _resolve_seed_params
+    module: regres.defscan
+    line: 1032
+    cyclomatic_complexity: 4
+    calls_out: 7
+    calls_in: 1
+  regres.defscan._render_seed_results:
+    name: _render_seed_results
+    module: regres.defscan
+    line: 1090
+    cyclomatic_complexity: 3
+    calls_out: 6
+    calls_in: 1
+  regres.regres_cli._append_if_true:
+    name: _append_if_true
+    module: regres.regres_cli
+    line: 191
     cyclomatic_complexity: 2
     calls_out: 1
-    calls_in: 7
+    calls_in: 9
+  regres.defscan._run_default_mode:
+    name: _run_default_mode
+    module: regres.defscan
+    line: 1194
+    cyclomatic_complexity: 12
+    calls_out: 22
+    calls_in: 1
+  regres.doctor_cli._record_module_resolution_step:
+    name: _record_module_resolution_step
+    module: regres.doctor_cli
+    line: 830
+    cyclomatic_complexity: 3
+    calls_out: 1
+    calls_in: 1
+  regres.regres.resolve_target_file:
+    name: resolve_target_file
+    module: regres.regres
+    line: 111
+    cyclomatic_complexity: 13
+    calls_out: 23
+    calls_in: 1
+  regres.regres.analyze_file:
+    name: analyze_file
+    module: regres.regres
+    line: 1401
+    cyclomatic_complexity: 4
+    calls_out: 25
+    calls_in: 1
+  regres.regres._render_first_broken_commit:
+    name: _render_first_broken_commit
+    module: regres.regres
+    line: 1338
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 1
+  regres.doctor_cli._handle_runtime_log_diagnostics:
+    name: _handle_runtime_log_diagnostics
+    module: regres.doctor_cli
+    line: 660
+    cyclomatic_complexity: 6
+    calls_out: 8
+    calls_in: 2
+  regres.regres.track_filename_history:
+    name: track_filename_history
+    module: regres.regres
+    line: 451
+    cyclomatic_complexity: 10
+    calls_out: 9
+    calls_in: 1
+  regres.defscan._count_similarity_levels:
+    name: _count_similarity_levels
+    module: regres.defscan
+    line: 1239
+    cyclomatic_complexity: 5
+    calls_out: 0
+    calls_in: 1
   regres.refactor._deps_print_word_results:
     name: _deps_print_word_results
     module: regres.refactor
-    line: 764
+    line: 850
     cyclomatic_complexity: 5
     calls_out: 7
     calls_in: 1
+  regres.version_check._write_env:
+    name: _write_env
+    module: regres.version_check
+    line: 41
+    cyclomatic_complexity: 10
+    calls_out: 19
+    calls_in: 2
   regres.defscan._advance_past_comment:
     name: _advance_past_comment
     module: regres.defscan
@@ -1356,19 +1230,89 @@ nodes:
     cyclomatic_complexity: 7
     calls_out: 6
     calls_in: 1
-  regres.doctor_cli._build_parser:
-    name: _build_parser
+  regres.defscan.extract_file:
+    name: extract_file
+    module: regres.defscan
+    line: 447
+    cyclomatic_complexity: 6
+    calls_out: 6
+    calls_in: 1
+  regres.doctor_cli._print_patches_info:
+    name: _print_patches_info
     module: regres.doctor_cli
-    line: 1061
-    cyclomatic_complexity: 1
+    line: 1128
+    cyclomatic_complexity: 6
+    calls_out: 3
+    calls_in: 1
+  regres.defscan._run_focus_mode:
+    name: _run_focus_mode
+    module: regres.defscan
+    line: 1143
+    cyclomatic_complexity: 11
     calls_out: 23
     calls_in: 1
+  regres.version_check._save_last_check:
+    name: _save_last_check
+    module: regres.version_check
+    line: 121
+    cyclomatic_complexity: 1
+    calls_out: 5
+    calls_in: 1
+  regres.import_error_toon_report.grouped_errors:
+    name: grouped_errors
+    module: regres.import_error_toon_report
+    line: 142
+    cyclomatic_complexity: 2
+    calls_out: 3
+    calls_in: 2
   regres.regres.extract_symbols:
     name: extract_symbols
     module: regres.regres
     line: 439
     cyclomatic_complexity: 5
     calls_out: 12
+    calls_in: 1
+  regres.refactor._toon_meta_section:
+    name: _toon_meta_section
+    module: regres.refactor
+    line: 920
+    cyclomatic_complexity: 4
+    calls_out: 4
+    calls_in: 1
+  regres.regres._render_last_good_section:
+    name: _render_last_good_section
+    module: regres.regres
+    line: 1286
+    cyclomatic_complexity: 3
+    calls_out: 3
+    calls_in: 1
+  regres.defscan.render_seed_text:
+    name: render_seed_text
+    module: regres.defscan
+    line: 808
+    cyclomatic_complexity: 10
+    calls_out: 42
+    calls_in: 1
+  regres.doctor_cli._build_chain_nlp_description:
+    name: _build_chain_nlp_description
+    module: regres.doctor_cli
+    line: 190
+    cyclomatic_complexity: 1
+    calls_out: 2
+    calls_in: 1
+  regres.defscan._print_seed_summary:
+    name: _print_seed_summary
+    module: regres.defscan
+    line: 1102
+    cyclomatic_complexity: 2
+    calls_out: 6
+    calls_in: 1
+  regres.doctor_cli._collect_dependency_chain_targets:
+    name: _collect_dependency_chain_targets
+    module: regres.doctor_cli
+    line: 438
+    cyclomatic_complexity: 12
+    calls_out: 6
     calls_in: 1
   regres.regres.historical_dependency_tree:
     name: historical_dependency_tree
@@ -1377,190 +1321,441 @@ nodes:
     cyclomatic_complexity: 2
     calls_out: 12
     calls_in: 1
+  regres.doctor_cli._run_llm_or_targeted_analysis:
+    name: _run_llm_or_targeted_analysis
+    module: regres.doctor_cli
+    line: 540
+    cyclomatic_complexity: 3
+    calls_out: 9
+    calls_in: 1
+  regres.regres._render_filename_history:
+    name: _render_filename_history
+    module: regres.regres
+    line: 1156
+    cyclomatic_complexity: 5
+    calls_out: 7
+    calls_in: 1
+  regres.import_error_toon_report.normalize_file_rel:
+    name: normalize_file_rel
+    module: regres.import_error_toon_report
+    line: 87
+    cyclomatic_complexity: 3
+    calls_out: 8
+    calls_in: 1
+  regres.doctor_config._parse_env_file:
+    name: _parse_env_file
+    module: regres.doctor_config
+    line: 155
+    cyclomatic_complexity: 11
+    calls_out: 9
+    calls_in: 1
+  regres.defscan._print_pair_summary:
+    name: _print_pair_summary
+    module: regres.defscan
+    line: 1253
+    cyclomatic_complexity: 2
+    calls_out: 5
+    calls_in: 1
+  regres.doctor_cli._run_vite_runtime_probe:
+    name: _run_vite_runtime_probe
+    module: regres.doctor_cli
+    line: 317
+    cyclomatic_complexity: 13
+    calls_out: 23
+    calls_in: 1
+  regres.refactor.rel:
+    name: rel
+    module: regres.refactor
+    line: 232
+    cyclomatic_complexity: 2
+    calls_out: 3
+    calls_in: 15
+  regres.regres._render_current_symbols:
+    name: _render_current_symbols
+    module: regres.regres
+    line: 1146
+    cyclomatic_complexity: 3
+    calls_out: 5
+    calls_in: 1
+  regres.regres.render_markdown:
+    name: render_markdown
+    module: regres.regres
+    line: 1378
+    cyclomatic_complexity: 1
+    calls_out: 20
+    calls_in: 1
+  regres.refactor._toon_similar_pairs_section:
+    name: _toon_similar_pairs_section
+    module: regres.refactor
+    line: 963
+    cyclomatic_complexity: 7
+    calls_out: 12
+    calls_in: 1
+  regres.regres.find_repo_root:
+    name: find_repo_root
+    module: regres.regres
+    line: 42
+    cyclomatic_complexity: 4
+    calls_out: 3
+    calls_in: 2
+  regres.doctor_cli.main:
+    name: main
+    module: regres.doctor_cli
+    line: 1330
+    cyclomatic_complexity: 5
+    calls_out: 19
+    calls_in: 0
+  regres.refactor._toon_clusters_section:
+    name: _toon_clusters_section
+    module: regres.refactor
+    line: 950
+    cyclomatic_complexity: 3
+    calls_out: 7
+    calls_in: 1
+  regres.refactor._check_sys_manipulation:
+    name: _check_sys_manipulation
+    module: regres.refactor
+    line: 360
+    cyclomatic_complexity: 3
+    calls_out: 1
+    calls_in: 1
+  regres.refactor.cmd_hotmap:
+    name: cmd_hotmap
+    module: regres.refactor
+    line: 707
+    cyclomatic_complexity: 2
+    calls_out: 8
+    calls_in: 0
+  regres.doctor_cli._render_patches_section:
+    name: _render_patches_section
+    module: regres.doctor_cli
+    line: 1149
+    cyclomatic_complexity: 10
+    calls_out: 24
+    calls_in: 2
+  regres.refactor._count_files_per_dir:
+    name: _count_files_per_dir
+    module: regres.refactor
+    line: 738
+    cyclomatic_complexity: 2
+    calls_out: 3
+    calls_in: 1
+  regres.doctor_cli._run_module_loader_compliance_check:
+    name: _run_module_loader_compliance_check
+    module: regres.doctor_cli
+    line: 106
+    cyclomatic_complexity: 2
+    calls_out: 5
+    calls_in: 1
+  regres.refactor.name_prefix:
+    name: name_prefix
+    module: regres.refactor
+    line: 239
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 2
+  regres.regres._check_absolute_path:
+    name: _check_absolute_path
+    module: regres.regres
+    line: 64
+    cyclomatic_complexity: 4
+    calls_out: 4
+    calls_in: 1
+  regres.regres._render_name_hash_section:
+    name: _render_name_hash_section
+    module: regres.regres
+    line: 1170
+    cyclomatic_complexity: 5
+    calls_out: 10
+    calls_in: 1
+  regres.doctor_cli._create_import_chain_diagnoses:
+    name: _create_import_chain_diagnoses
+    module: regres.doctor_cli
+    line: 140
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 1
+  regres.defscan.extract_go:
+    name: extract_go
+    module: regres.defscan
+    line: 392
+    cyclomatic_complexity: 6
+    calls_out: 32
+    calls_in: 1
+  regres.defscan._advance_past_string:
+    name: _advance_past_string
+    module: regres.defscan
+    line: 245
+    cyclomatic_complexity: 4
+    calls_out: 1
+    calls_in: 1
+  regres.regres.resolve_local_import:
+    name: resolve_local_import
+    module: regres.regres
+    line: 186
+    cyclomatic_complexity: 8
+    calls_out: 13
+    calls_in: 3
+  regres.regres._render_last_working_commit:
+    name: _render_last_working_commit
+    module: regres.regres
+    line: 1325
+    cyclomatic_complexity: 2
+    calls_out: 4
+    calls_in: 1
+  regres.doctor_cli._run_url_module_analysis:
+    name: _run_url_module_analysis
+    module: regres.doctor_cli
+    line: 572
+    cyclomatic_complexity: 5
+    calls_out: 11
+    calls_in: 1
+  regres.doctor_cli._save_json_report:
+    name: _save_json_report
+    module: regres.doctor_cli
+    line: 1106
+    cyclomatic_complexity: 1
+    calls_out: 4
+    calls_in: 1
+  regres.doctor_cli._build_commands_for_broken:
+    name: _build_commands_for_broken
+    module: regres.doctor_cli
+    line: 255
+    cyclomatic_complexity: 3
+    calls_out: 8
+    calls_in: 1
+  regres.refactor._collect_file_infos:
+    name: _collect_file_infos
+    module: regres.refactor
+    line: 1000
+    cyclomatic_complexity: 6
+    calls_out: 14
+    calls_in: 1
+  regres.doctor_cli._build_parser:
+    name: _build_parser
+    module: regres.doctor_cli
+    line: 1229
+    cyclomatic_complexity: 1
+    calls_out: 23
+    calls_in: 1
+  regres.doctor_cli._refresh_import_error_log:
+    name: _refresh_import_error_log
+    module: regres.doctor_cli
+    line: 1188
+    cyclomatic_complexity: 5
+    calls_out: 11
+    calls_in: 0
+  regres.refactor._render_cross_lang_symbols:
+    name: _render_cross_lang_symbols
+    module: regres.refactor
+    line: 493
+    cyclomatic_complexity: 6
+    calls_out: 8
+    calls_in: 1
+  regres.version_check.check_version:
+    name: check_version
+    module: regres.version_check
+    line: 133
+    cyclomatic_complexity: 7
+    calls_out: 17
+    calls_in: 3
+  regres.regres._render_missing_imports_history:
+    name: _render_missing_imports_history
+    module: regres.regres
+    line: 1350
+    cyclomatic_complexity: 5
+    calls_out: 5
+    calls_in: 1
+  regres.defscan._extract_block_ts:
+    name: _extract_block_ts
+    module: regres.defscan
+    line: 269
+    cyclomatic_complexity: 12
+    calls_out: 4
+    calls_in: 4
+  regres.regres.trace_name_and_hash_candidates:
+    name: trace_name_and_hash_candidates
+    module: regres.regres
+    line: 736
+    cyclomatic_complexity: 13
+    calls_out: 28
+    calls_in: 1
+  regres.regres._render_broken_imports:
+    name: _render_broken_imports
+    module: regres.regres
+    line: 1316
+    cyclomatic_complexity: 2
+    calls_out: 5
+    calls_in: 1
+  regres.defscan.extract_python:
+    name: extract_python
+    module: regres.defscan
+    line: 223
+    cyclomatic_complexity: 5
+    calls_out: 12
+    calls_in: 1
+  regres.refactor._find_external_importers:
+    name: _find_external_importers
+    module: regres.refactor
+    line: 1093
+    cyclomatic_complexity: 7
+    calls_out: 8
+    calls_in: 1
+  regres.regres.file_lineage:
+    name: file_lineage
+    module: regres.regres
+    line: 841
+    cyclomatic_complexity: 9
+    calls_out: 12
+    calls_in: 1
+  regres.defscan.Definition.__init__:
+    name: __init__
+    module: regres.defscan
+    line: 103
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 0
+  regres.regres.parse_numstat_block:
+    name: parse_numstat_block
+    module: regres.regres
+    line: 826
+    cyclomatic_complexity: 5
+    calls_out: 7
+    calls_in: 1
+  regres.defscan.classify_similarity:
+    name: classify_similarity
+    module: regres.defscan
+    line: 682
+    cyclomatic_complexity: 5
+    calls_out: 0
+    calls_in: 6
+  regres.regres._render_classification_header:
+    name: _render_classification_header
+    module: regres.regres
+    line: 1108
+    cyclomatic_complexity: 2
+    calls_out: 5
+    calls_in: 1
+  project.map.toon._normalize:
+    name: _normalize
+    module: project.map.toon
+    line: 41
+    cyclomatic_complexity: 0
+    calls_out: 0
+    calls_in: 1
+  regres.refactor.wrapper_score:
+    name: wrapper_score
+    module: regres.refactor
+    line: 312
+    cyclomatic_complexity: 1
+    calls_out: 7
+    calls_in: 2
+  regres.defscan._lineno_at:
+    name: _lineno_at
+    module: regres.defscan
+    line: 338
+    cyclomatic_complexity: 1
+    calls_out: 1
+    calls_in: 4
+  regres.regres.analyze_regression:
+    name: analyze_regression
+    module: regres.regres
+    line: 362
+    cyclomatic_complexity: 11
+    calls_out: 10
+    calls_in: 1
+  regres.refactor._render_duplicate_symbols:
+    name: _render_duplicate_symbols
+    module: regres.refactor
+    line: 508
+    cyclomatic_complexity: 6
+    calls_out: 9
+    calls_in: 1
+  regres.regres._render_metrics_section:
+    name: _render_metrics_section
+    module: regres.regres
+    line: 1192
+    cyclomatic_complexity: 1
+    calls_out: 1
+    calls_in: 1
+  regres.regres.analyze_evolution:
+    name: analyze_evolution
+    module: regres.regres
+    line: 983
+    cyclomatic_complexity: 10
+    calls_out: 17
+    calls_in: 1
+  regres.version_check._read_env:
+    name: _read_env
+    module: regres.version_check
+    line: 26
+    cyclomatic_complexity: 6
+    calls_out: 9
+    calls_in: 3
+  regres.regres.file_content_at_commit:
+    name: file_content_at_commit
+    module: regres.regres
+    line: 915
+    cyclomatic_complexity: 2
+    calls_out: 1
+    calls_in: 7
+  regres.refactor._find_duplicate_symbols:
+    name: _find_duplicate_symbols
+    module: regres.refactor
+    line: 1066
+    cyclomatic_complexity: 5
+    calls_out: 9
+    calls_in: 1
+  regres.defscan.extract_rust:
+    name: extract_rust
+    module: regres.defscan
+    line: 428
+    cyclomatic_complexity: 4
+    calls_out: 16
+    calls_in: 1
+  regres.regres_cli.main:
+    name: main
+    module: regres.regres_cli
+    line: 37
+    cyclomatic_complexity: 1
+    calls_out: 54
+    calls_in: 0
+  regres.defscan._should_skip_file:
+    name: _should_skip_file
+    module: regres.defscan
+    line: 543
+    cyclomatic_complexity: 11
+    calls_out: 8
+    calls_in: 1
+  regres.defscan._scan_all_definitions:
+    name: _scan_all_definitions
+    module: regres.defscan
+    line: 1052
+    cyclomatic_complexity: 5
+    calls_out: 2
+    calls_in: 1
+  regres.refactor._check_wrapper_signatures:
+    name: _check_wrapper_signatures
+    module: regres.refactor
+    line: 330
+    cyclomatic_complexity: 3
+    calls_out: 2
+    calls_in: 1
+  regres.doctor_cli._run_page_registry_compliance_check:
+    name: _run_page_registry_compliance_check
+    module: regres.doctor_cli
+    line: 511
+    cyclomatic_complexity: 2
+    calls_out: 5
+    calls_in: 1
+  regres.refactor.extract_symbols_regex:
+    name: extract_symbols_regex
+    module: regres.refactor
+    line: 281
+    cyclomatic_complexity: 7
+    calls_out: 11
+    calls_in: 1
 edges:
-- caller: regres.regres._check_relative_paths
-  callee: regres.regres._dedupe_paths
-  call_type: resolved
-- caller: regres.regres._search_by_name_suffix
-  callee: regres.regres._dedupe_paths
-  call_type: resolved
-- caller: regres.regres.resolve_target_file
-  callee: regres.regres._check_absolute_path
-  call_type: resolved
-- caller: regres.regres.resolve_target_file
-  callee: regres.regres._check_relative_paths
-  call_type: resolved
-- caller: regres.regres.resolve_target_file
-  callee: regres.regres._search_by_name_suffix
-  call_type: resolved
-- caller: regres.regres.content_metrics
-  callee: regres.regres.sha256_of_file
-  call_type: resolved
-- caller: regres.regres.check_imports_at_commit
-  callee: regres.regres.extract_local_imports
-  call_type: resolved
-- caller: regres.regres.check_imports_at_commit
-  callee: regres.regres.file_content_at_commit
-  call_type: resolved
-- caller: regres.regres.check_imports_at_commit
-  callee: regres.regres.safe_read_text
-  call_type: resolved
-- caller: regres.regres.find_last_working_commit
-  callee: regres.regres.check_imports_at_commit
-  call_type: resolved
-- caller: regres.regres.search_missing_in_history
-  callee: regres.regres.run_git
-  call_type: resolved
-- caller: regres.regres.analyze_regression
-  callee: regres.regres.check_imports_at_commit
-  call_type: resolved
-- caller: regres.regres.analyze_regression
-  callee: regres.regres.find_last_working_commit
-  call_type: resolved
-- caller: regres.regres.analyze_regression
-  callee: regres.regres.search_missing_in_history
-  call_type: resolved
-- caller: regres.regres.track_filename_history
-  callee: regres.regres.run_git
-  call_type: resolved
-- caller: regres.regres._classify_import_problem
-  callee: regres.regres.find_current_locations
-  call_type: resolved
-- caller: regres.regres._determine_primary_type
-  callee: regres.regres._analyze_evolution
-  call_type: resolved
-- caller: regres.regres._determine_primary_type
-  callee: regres.regres._analyze_import_problems
-  call_type: resolved
-- caller: regres.regres.classify_problem
-  callee: regres.regres.extract_symbols
-  call_type: resolved
-- caller: regres.regres.classify_problem
-  callee: regres.regres._determine_primary_type
-  call_type: resolved
-- caller: regres.regres.classify_problem
-  callee: regres.regres._classify_import_problem
-  call_type: resolved
-- caller: regres.regres.classify_problem
-  callee: regres.regres.track_filename_history
-  call_type: resolved
-- caller: regres.regres.dependency_tree
-  callee: regres.regres.to_rel
-  call_type: resolved
-- caller: regres.regres.dependency_tree
-  callee: regres.regres.safe_read_text
-  call_type: resolved
-- caller: regres.regres.dependency_tree
-  callee: regres.regres.resolve_local_import
-  call_type: resolved
-- caller: regres.regres.reverse_references
-  callee: regres.regres.to_rel
-  call_type: resolved
-- caller: regres.regres.reverse_references
-  callee: regres.regres.safe_read_text
-  call_type: resolved
-- caller: regres.regres.reverse_references
-  callee: regres.regres.resolve_local_import
-  call_type: resolved
-- caller: regres.regres.exact_and_near_duplicates
-  callee: regres.regres.sha256_of_file
-  call_type: resolved
-- caller: regres.regres.exact_and_near_duplicates
-  callee: regres.regres.safe_read_text
-  call_type: resolved
-- caller: regres.regres.exact_and_near_duplicates
-  callee: regres.regres.to_rel
-  call_type: resolved
-- caller: regres.regres.trace_name_and_hash_candidates
-  callee: regres.regres.to_rel
-  call_type: resolved
-- caller: regres.regres.trace_name_and_hash_candidates
-  callee: regres.regres.safe_read_text
-  call_type: resolved
-- caller: regres.regres.trace_name_and_hash_candidates
-  callee: regres.regres.sha256_of_file
-  call_type: resolved
-- caller: regres.regres.file_lineage
-  callee: regres.regres.run_git
-  call_type: resolved
-- caller: regres.regres.file_lineage
-  callee: regres.regres.parse_numstat_block
-  call_type: resolved
-- caller: regres.regres.changed_files_for_commit
-  callee: regres.regres.run_git
-  call_type: resolved
-- caller: regres.regres.references_in_recent_commits
-  callee: regres.regres.changed_files_for_commit
-  call_type: resolved
-- caller: regres.regres.file_content_at_commit
-  callee: regres.regres.run_git
-  call_type: resolved
-- caller: regres.regres.historical_dependency_tree
-  callee: regres.regres.file_content_at_commit
-  call_type: resolved
-- caller: regres.regres.historical_dependency_tree
-  callee: regres.regres.resolve_import_historical
-  call_type: resolved
-- caller: regres.regres.analyze_evolution
-  callee: regres.regres.file_content_at_commit
-  call_type: resolved
-- caller: regres.regres.analyze_evolution
-  callee: regres.regres.historical_dependency_tree
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_classification_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_name_hash_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_metrics_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_references_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_duplicates_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_lineage_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_evolution_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_last_good_section
-  call_type: resolved
-- caller: regres.regres.render_markdown
-  callee: regres.regres._render_regression_section
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.find_repo_root
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.to_rel
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.safe_read_text
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.content_metrics
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.dependency_tree
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.reverse_references
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.exact_and_near_duplicates
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.trace_name_and_hash_candidates
-  call_type: resolved
-- caller: regres.regres.analyze_file
-  callee: regres.regres.file_lineage
-  call_type: resolved
 - caller: regres.doctor_config.DoctorConfig.print_banner_to
   callee: docs.DEFSCAN.print
   call_type: resolved
@@ -1609,11 +1804,479 @@ edges:
 - caller: regres.version_check.check_version
   callee: docs.DEFSCAN.print
   call_type: resolved
+- caller: regres.doctor_cli._create_import_chain_diagnoses
+  callee: regres.doctor_cli._create_single_chain_diagnosis
+  call_type: resolved
+- caller: regres.doctor_cli._create_single_chain_diagnosis
+  callee: regres.doctor_cli._build_chain_nlp_description
+  call_type: resolved
+- caller: regres.doctor_cli._create_single_chain_diagnosis
+  callee: regres.doctor_cli._build_file_actions_for_chain
+  call_type: resolved
+- caller: regres.doctor_cli._create_single_chain_diagnosis
+  callee: regres.doctor_cli._build_shell_commands_for_chain
+  call_type: resolved
+- caller: regres.doctor_cli._build_file_actions_for_chain
+  callee: regres.doctor_cli._format_history_reason
+  call_type: resolved
+- caller: regres.doctor_cli._build_shell_commands_for_chain
+  callee: regres.doctor_cli._build_commands_for_broken
+  call_type: resolved
+- caller: regres.doctor_cli._build_shell_commands_for_chain
+  callee: regres.doctor_cli._build_commands_for_stubs
+  call_type: resolved
+- caller: regres.doctor_cli._build_commands_for_broken
+  callee: regres.doctor_cli._build_regres_command
+  call_type: resolved
+- caller: regres.doctor_cli._build_commands_for_stubs
+  callee: regres.doctor_cli._build_regres_command
+  call_type: resolved
+- caller: regres.doctor_cli._run_llm_or_targeted_analysis
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._run_page_implementation_analysis
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._run_module_loader_compliance_check
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._run_page_registry_compliance_check
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._collect_dependency_chain_targets
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._run_llm_or_targeted_analysis
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._run_dependency_chain_analysis
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._derive_vite_base
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._create_import_chain_diagnoses
+  call_type: resolved
+- caller: regres.doctor_cli._run_url_module_analysis
+  callee: regres.doctor_cli._run_vite_runtime_probe
+  call_type: resolved
+- caller: regres.doctor_cli._handle_runtime_log_diagnostics
+  callee: regres.doctor_cli._resolve_runtime_log_path
+  call_type: resolved
+- caller: regres.doctor_cli._handle_url_mode
+  callee: regres.doctor_cli._resolve_module_from_url
+  call_type: resolved
+- caller: regres.doctor_cli._handle_url_mode
+  callee: regres.doctor_cli._record_url_discovery_step
+  call_type: resolved
+- caller: regres.doctor_cli._handle_url_mode
+  callee: regres.doctor_cli._setup_url_analysis_context
+  call_type: resolved
+- caller: regres.doctor_cli._handle_url_mode
+  callee: regres.doctor_cli._handle_module_resolution
+  call_type: resolved
+- caller: regres.doctor_cli._handle_url_mode
+  callee: regres.doctor_cli._apply_fixes_if_requested
+  call_type: resolved
+- caller: regres.doctor_cli._setup_url_analysis_context
+  callee: regres.doctor_cli._handle_runtime_log_diagnostics
+  call_type: resolved
+- caller: regres.doctor_cli._handle_module_resolution
+  callee: regres.doctor_cli._record_module_resolution_step
+  call_type: resolved
+- caller: regres.doctor_cli._handle_module_resolution
+  callee: regres.doctor_cli._record_module_not_found_step
+  call_type: resolved
+- caller: regres.doctor_cli._handle_module_resolution
+  callee: regres.doctor_cli._append_url_module_not_found_diagnosis
+  call_type: resolved
+- caller: regres.doctor_cli._handle_module_resolution
+  callee: regres.doctor_cli._run_url_module_analysis
+  call_type: resolved
+- caller: regres.doctor_cli._apply_fixes_if_requested
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli._handle_auto_decision_flow
+  callee: regres.doctor_cli._setup_analysis_context
+  call_type: resolved
+- caller: regres.doctor_cli._handle_auto_decision_flow
+  callee: regres.doctor_cli._run_import_analysis
+  call_type: resolved
+- caller: regres.doctor_cli._handle_auto_decision_flow
+  callee: regres.doctor_cli._run_additional_scans
+  call_type: resolved
+- caller: regres.doctor_cli._handle_auto_decision_flow
+  callee: regres.doctor_cli._run_prescans
+  call_type: resolved
+- caller: regres.doctor_cli._handle_auto_decision_flow
+  callee: regres.doctor_cli._run_regress_history_phase
+  call_type: resolved
+- caller: regres.doctor_cli._setup_analysis_context
+  callee: regres.doctor_cli._handle_runtime_log_diagnostics
+  call_type: resolved
+- caller: regres.doctor_cli._run_import_analysis
+  callee: regres.doctor_cli._get_import_log_path
+  call_type: resolved
+- caller: regres.doctor_cli._run_import_analysis
+  callee: regres.doctor_cli._refresh_import_log
+  call_type: resolved
+- caller: regres.doctor_cli._run_regress_history_phase
+  callee: regres.doctor_cli._collect_affected_files
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._derive_output_basename
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._resolve_patches_dir
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._generate_and_attach_patches
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._print_patches_info
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._save_json_report
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._save_markdown_report
+  call_type: resolved
+- caller: regres.doctor_cli._save_report
+  callee: regres.doctor_cli._print_report_to_stdout
+  call_type: resolved
+- caller: regres.doctor_cli._save_json_report
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli._save_markdown_report
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli._save_markdown_report
+  callee: regres.doctor_cli._render_patches_section
+  call_type: resolved
+- caller: regres.doctor_cli._print_patches_info
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli._print_report_to_stdout
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli._print_report_to_stdout
+  callee: regres.doctor_cli._render_patches_section
+  call_type: resolved
+- caller: regres.doctor_cli._refresh_import_error_log
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.doctor_cli.main
+  callee: regres.version_check.check_version
+  call_type: resolved
+- caller: regres.doctor_cli.main
+  callee: regres.doctor_cli._build_parser
+  call_type: resolved
+- caller: regres.doctor_cli.main
+  callee: regres.doctor_config.load_config
+  call_type: resolved
+- caller: regres.doctor_cli.main
+  callee: regres.doctor_cli._handle_auto_decision_flow
+  call_type: resolved
+- caller: regres.doctor_cli.main
+  callee: regres.doctor_cli._save_report
+  call_type: resolved
+- caller: regres.import_error_toon_report.parse_ts_errors
+  callee: regres.import_error_toon_report.normalize_file_rel
+  call_type: resolved
+- caller: regres.import_error_toon_report.to_toon_global_payload
+  callee: regres.import_error_toon_report.grouped_errors
+  call_type: resolved
+- caller: regres.import_error_toon_report.to_toon_global_payload
+  callee: regres.import_error_toon_report.metrics
+  call_type: resolved
+- caller: regres.import_error_toon_report.to_toon_compact_per_file
+  callee: regres.import_error_toon_report.toon_quote
+  call_type: resolved
+- caller: regres.import_error_toon_report.render_markdown
+  callee: regres.import_error_toon_report.grouped_errors
+  call_type: resolved
+- caller: regres.import_error_toon_report.render_markdown
+  callee: regres.import_error_toon_report.metrics
+  call_type: resolved
+- caller: regres.import_error_toon_report.render_markdown
+  callee: regres.import_error_toon_report.to_toon_global_payload
+  call_type: resolved
+- caller: regres.import_error_toon_report.render_markdown
+  callee: regres.import_error_toon_report.to_toon_compact_per_file
+  call_type: resolved
+- caller: regres.import_error_toon_report.main
+  callee: regres.version_check.check_version
+  call_type: resolved
+- caller: regres.import_error_toon_report.main
+  callee: regres.import_error_toon_report.parse_args
+  call_type: resolved
+- caller: regres.import_error_toon_report.main
+  callee: regres.import_error_toon_report.parse_ts_errors
+  call_type: resolved
+- caller: regres.import_error_toon_report.main
+  callee: regres.import_error_toon_report.render_markdown
+  call_type: resolved
+- caller: regres.import_error_toon_report.main
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.regres_cli.main
+  callee: regres.version_check.check_version
+  call_type: resolved
+- caller: regres.regres_cli._build_defscan_argv
+  callee: regres.regres_cli._extend_if_set
+  call_type: resolved
+- caller: regres.regres_cli._build_defscan_argv
+  callee: regres.regres_cli._append_if_true
+  call_type: resolved
+- caller: regres.regres_cli._build_doctor_argv
+  callee: regres.regres_cli._extend_if_set
+  call_type: resolved
+- caller: regres.regres_cli._build_doctor_argv
+  callee: regres.regres_cli._append_if_true
+  call_type: resolved
+- caller: regres.regres_cli._build_ier_argv
+  callee: regres.regres_cli._extend_if_set
+  call_type: resolved
+- caller: regres.defscan.Definition.__init__
+  callee: project.map.toon._normalize
+  call_type: resolved
+- caller: regres.defscan._extract_class_definitions
+  callee: regres.defscan._get_body
+  call_type: resolved
+- caller: regres.defscan._extract_class_definitions
+  callee: regres.defscan._get_decorators
+  call_type: resolved
+- caller: regres.defscan._extract_function_definition
+  callee: regres.defscan._get_body
+  call_type: resolved
+- caller: regres.defscan._extract_function_definition
+  callee: regres.defscan._get_decorators
+  call_type: resolved
+- caller: regres.defscan.extract_python
+  callee: regres.defscan._collect_class_method_ids
+  call_type: resolved
+- caller: regres.defscan.extract_python
+  callee: regres.defscan._extract_class_definitions
+  call_type: resolved
+- caller: regres.defscan._extract_block_ts
+  callee: regres.defscan._advance_past_string
+  call_type: resolved
+- caller: regres.defscan._extract_block_ts
+  callee: regres.defscan._advance_past_comment
+  call_type: resolved
+- caller: regres.defscan.extract_typescript
+  callee: regres.defscan._lineno_at
+  call_type: resolved
+- caller: regres.defscan.extract_typescript
+  callee: regres.defscan._extract_block_ts
+  call_type: resolved
+- caller: regres.defscan.extract_go
+  callee: regres.defscan._extract_block_ts
+  call_type: resolved
+- caller: regres.defscan.extract_go
+  callee: regres.defscan._lineno_at
+  call_type: resolved
+- caller: regres.defscan.extract_rust
+  callee: regres.defscan._extract_block_ts
+  call_type: resolved
+- caller: regres.defscan.extract_rust
+  callee: regres.defscan._lineno_at
+  call_type: resolved
+- caller: regres.defscan.extract_file
+  callee: regres.defscan.extract_python
+  call_type: resolved
+- caller: regres.defscan.extract_file
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan.extract_file
+  callee: regres.defscan.extract_typescript
+  call_type: resolved
+- caller: regres.defscan.extract_file
+  callee: regres.defscan.extract_go
+  call_type: resolved
+- caller: regres.defscan.extract_file
+  callee: regres.defscan.extract_rust
+  call_type: resolved
+- caller: regres.defscan._path_ignored_by_gitignore
+  callee: regres.defscan._match_anchored_pattern
+  call_type: resolved
+- caller: regres.defscan._path_ignored_by_gitignore
+  callee: regres.defscan._match_unanchored_pattern
+  call_type: resolved
+- caller: regres.defscan._should_skip_file
+  callee: regres.defscan._path_ignored_by_gitignore
+  call_type: resolved
+- caller: regres.defscan.scan
+  callee: regres.defscan.load_gitignore
+  call_type: resolved
+- caller: regres.defscan.scan
+  callee: regres.defscan._should_skip_file
+  call_type: resolved
+- caller: regres.defscan.scan
+  callee: regres.defscan.extract_file
+  call_type: resolved
+- caller: regres.defscan.compare_seed_to_all
+  callee: regres.defscan._def_key
+  call_type: resolved
+- caller: regres.defscan.compare_seed_to_all
+  callee: regres.defscan.sim
+  call_type: resolved
+- caller: regres.defscan.analyse_group
+  callee: regres.defscan.sim
+  call_type: resolved
+- caller: regres.defscan.render_text
+  callee: regres.defscan.c
+  call_type: resolved
+- caller: regres.defscan.render_seed_text
+  callee: regres.defscan.c
+  call_type: resolved
+- caller: regres.defscan.render_seed_markdown
+  callee: regres.defscan._short_path
+  call_type: resolved
+- caller: regres.defscan.render_seed_json
+  callee: regres.defscan._short_path
+  call_type: resolved
+- caller: regres.defscan.render_seed_json
+  callee: regres.defscan.classify_similarity
+  call_type: resolved
+- caller: regres.defscan.render_json
+  callee: regres.defscan.classify_similarity
+  call_type: resolved
+- caller: regres.defscan.render_json
+  callee: regres.defscan._short_path
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._resolve_seed_params
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._print_seed_header
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._scan_all_definitions
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._scan_seed_definitions
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._compare_seed_similarity
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._render_seed_results
+  call_type: resolved
+- caller: regres.defscan._run_seed_mode
+  callee: regres.defscan._print_seed_summary
+  call_type: resolved
+- caller: regres.defscan._resolve_seed_params
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._print_seed_header
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._scan_all_definitions
+  callee: regres.defscan.scan
+  call_type: resolved
+- caller: regres.defscan._scan_seed_definitions
+  callee: regres.defscan.scan
+  call_type: resolved
+- caller: regres.defscan._compare_seed_similarity
+  callee: regres.defscan.compare_seed_to_all
+  call_type: resolved
+- caller: regres.defscan._render_seed_results
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._render_seed_results
+  callee: regres.defscan.render_seed_json
+  call_type: resolved
+- caller: regres.defscan._render_seed_results
+  callee: regres.defscan.render_seed_markdown
+  call_type: resolved
+- caller: regres.defscan._render_seed_results
+  callee: regres.defscan.render_seed_text
+  call_type: resolved
+- caller: regres.defscan._print_seed_summary
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._build_focus_groups
+  callee: regres.defscan._def_key
+  call_type: resolved
+- caller: regres.defscan._analyse_and_sort_groups
+  callee: regres.defscan.analyse_group
+  call_type: resolved
+- caller: regres.defscan._run_focus_mode
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._run_focus_mode
+  callee: regres.defscan.scan
+  call_type: resolved
+- caller: regres.defscan._run_focus_mode
+  callee: regres.defscan._build_focus_groups
+  call_type: resolved
+- caller: regres.defscan._run_focus_mode
+  callee: regres.defscan._analyse_and_sort_groups
+  call_type: resolved
+- caller: regres.defscan._run_default_mode
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._run_default_mode
+  callee: regres.defscan.scan
+  call_type: resolved
+- caller: regres.defscan._run_default_mode
+  callee: regres.defscan._print_pair_summary
+  call_type: resolved
+- caller: regres.defscan._run_default_mode
+  callee: regres.defscan.analyse_group
+  call_type: resolved
+- caller: regres.defscan._print_pair_summary
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan._print_pair_summary
+  callee: regres.defscan._count_similarity_levels
+  call_type: resolved
+- caller: regres.defscan.main
+  callee: regres.defscan._build_argument_parser
+  call_type: resolved
+- caller: regres.defscan.main
+  callee: regres.defscan.load_gitignore
+  call_type: resolved
+- caller: regres.defscan.main
+  callee: docs.DEFSCAN.print
+  call_type: resolved
+- caller: regres.defscan.main
+  callee: regres.defscan._run_seed_mode
+  call_type: resolved
+- caller: regres.refactor.iter_files
+  callee: regres.refactor._is_valid_file
+  call_type: resolved
+- caller: regres.refactor.iter_files
+  callee: regres.refactor._file_contains_word
+  call_type: resolved
 - caller: regres.refactor.get_symbols
   callee: regres.refactor.extract_symbols_regex
   call_type: resolved
 - caller: regres.refactor.get_symbols
   callee: regres.refactor.extract_symbols_ast
+  call_type: resolved
+- caller: regres.refactor.wrapper_score
+  callee: regres.refactor._check_wrapper_signatures
+  call_type: resolved
+- caller: regres.refactor.wrapper_score
+  callee: regres.refactor._check_file_length
+  call_type: resolved
+- caller: regres.refactor.wrapper_score
+  callee: regres.refactor._check_import_density
+  call_type: resolved
+- caller: regres.refactor.wrapper_score
+  callee: regres.refactor._check_sys_manipulation
+  call_type: resolved
+- caller: regres.refactor.wrapper_score
+  callee: regres.refactor._check_barrel_export
+  call_type: resolved
+- caller: regres.refactor.wrapper_score
+  callee: regres.refactor._check_dynamic_import
   call_type: resolved
 - caller: regres.refactor.cmd_find
   callee: regres.refactor.iter_files
@@ -1700,9 +2363,36 @@ edges:
   callee: docs.DEFSCAN.print
   call_type: resolved
 - caller: regres.refactor.cmd_hotmap
-  callee: regres.refactor.iter_files
+  callee: regres.refactor._collect_and_normalize_files
   call_type: resolved
 - caller: regres.refactor.cmd_hotmap
+  callee: regres.refactor._count_files_per_dir
+  call_type: resolved
+- caller: regres.refactor.cmd_hotmap
+  callee: regres.refactor._count_similar_pairs
+  call_type: resolved
+- caller: regres.refactor.cmd_hotmap
+  callee: regres.refactor._calculate_hotmap
+  call_type: resolved
+- caller: regres.refactor.cmd_hotmap
+  callee: regres.refactor._render_hotmap_output
+  call_type: resolved
+- caller: regres.refactor._collect_and_normalize_files
+  callee: regres.refactor.iter_files
+  call_type: resolved
+- caller: regres.refactor._collect_and_normalize_files
+  callee: regres.refactor.rel
+  call_type: resolved
+- caller: regres.refactor._collect_and_normalize_files
+  callee: regres.refactor.read_text
+  call_type: resolved
+- caller: regres.refactor._collect_and_normalize_files
+  callee: regres.refactor.normalize_code
+  call_type: resolved
+- caller: regres.refactor._count_similar_pairs
+  callee: regres.refactor.similarity_ratio
+  call_type: resolved
+- caller: regres.refactor._render_hotmap_output
   callee: docs.DEFSCAN.print
   call_type: resolved
 - caller: regres.refactor.cmd_cluster
@@ -1846,321 +2536,224 @@ edges:
 - caller: regres.refactor.main
   callee: docs.DEFSCAN.print
   call_type: resolved
-- caller: regres.import_error_toon_report.parse_ts_errors
-  callee: regres.import_error_toon_report.normalize_file_rel
+- caller: regres.regres._check_relative_paths
+  callee: regres.regres._dedupe_paths
   call_type: resolved
-- caller: regres.import_error_toon_report.to_toon_global_payload
-  callee: regres.import_error_toon_report.grouped_errors
+- caller: regres.regres._search_by_name_suffix
+  callee: regres.regres._dedupe_paths
   call_type: resolved
-- caller: regres.import_error_toon_report.to_toon_global_payload
-  callee: regres.import_error_toon_report.metrics
+- caller: regres.regres.resolve_target_file
+  callee: regres.regres._check_absolute_path
   call_type: resolved
-- caller: regres.import_error_toon_report.to_toon_compact_per_file
-  callee: regres.import_error_toon_report.toon_quote
+- caller: regres.regres.resolve_target_file
+  callee: regres.regres._check_relative_paths
   call_type: resolved
-- caller: regres.import_error_toon_report.render_markdown
-  callee: regres.import_error_toon_report.grouped_errors
+- caller: regres.regres.resolve_target_file
+  callee: regres.regres._search_by_name_suffix
   call_type: resolved
-- caller: regres.import_error_toon_report.render_markdown
-  callee: regres.import_error_toon_report.metrics
+- caller: regres.regres.content_metrics
+  callee: regres.regres.sha256_of_file
   call_type: resolved
-- caller: regres.import_error_toon_report.render_markdown
-  callee: regres.import_error_toon_report.to_toon_global_payload
+- caller: regres.regres.check_imports_at_commit
+  callee: regres.regres.extract_local_imports
   call_type: resolved
-- caller: regres.import_error_toon_report.render_markdown
-  callee: regres.import_error_toon_report.to_toon_compact_per_file
+- caller: regres.regres.check_imports_at_commit
+  callee: regres.regres.file_content_at_commit
   call_type: resolved
-- caller: regres.import_error_toon_report.main
-  callee: regres.version_check.check_version
+- caller: regres.regres.check_imports_at_commit
+  callee: regres.regres.safe_read_text
   call_type: resolved
-- caller: regres.import_error_toon_report.main
-  callee: regres.import_error_toon_report.parse_args
+- caller: regres.regres.find_last_working_commit
+  callee: regres.regres.check_imports_at_commit
   call_type: resolved
-- caller: regres.import_error_toon_report.main
-  callee: regres.import_error_toon_report.parse_ts_errors
+- caller: regres.regres.search_missing_in_history
+  callee: regres.regres.run_git
   call_type: resolved
-- caller: regres.import_error_toon_report.main
-  callee: regres.import_error_toon_report.render_markdown
+- caller: regres.regres.analyze_regression
+  callee: regres.regres.check_imports_at_commit
   call_type: resolved
-- caller: regres.import_error_toon_report.main
-  callee: docs.DEFSCAN.print
+- caller: regres.regres.analyze_regression
+  callee: regres.regres.find_last_working_commit
   call_type: resolved
-- caller: regres.regres_cli.main
-  callee: regres.version_check.check_version
+- caller: regres.regres.analyze_regression
+  callee: regres.regres.search_missing_in_history
   call_type: resolved
-- caller: regres.regres_cli._build_defscan_argv
-  callee: regres.regres_cli._extend_if_set
+- caller: regres.regres.track_filename_history
+  callee: regres.regres.run_git
   call_type: resolved
-- caller: regres.regres_cli._build_defscan_argv
-  callee: regres.regres_cli._append_if_true
+- caller: regres.regres._classify_import_problem
+  callee: regres.regres.find_current_locations
   call_type: resolved
-- caller: regres.regres_cli._build_doctor_argv
-  callee: regres.regres_cli._extend_if_set
+- caller: regres.regres._determine_primary_type
+  callee: regres.regres._analyze_evolution
   call_type: resolved
-- caller: regres.regres_cli._build_doctor_argv
-  callee: regres.regres_cli._append_if_true
+- caller: regres.regres._determine_primary_type
+  callee: regres.regres._analyze_import_problems
   call_type: resolved
-- caller: regres.regres_cli._build_ier_argv
-  callee: regres.regres_cli._extend_if_set
+- caller: regres.regres.classify_problem
+  callee: regres.regres.extract_symbols
   call_type: resolved
-- caller: regres.defscan.Definition.__init__
-  callee: regres.defscan._normalize
+- caller: regres.regres.classify_problem
+  callee: regres.regres._determine_primary_type
   call_type: resolved
-- caller: regres.defscan._extract_class_definitions
-  callee: regres.defscan._get_body
+- caller: regres.regres.classify_problem
+  callee: regres.regres._classify_import_problem
   call_type: resolved
-- caller: regres.defscan._extract_class_definitions
-  callee: regres.defscan._get_decorators
+- caller: regres.regres.classify_problem
+  callee: regres.regres.track_filename_history
   call_type: resolved
-- caller: regres.defscan._extract_function_definition
-  callee: regres.defscan._get_body
+- caller: regres.regres.dependency_tree
+  callee: regres.regres.to_rel
   call_type: resolved
-- caller: regres.defscan._extract_function_definition
-  callee: regres.defscan._get_decorators
+- caller: regres.regres.dependency_tree
+  callee: regres.regres.safe_read_text
   call_type: resolved
-- caller: regres.defscan.extract_python
-  callee: regres.defscan._collect_class_method_ids
+- caller: regres.regres.dependency_tree
+  callee: regres.regres.resolve_local_import
   call_type: resolved
-- caller: regres.defscan.extract_python
-  callee: regres.defscan._extract_class_definitions
+- caller: regres.regres.reverse_references
+  callee: regres.regres.to_rel
   call_type: resolved
-- caller: regres.defscan._extract_block_ts
-  callee: regres.defscan._advance_past_string
+- caller: regres.regres.reverse_references
+  callee: regres.regres.safe_read_text
   call_type: resolved
-- caller: regres.defscan._extract_block_ts
-  callee: regres.defscan._advance_past_comment
+- caller: regres.regres.reverse_references
+  callee: regres.regres.resolve_local_import
   call_type: resolved
-- caller: regres.defscan.extract_typescript
-  callee: regres.defscan._lineno_at
+- caller: regres.regres.exact_and_near_duplicates
+  callee: regres.regres.sha256_of_file
   call_type: resolved
-- caller: regres.defscan.extract_typescript
-  callee: regres.defscan._extract_block_ts
+- caller: regres.regres.exact_and_near_duplicates
+  callee: regres.regres.safe_read_text
   call_type: resolved
-- caller: regres.defscan.extract_go
-  callee: regres.defscan._extract_block_ts
+- caller: regres.regres.exact_and_near_duplicates
+  callee: regres.regres.to_rel
   call_type: resolved
-- caller: regres.defscan.extract_go
-  callee: regres.defscan._lineno_at
+- caller: regres.regres.trace_name_and_hash_candidates
+  callee: regres.regres.to_rel
   call_type: resolved
-- caller: regres.defscan.extract_rust
-  callee: regres.defscan._extract_block_ts
+- caller: regres.regres.trace_name_and_hash_candidates
+  callee: regres.regres.safe_read_text
   call_type: resolved
-- caller: regres.defscan.extract_rust
-  callee: regres.defscan._lineno_at
+- caller: regres.regres.trace_name_and_hash_candidates
+  callee: regres.regres.sha256_of_file
   call_type: resolved
-- caller: regres.defscan.extract_file
-  callee: regres.defscan.extract_python
+- caller: regres.regres.file_lineage
+  callee: regres.regres.run_git
   call_type: resolved
-- caller: regres.defscan.extract_file
-  callee: docs.DEFSCAN.print
+- caller: regres.regres.file_lineage
+  callee: regres.regres.parse_numstat_block
   call_type: resolved
-- caller: regres.defscan.extract_file
-  callee: regres.defscan.extract_typescript
+- caller: regres.regres.changed_files_for_commit
+  callee: regres.regres.run_git
   call_type: resolved
-- caller: regres.defscan.extract_file
-  callee: regres.defscan.extract_go
+- caller: regres.regres.references_in_recent_commits
+  callee: regres.regres.changed_files_for_commit
   call_type: resolved
-- caller: regres.defscan.extract_file
-  callee: regres.defscan.extract_rust
+- caller: regres.regres.file_content_at_commit
+  callee: regres.regres.run_git
   call_type: resolved
-- caller: regres.defscan._path_ignored_by_gitignore
-  callee: regres.defscan._match_anchored_pattern
+- caller: regres.regres.historical_dependency_tree
+  callee: regres.regres.file_content_at_commit
   call_type: resolved
-- caller: regres.defscan._path_ignored_by_gitignore
-  callee: regres.defscan._match_unanchored_pattern
+- caller: regres.regres.historical_dependency_tree
+  callee: regres.regres.resolve_import_historical
   call_type: resolved
-- caller: regres.defscan._should_skip_file
-  callee: regres.defscan._path_ignored_by_gitignore
+- caller: regres.regres.analyze_evolution
+  callee: regres.regres.file_content_at_commit
   call_type: resolved
-- caller: regres.defscan.scan
-  callee: regres.defscan.load_gitignore
+- caller: regres.regres.analyze_evolution
+  callee: regres.regres.historical_dependency_tree
   call_type: resolved
-- caller: regres.defscan.scan
-  callee: regres.defscan._should_skip_file
+- caller: regres.regres._render_classification_section
+  callee: regres.regres._render_classification_header
   call_type: resolved
-- caller: regres.defscan.scan
-  callee: regres.defscan.extract_file
+- caller: regres.regres._render_classification_section
+  callee: regres.regres._render_evidence
   call_type: resolved
-- caller: regres.defscan.compare_seed_to_all
-  callee: regres.defscan._def_key
+- caller: regres.regres._render_classification_section
+  callee: regres.regres._render_import_problems
   call_type: resolved
-- caller: regres.defscan.compare_seed_to_all
-  callee: regres.defscan.sim
+- caller: regres.regres._render_classification_section
+  callee: regres.regres._render_current_symbols
   call_type: resolved
-- caller: regres.defscan.analyse_group
-  callee: regres.defscan.sim
+- caller: regres.regres._render_classification_section
+  callee: regres.regres._render_filename_history
   call_type: resolved
-- caller: regres.defscan.render_text
-  callee: regres.defscan.c
+- caller: regres.regres._render_regression_section
+  callee: regres.regres._render_broken_imports
   call_type: resolved
-- caller: regres.defscan.render_seed_text
-  callee: regres.defscan.c
+- caller: regres.regres._render_regression_section
+  callee: regres.regres._render_last_working_commit
   call_type: resolved
-- caller: regres.defscan.render_seed_markdown
-  callee: regres.defscan._short_path
+- caller: regres.regres._render_regression_section
+  callee: regres.regres._render_first_broken_commit
   call_type: resolved
-- caller: regres.defscan.render_seed_json
-  callee: regres.defscan._short_path
+- caller: regres.regres._render_regression_section
+  callee: regres.regres._render_missing_imports_history
   call_type: resolved
-- caller: regres.defscan.render_seed_json
-  callee: regres.defscan.classify_similarity
+- caller: regres.regres._render_regression_section
+  callee: regres.regres._render_recommendations
   call_type: resolved
-- caller: regres.defscan.render_json
-  callee: regres.defscan.classify_similarity
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_classification_section
   call_type: resolved
-- caller: regres.defscan.render_json
-  callee: regres.defscan._short_path
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_name_hash_section
   call_type: resolved
-- caller: regres.defscan._run_seed_mode
-  callee: docs.DEFSCAN.print
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_metrics_section
   call_type: resolved
-- caller: regres.defscan._run_seed_mode
-  callee: regres.defscan.scan
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_references_section
   call_type: resolved
-- caller: regres.defscan._run_seed_mode
-  callee: regres.defscan.compare_seed_to_all
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_duplicates_section
   call_type: resolved
-- caller: regres.defscan._build_focus_groups
-  callee: regres.defscan._def_key
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_lineage_section
   call_type: resolved
-- caller: regres.defscan._analyse_and_sort_groups
-  callee: regres.defscan.analyse_group
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_evolution_section
   call_type: resolved
-- caller: regres.defscan._run_focus_mode
-  callee: docs.DEFSCAN.print
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_last_good_section
   call_type: resolved
-- caller: regres.defscan._run_focus_mode
-  callee: regres.defscan.scan
+- caller: regres.regres.render_markdown
+  callee: regres.regres._render_regression_section
   call_type: resolved
-- caller: regres.defscan._run_focus_mode
-  callee: regres.defscan._build_focus_groups
+- caller: regres.regres.analyze_file
+  callee: regres.regres.find_repo_root
   call_type: resolved
-- caller: regres.defscan._run_focus_mode
-  callee: regres.defscan._analyse_and_sort_groups
+- caller: regres.regres.analyze_file
+  callee: regres.regres.to_rel
   call_type: resolved
-- caller: regres.defscan._run_default_mode
-  callee: docs.DEFSCAN.print
+- caller: regres.regres.analyze_file
+  callee: regres.regres.safe_read_text
   call_type: resolved
-- caller: regres.defscan._run_default_mode
-  callee: regres.defscan.scan
+- caller: regres.regres.analyze_file
+  callee: regres.regres.content_metrics
   call_type: resolved
-- caller: regres.defscan._run_default_mode
-  callee: regres.defscan._print_pair_summary
+- caller: regres.regres.analyze_file
+  callee: regres.regres.dependency_tree
   call_type: resolved
-- caller: regres.defscan._run_default_mode
-  callee: regres.defscan.analyse_group
+- caller: regres.regres.analyze_file
+  callee: regres.regres.reverse_references
   call_type: resolved
-- caller: regres.defscan._print_pair_summary
-  callee: docs.DEFSCAN.print
+- caller: regres.regres.analyze_file
+  callee: regres.regres.exact_and_near_duplicates
   call_type: resolved
-- caller: regres.defscan._print_pair_summary
-  callee: regres.defscan._count_similarity_levels
+- caller: regres.regres.analyze_file
+  callee: regres.regres.trace_name_and_hash_candidates
   call_type: resolved
-- caller: regres.defscan.main
-  callee: regres.defscan._build_argument_parser
-  call_type: resolved
-- caller: regres.defscan.main
-  callee: regres.defscan.load_gitignore
-  call_type: resolved
-- caller: regres.defscan.main
-  callee: docs.DEFSCAN.print
-  call_type: resolved
-- caller: regres.defscan.main
-  callee: regres.defscan._run_seed_mode
-  call_type: resolved
-- caller: regres.doctor_cli._run_llm_or_targeted_analysis
-  callee: docs.DEFSCAN.print
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._run_page_implementation_analysis
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._run_module_loader_compliance_check
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._run_page_registry_compliance_check
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._collect_dependency_chain_targets
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._run_llm_or_targeted_analysis
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._run_dependency_chain_analysis
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._derive_vite_base
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._create_import_chain_diagnoses
-  call_type: resolved
-- caller: regres.doctor_cli._run_url_module_analysis
-  callee: regres.doctor_cli._run_vite_runtime_probe
-  call_type: resolved
-- caller: regres.doctor_cli._handle_runtime_log_diagnostics
-  callee: regres.doctor_cli._resolve_runtime_log_path
-  call_type: resolved
-- caller: regres.doctor_cli._handle_url_mode
-  callee: regres.doctor_cli._resolve_module_from_url
-  call_type: resolved
-- caller: regres.doctor_cli._handle_url_mode
-  callee: regres.doctor_cli._record_url_discovery_step
-  call_type: resolved
-- caller: regres.doctor_cli._handle_url_mode
-  callee: regres.doctor_cli._setup_url_analysis_context
-  call_type: resolved
-- caller: regres.doctor_cli._handle_url_mode
-  callee: regres.doctor_cli._handle_module_resolution
-  call_type: resolved
-- caller: regres.doctor_cli._handle_url_mode
-  callee: regres.doctor_cli._apply_fixes_if_requested
-  call_type: resolved
-- caller: regres.doctor_cli._setup_url_analysis_context
-  callee: regres.doctor_cli._handle_runtime_log_diagnostics
-  call_type: resolved
-- caller: regres.doctor_cli._handle_module_resolution
-  callee: regres.doctor_cli._record_module_resolution_step
-  call_type: resolved
-- caller: regres.doctor_cli._handle_module_resolution
-  callee: regres.doctor_cli._record_module_not_found_step
-  call_type: resolved
-- caller: regres.doctor_cli._handle_module_resolution
-  callee: regres.doctor_cli._append_url_module_not_found_diagnosis
-  call_type: resolved
-- caller: regres.doctor_cli._handle_module_resolution
-  callee: regres.doctor_cli._run_url_module_analysis
-  call_type: resolved
-- caller: regres.doctor_cli._apply_fixes_if_requested
-  callee: docs.DEFSCAN.print
-  call_type: resolved
-- caller: regres.doctor_cli._handle_auto_decision_flow
-  callee: regres.doctor_cli._handle_runtime_log_diagnostics
-  call_type: resolved
-- caller: regres.doctor_cli._save_report
-  callee: docs.DEFSCAN.print
-  call_type: resolved
-- caller: regres.doctor_cli._refresh_import_error_log
-  callee: docs.DEFSCAN.print
-  call_type: resolved
-- caller: regres.doctor_cli.main
-  callee: regres.version_check.check_version
-  call_type: resolved
-- caller: regres.doctor_cli.main
-  callee: regres.doctor_cli._build_parser
-  call_type: resolved
-- caller: regres.doctor_cli.main
-  callee: regres.doctor_config.load_config
-  call_type: resolved
-- caller: regres.doctor_cli.main
-  callee: regres.doctor_cli._handle_auto_decision_flow
-  call_type: resolved
-- caller: regres.doctor_cli.main
-  callee: regres.doctor_cli._save_report
+- caller: regres.regres.analyze_file
+  callee: regres.regres.file_lineage
   call_type: resolved
 modules:
   docs.DEFSCAN:
   - docs.DEFSCAN.print
+  project.map.toon:
+  - project.map.toon._normalize
   regres.defscan:
   - regres.defscan.Definition.__init__
   - regres.defscan._advance_past_comment
@@ -2169,6 +2762,7 @@ modules:
   - regres.defscan._build_argument_parser
   - regres.defscan._build_focus_groups
   - regres.defscan._collect_class_method_ids
+  - regres.defscan._compare_seed_similarity
   - regres.defscan._count_similarity_levels
   - regres.defscan._def_key
   - regres.defscan._extract_block_ts
@@ -2179,12 +2773,17 @@ modules:
   - regres.defscan._lineno_at
   - regres.defscan._match_anchored_pattern
   - regres.defscan._match_unanchored_pattern
-  - regres.defscan._normalize
   - regres.defscan._path_ignored_by_gitignore
   - regres.defscan._print_pair_summary
+  - regres.defscan._print_seed_header
+  - regres.defscan._print_seed_summary
+  - regres.defscan._render_seed_results
+  - regres.defscan._resolve_seed_params
   - regres.defscan._run_default_mode
   - regres.defscan._run_focus_mode
   - regres.defscan._run_seed_mode
+  - regres.defscan._scan_all_definitions
+  - regres.defscan._scan_seed_definitions
   - regres.defscan._short_path
   - regres.defscan._should_skip_file
   - regres.defscan.analyse_group
@@ -2208,28 +2807,52 @@ modules:
   regres.doctor_cli:
   - regres.doctor_cli._append_url_module_not_found_diagnosis
   - regres.doctor_cli._apply_fixes_if_requested
+  - regres.doctor_cli._build_chain_nlp_description
+  - regres.doctor_cli._build_commands_for_broken
+  - regres.doctor_cli._build_commands_for_stubs
+  - regres.doctor_cli._build_file_actions_for_chain
   - regres.doctor_cli._build_parser
+  - regres.doctor_cli._build_regres_command
+  - regres.doctor_cli._build_shell_commands_for_chain
+  - regres.doctor_cli._collect_affected_files
   - regres.doctor_cli._collect_dependency_chain_targets
   - regres.doctor_cli._create_import_chain_diagnoses
+  - regres.doctor_cli._create_single_chain_diagnosis
+  - regres.doctor_cli._derive_output_basename
   - regres.doctor_cli._derive_vite_base
+  - regres.doctor_cli._format_history_reason
+  - regres.doctor_cli._generate_and_attach_patches
+  - regres.doctor_cli._get_import_log_path
   - regres.doctor_cli._handle_auto_decision_flow
   - regres.doctor_cli._handle_module_resolution
   - regres.doctor_cli._handle_runtime_log_diagnostics
   - regres.doctor_cli._handle_url_mode
+  - regres.doctor_cli._print_patches_info
+  - regres.doctor_cli._print_report_to_stdout
   - regres.doctor_cli._record_module_not_found_step
   - regres.doctor_cli._record_module_resolution_step
   - regres.doctor_cli._record_url_discovery_step
   - regres.doctor_cli._refresh_import_error_log
+  - regres.doctor_cli._refresh_import_log
+  - regres.doctor_cli._render_patches_section
   - regres.doctor_cli._resolve_module_from_url
+  - regres.doctor_cli._resolve_patches_dir
   - regres.doctor_cli._resolve_runtime_log_path
+  - regres.doctor_cli._run_additional_scans
   - regres.doctor_cli._run_dependency_chain_analysis
+  - regres.doctor_cli._run_import_analysis
   - regres.doctor_cli._run_llm_or_targeted_analysis
   - regres.doctor_cli._run_module_loader_compliance_check
   - regres.doctor_cli._run_page_implementation_analysis
   - regres.doctor_cli._run_page_registry_compliance_check
+  - regres.doctor_cli._run_prescans
+  - regres.doctor_cli._run_regress_history_phase
   - regres.doctor_cli._run_url_module_analysis
   - regres.doctor_cli._run_vite_runtime_probe
+  - regres.doctor_cli._save_json_report
+  - regres.doctor_cli._save_markdown_report
   - regres.doctor_cli._save_report
+  - regres.doctor_cli._setup_analysis_context
   - regres.doctor_cli._setup_url_analysis_context
   - regres.doctor_cli.main
   regres.doctor_config:
@@ -2250,10 +2873,21 @@ modules:
   - regres.import_error_toon_report.toon_quote
   regres.refactor:
   - regres.refactor._build_symbol_index
+  - regres.refactor._calculate_hotmap
+  - regres.refactor._check_barrel_export
+  - regres.refactor._check_dynamic_import
+  - regres.refactor._check_file_length
+  - regres.refactor._check_import_density
+  - regres.refactor._check_sys_manipulation
+  - regres.refactor._check_wrapper_signatures
+  - regres.refactor._collect_and_normalize_files
   - regres.refactor._collect_file_infos
+  - regres.refactor._count_files_per_dir
+  - regres.refactor._count_similar_pairs
   - regres.refactor._deps_filter_by_word
   - regres.refactor._deps_print_all
   - regres.refactor._deps_print_word_results
+  - regres.refactor._file_contains_word
   - regres.refactor._find_duplicate_symbols
   - regres.refactor._find_external_importers
   - regres.refactor._find_md5_duplicates
@@ -2261,9 +2895,11 @@ modules:
   - regres.refactor._find_similar_pairs
   - regres.refactor._format_imports
   - regres.refactor._format_preview
+  - regres.refactor._is_valid_file
   - regres.refactor._render_cross_lang_symbols
   - regres.refactor._render_duplicate_symbols
   - regres.refactor._render_file_symbols
+  - regres.refactor._render_hotmap_output
   - regres.refactor._sanitize
   - regres.refactor._save_report
   - regres.refactor._toon_clusters_section
@@ -2305,13 +2941,23 @@ modules:
   - regres.regres._classify_import_problem
   - regres.regres._dedupe_paths
   - regres.regres._determine_primary_type
+  - regres.regres._render_broken_imports
+  - regres.regres._render_classification_header
   - regres.regres._render_classification_section
+  - regres.regres._render_current_symbols
   - regres.regres._render_duplicates_section
+  - regres.regres._render_evidence
   - regres.regres._render_evolution_section
+  - regres.regres._render_filename_history
+  - regres.regres._render_first_broken_commit
+  - regres.regres._render_import_problems
   - regres.regres._render_last_good_section
+  - regres.regres._render_last_working_commit
   - regres.regres._render_lineage_section
   - regres.regres._render_metrics_section
+  - regres.regres._render_missing_imports_history
   - regres.regres._render_name_hash_section
+  - regres.regres._render_recommendations
   - regres.regres._render_references_section
   - regres.regres._render_regression_section
   - regres.regres._search_by_name_suffix
@@ -2375,37 +3021,53 @@ entry_points:
 - SUMD._analyze_evolution
 - SUMD._analyze_history_patterns
 - SUMD._analyze_import_problems
+- SUMD._analyze_imports
 - SUMD._append_if_true
 - SUMD._append_url_module_not_found_diagnosis
+- SUMD._apply_fallback_entries
 - SUMD._apply_file_action
+- SUMD._apply_fixes_if_requested
 - SUMD._apply_shell_command
 - SUMD._build_argument_parser
 - SUMD._build_candidate_patch_index
+- SUMD._build_chain_nlp_description
+- SUMD._build_commands_for_broken
+- SUMD._build_commands_for_stubs
 - SUMD._build_defscan_argv
 - SUMD._build_doctor_argv
+- SUMD._build_file_actions_for_chain
 - SUMD._build_focus_groups
 - SUMD._build_header
 - SUMD._build_ier_argv
+- SUMD._build_import_entry
+- SUMD._build_import_nlp_description
 - SUMD._build_missing_page_diagnosis
 - SUMD._build_nlp_diagnosis
 - SUMD._build_parser
 - SUMD._build_playbook
 - SUMD._build_proposed_fixes
 - SUMD._build_refactor_argv
+- SUMD._build_registry_diagnosis
+- SUMD._build_registry_nlp
 - SUMD._build_regres_argv
+- SUMD._build_regres_command
+- SUMD._build_relation_summary
 - SUMD._build_report
 - SUMD._build_section
 - SUMD._build_shell_commands
+- SUMD._build_shell_commands_for_chain
 - SUMD._build_stub_diagnosis_actions
 - SUMD._build_summary
 - SUMD._build_symbol_index
 - SUMD._build_url_fallback_diagnosis
 - SUMD._categorize_chain_imports
 - SUMD._check_absolute_path
+- SUMD._check_page_stub
 - SUMD._check_page_stub_indicators
 - SUMD._check_relative_paths
 - SUMD._classify_import_problem
 - SUMD._clear_regres_env
+- SUMD._collect_affected_files
 - SUMD._collect_all_diagnoses
 - SUMD._collect_class_method_ids
 - SUMD._collect_defscan_context
@@ -2413,12 +3075,14 @@ entry_points:
 - SUMD._collect_file_infos
 - SUMD._collect_git_context
 - SUMD._collect_git_relation_changes
+- SUMD._collect_module_files
 - SUMD._collect_page_history_candidates
 - SUMD._collect_refactor_context
 - SUMD._collect_structure_context
 - SUMD._collect_tree_paths
 - SUMD._count_similarity_levels
 - SUMD._create_import_chain_diagnoses
+- SUMD._create_single_chain_diagnosis
 - SUMD._create_vite_runtime_diagnoses
 - SUMD._dedupe_and_limit_candidates
 - SUMD._dedupe_paths
@@ -2426,25 +3090,35 @@ entry_points:
 - SUMD._deps_filter_by_word
 - SUMD._deps_print_all
 - SUMD._deps_print_word_results
+- SUMD._derive_output_basename
 - SUMD._derive_vite_base
 - SUMD._detect_content_regression
+- SUMD._detect_duplicates
+- SUMD._determine_import_severity
 - SUMD._determine_primary_type
 - SUMD._diagnose_duplicate
 - SUMD._diagnose_import_issue
 - SUMD._diagnose_page_stub
+- SUMD._discover_backend_only_roots
+- SUMD._discover_flat_frontend_roots
 - SUMD._discover_module_path_map
+- SUMD._discover_monorepo_frontend_roots
 - SUMD._dispatch_command
 - SUMD._ensure_env_file
 - SUMD._extend_if_set
 - SUMD._extract_block_ts
 - SUMD._extract_class_definitions
+- SUMD._extract_default_page
 - SUMD._extract_function_definition
 - SUMD._extract_history_candidates
 - SUMD._extract_missing_modules
 - SUMD._extract_module_name
 - SUMD._extract_page_token
+- SUMD._extract_registry_keys
+- SUMD._extract_registry_name
 - SUMD._extract_relative_imports
 - SUMD._filter_actionable_diagnoses
+- SUMD._filter_scoped_files
 - SUMD._find_backup_page_implementation
 - SUMD._find_cross_language_symbols
 - SUMD._find_duplicate_symbols
@@ -2459,21 +3133,32 @@ entry_points:
 - SUMD._find_symlink_base
 - SUMD._fingerprint_page_content
 - SUMD._fmt_plan_value
+- SUMD._format_history_reason
 - SUMD._format_imports
 - SUMD._format_preview
+- SUMD._generate_and_attach_patches
 - SUMD._generate_history_patch
 - SUMD._get_body
 - SUMD._get_decorators
 - SUMD._get_file_at_commit
+- SUMD._get_file_key
+- SUMD._get_import_log_path
 - SUMD._get_module_path_map
 - SUMD._get_pypi_version
+- SUMD._get_relative_path
+- SUMD._get_resolved_rel_path
 - SUMD._get_url_route_module_hints
 - SUMD._handle_auto_decision_flow
+- SUMD._handle_c2004_alias_import
 - SUMD._handle_defscan_refactor
 - SUMD._handle_import_errors
+- SUMD._handle_module_resolution
+- SUMD._handle_relative_import
 - SUMD._handle_runtime_log_diagnostics
 - SUMD._handle_url_mode
 - SUMD._import_exists_in_source
+- SUMD._init_relation_structure
+- SUMD._is_default_page_present
 - SUMD._is_newer
 - SUMD._lineno_at
 - SUMD._make_module_entry
@@ -2490,9 +3175,18 @@ entry_points:
 - SUMD._parse_version
 - SUMD._path_ignored_by_gitignore
 - SUMD._print_pair_summary
+- SUMD._print_patches_info
+- SUMD._print_report_to_stdout
+- SUMD._process_imports_at_file
 - SUMD._read_env
+- SUMD._read_registry_file
+- SUMD._record_module_not_found_step
+- SUMD._record_module_resolution_step
+- SUMD._record_url_discovery_step
 - SUMD._refresh_import_error_log
+- SUMD._refresh_import_log
 - SUMD._rel_or_abs
+- SUMD._render_affected_file_entry
 - SUMD._render_affected_files
 - SUMD._render_analyze_step
 - SUMD._render_apply_step
@@ -2503,11 +3197,14 @@ entry_points:
 - SUMD._render_cross_lang_symbols
 - SUMD._render_decision_workflow
 - SUMD._render_dependency_chain
+- SUMD._render_direct_actions
 - SUMD._render_duplicate_symbols
 - SUMD._render_duplicates_section
 - SUMD._render_evolution_section
 - SUMD._render_file_symbols
 - SUMD._render_generic_patch_script
+- SUMD._render_git_candidate
+- SUMD._render_git_candidates
 - SUMD._render_last_good_section
 - SUMD._render_lineage_section
 - SUMD._render_metrics_section
@@ -2528,31 +3225,42 @@ entry_points:
 - SUMD._render_validate_step
 - SUMD._resolve_alias_target
 - SUMD._resolve_history_params
+- SUMD._resolve_module_from_url
 - SUMD._resolve_module_path
 - SUMD._resolve_output_path
+- SUMD._resolve_patches_dir
 - SUMD._resolve_relative_import
 - SUMD._resolve_runtime_log_path
 - SUMD._resolve_single_or_error
+- SUMD._run_additional_scans
 - SUMD._run_default_mode
 - SUMD._run_dependency_chain_analysis
 - SUMD._run_focus_mode
 - SUMD._run_git_history_query
+- SUMD._run_import_analysis
 - SUMD._run_llm_or_targeted_analysis
 - SUMD._run_module_loader_compliance_check
 - SUMD._run_page_implementation_analysis
 - SUMD._run_page_registry_compliance_check
+- SUMD._run_prescans
+- SUMD._run_regress_history_phase
 - SUMD._run_seed_mode
 - SUMD._run_url_module_analysis
 - SUMD._run_vite_runtime_probe
 - SUMD._sanitize
+- SUMD._save_json_report
 - SUMD._save_last_check
+- SUMD._save_markdown_report
 - SUMD._save_report
 - SUMD._save_skip_preference
 - SUMD._search_by_name_suffix
+- SUMD._setup_analysis_context
+- SUMD._setup_url_analysis_context
 - SUMD._short_path
 - SUMD._should_check
 - SUMD._should_skip_file
 - SUMD._suggest_url_for_path
+- SUMD._to_rel_path
 - SUMD._toon_clusters_section
 - SUMD._toon_files_section
 - SUMD._toon_llm_hint
@@ -3019,30 +3727,46 @@ entry_points:
 - SUMR._analyze_evolution
 - SUMR._analyze_history_patterns
 - SUMR._analyze_import_problems
+- SUMR._analyze_imports
 - SUMR._append_url_module_not_found_diagnosis
+- SUMR._apply_fallback_entries
 - SUMR._apply_file_action
+- SUMR._apply_fixes_if_requested
 - SUMR._apply_shell_command
 - SUMR._build_argument_parser
 - SUMR._build_candidate_patch_index
+- SUMR._build_chain_nlp_description
+- SUMR._build_commands_for_broken
+- SUMR._build_commands_for_stubs
+- SUMR._build_file_actions_for_chain
 - SUMR._build_focus_groups
 - SUMR._build_header
+- SUMR._build_import_entry
+- SUMR._build_import_nlp_description
 - SUMR._build_missing_page_diagnosis
 - SUMR._build_nlp_diagnosis
 - SUMR._build_parser
 - SUMR._build_playbook
 - SUMR._build_proposed_fixes
+- SUMR._build_registry_diagnosis
+- SUMR._build_registry_nlp
+- SUMR._build_regres_command
+- SUMR._build_relation_summary
 - SUMR._build_report
 - SUMR._build_section
 - SUMR._build_shell_commands
+- SUMR._build_shell_commands_for_chain
 - SUMR._build_stub_diagnosis_actions
 - SUMR._build_summary
 - SUMR._build_symbol_index
 - SUMR._build_url_fallback_diagnosis
 - SUMR._categorize_chain_imports
 - SUMR._check_absolute_path
+- SUMR._check_page_stub
 - SUMR._check_page_stub_indicators
 - SUMR._check_relative_paths
 - SUMR._classify_import_problem
+- SUMR._collect_affected_files
 - SUMR._collect_all_diagnoses
 - SUMR._collect_class_method_ids
 - SUMR._collect_defscan_context
@@ -3050,12 +3774,14 @@ entry_points:
 - SUMR._collect_file_infos
 - SUMR._collect_git_context
 - SUMR._collect_git_relation_changes
+- SUMR._collect_module_files
 - SUMR._collect_page_history_candidates
 - SUMR._collect_refactor_context
 - SUMR._collect_structure_context
 - SUMR._collect_tree_paths
 - SUMR._count_similarity_levels
 - SUMR._create_import_chain_diagnoses
+- SUMR._create_single_chain_diagnosis
 - SUMR._create_vite_runtime_diagnoses
 - SUMR._dedupe_and_limit_candidates
 - SUMR._dedupe_paths
@@ -3063,22 +3789,32 @@ entry_points:
 - SUMR._deps_filter_by_word
 - SUMR._deps_print_all
 - SUMR._deps_print_word_results
+- SUMR._derive_output_basename
 - SUMR._derive_vite_base
 - SUMR._detect_content_regression
+- SUMR._detect_duplicates
+- SUMR._determine_import_severity
 - SUMR._determine_primary_type
 - SUMR._diagnose_duplicate
 - SUMR._diagnose_import_issue
 - SUMR._diagnose_page_stub
+- SUMR._discover_backend_only_roots
+- SUMR._discover_flat_frontend_roots
 - SUMR._discover_module_path_map
+- SUMR._discover_monorepo_frontend_roots
 - SUMR._extract_block_ts
 - SUMR._extract_class_definitions
+- SUMR._extract_default_page
 - SUMR._extract_function_definition
 - SUMR._extract_history_candidates
 - SUMR._extract_missing_modules
 - SUMR._extract_module_name
 - SUMR._extract_page_token
+- SUMR._extract_registry_keys
+- SUMR._extract_registry_name
 - SUMR._extract_relative_imports
 - SUMR._filter_actionable_diagnoses
+- SUMR._filter_scoped_files
 - SUMR._find_backup_page_implementation
 - SUMR._find_cross_language_symbols
 - SUMR._find_duplicate_symbols
@@ -3092,20 +3828,31 @@ entry_points:
 - SUMR._find_symlink_base
 - SUMR._fingerprint_page_content
 - SUMR._fmt_plan_value
+- SUMR._format_history_reason
 - SUMR._format_imports
 - SUMR._format_preview
+- SUMR._generate_and_attach_patches
 - SUMR._generate_history_patch
 - SUMR._get_body
 - SUMR._get_decorators
 - SUMR._get_file_at_commit
+- SUMR._get_file_key
+- SUMR._get_import_log_path
 - SUMR._get_module_path_map
+- SUMR._get_relative_path
+- SUMR._get_resolved_rel_path
 - SUMR._get_url_route_module_hints
 - SUMR._handle_auto_decision_flow
+- SUMR._handle_c2004_alias_import
 - SUMR._handle_defscan_refactor
 - SUMR._handle_import_errors
+- SUMR._handle_module_resolution
+- SUMR._handle_relative_import
 - SUMR._handle_runtime_log_diagnostics
 - SUMR._handle_url_mode
 - SUMR._import_exists_in_source
+- SUMR._init_relation_structure
+- SUMR._is_default_page_present
 - SUMR._lineno_at
 - SUMR._map_workspace_to_frontend
 - SUMR._match_anchored_pattern
@@ -3117,8 +3864,17 @@ entry_points:
 - SUMR._parse_ts_errors
 - SUMR._path_ignored_by_gitignore
 - SUMR._print_pair_summary
+- SUMR._print_patches_info
+- SUMR._print_report_to_stdout
+- SUMR._process_imports_at_file
+- SUMR._read_registry_file
+- SUMR._record_module_not_found_step
+- SUMR._record_module_resolution_step
+- SUMR._record_url_discovery_step
 - SUMR._refresh_import_error_log
+- SUMR._refresh_import_log
 - SUMR._rel_or_abs
+- SUMR._render_affected_file_entry
 - SUMR._render_affected_files
 - SUMR._render_analyze_step
 - SUMR._render_apply_step
@@ -3129,11 +3885,14 @@ entry_points:
 - SUMR._render_cross_lang_symbols
 - SUMR._render_decision_workflow
 - SUMR._render_dependency_chain
+- SUMR._render_direct_actions
 - SUMR._render_duplicate_symbols
 - SUMR._render_duplicates_section
 - SUMR._render_evolution_section
 - SUMR._render_file_symbols
 - SUMR._render_generic_patch_script
+- SUMR._render_git_candidate
+- SUMR._render_git_candidates
 - SUMR._render_last_good_section
 - SUMR._render_lineage_section
 - SUMR._render_metrics_section
@@ -3154,28 +3913,39 @@ entry_points:
 - SUMR._render_validate_step
 - SUMR._resolve_alias_target
 - SUMR._resolve_history_params
+- SUMR._resolve_module_from_url
 - SUMR._resolve_module_path
 - SUMR._resolve_output_path
+- SUMR._resolve_patches_dir
 - SUMR._resolve_relative_import
 - SUMR._resolve_runtime_log_path
 - SUMR._resolve_single_or_error
+- SUMR._run_additional_scans
 - SUMR._run_default_mode
 - SUMR._run_dependency_chain_analysis
 - SUMR._run_focus_mode
 - SUMR._run_git_history_query
+- SUMR._run_import_analysis
 - SUMR._run_llm_or_targeted_analysis
 - SUMR._run_module_loader_compliance_check
 - SUMR._run_page_implementation_analysis
 - SUMR._run_page_registry_compliance_check
+- SUMR._run_prescans
+- SUMR._run_regress_history_phase
 - SUMR._run_seed_mode
 - SUMR._run_url_module_analysis
 - SUMR._run_vite_runtime_probe
 - SUMR._sanitize
+- SUMR._save_json_report
+- SUMR._save_markdown_report
 - SUMR._save_report
 - SUMR._search_by_name_suffix
+- SUMR._setup_analysis_context
+- SUMR._setup_url_analysis_context
 - SUMR._short_path
 - SUMR._should_skip_file
 - SUMR._suggest_url_for_path
+- SUMR._to_rel_path
 - SUMR._toon_clusters_section
 - SUMR._toon_files_section
 - SUMR._toon_llm_hint
@@ -3302,32 +4072,42 @@ entry_points:
 - project.map.toon._analyze_import_problems
 - project.map.toon._append_if_true
 - project.map.toon._append_url_module_not_found_diagnosis
+- project.map.toon._apply_fixes_if_requested
 - project.map.toon._build_argument_parser
+- project.map.toon._build_chain_nlp_description
+- project.map.toon._build_commands_for_broken
+- project.map.toon._build_commands_for_stubs
 - project.map.toon._build_defscan_argv
 - project.map.toon._build_doctor_argv
+- project.map.toon._build_file_actions_for_chain
 - project.map.toon._build_focus_groups
 - project.map.toon._build_ier_argv
 - project.map.toon._build_parser
 - project.map.toon._build_refactor_argv
 - project.map.toon._build_regres_argv
+- project.map.toon._build_regres_command
 - project.map.toon._build_report
+- project.map.toon._build_shell_commands_for_chain
 - project.map.toon._build_symbol_index
 - project.map.toon._check_absolute_path
 - project.map.toon._check_relative_paths
 - project.map.toon._classify_import_problem
 - project.map.toon._clear_regres_env
+- project.map.toon._collect_affected_files
 - project.map.toon._collect_class_method_ids
 - project.map.toon._collect_dependency_chain_targets
 - project.map.toon._collect_file_infos
 - project.map.toon._collect_tree_paths
 - project.map.toon._count_similarity_levels
 - project.map.toon._create_import_chain_diagnoses
+- project.map.toon._create_single_chain_diagnosis
 - project.map.toon._create_vite_runtime_diagnoses
 - project.map.toon._dedupe_paths
 - project.map.toon._def_key
 - project.map.toon._deps_filter_by_word
 - project.map.toon._deps_print_all
 - project.map.toon._deps_print_word_results
+- project.map.toon._derive_output_basename
 - project.map.toon._derive_vite_base
 - project.map.toon._determine_primary_type
 - project.map.toon._dispatch_command
@@ -3343,14 +4123,18 @@ entry_points:
 - project.map.toon._find_md5_duplicates
 - project.map.toon._find_name_clusters
 - project.map.toon._find_similar_pairs
+- project.map.toon._format_history_reason
 - project.map.toon._format_imports
 - project.map.toon._format_preview
+- project.map.toon._generate_and_attach_patches
 - project.map.toon._get_body
 - project.map.toon._get_decorators
+- project.map.toon._get_import_log_path
 - project.map.toon._get_pypi_version
 - project.map.toon._handle_auto_decision_flow
 - project.map.toon._handle_defscan_refactor
 - project.map.toon._handle_import_errors
+- project.map.toon._handle_module_resolution
 - project.map.toon._handle_runtime_log_diagnostics
 - project.map.toon._handle_url_mode
 - project.map.toon._is_newer
@@ -3359,13 +4143,18 @@ entry_points:
 - project.map.toon._make_pages_index
 - project.map.toon._match_anchored_pattern
 - project.map.toon._match_unanchored_pattern
-- project.map.toon._normalize
 - project.map.toon._parse_env_file
 - project.map.toon._parse_version
 - project.map.toon._path_ignored_by_gitignore
 - project.map.toon._print_pair_summary
+- project.map.toon._print_patches_info
+- project.map.toon._print_report_to_stdout
 - project.map.toon._read_env
+- project.map.toon._record_module_not_found_step
+- project.map.toon._record_module_resolution_step
+- project.map.toon._record_url_discovery_step
 - project.map.toon._refresh_import_error_log
+- project.map.toon._refresh_import_log
 - project.map.toon._render_classification_section
 - project.map.toon._render_cross_lang_symbols
 - project.map.toon._render_duplicate_symbols
@@ -3379,24 +4168,34 @@ entry_points:
 - project.map.toon._render_patches_section
 - project.map.toon._render_references_section
 - project.map.toon._render_regression_section
+- project.map.toon._resolve_module_from_url
 - project.map.toon._resolve_output_path
+- project.map.toon._resolve_patches_dir
 - project.map.toon._resolve_runtime_log_path
 - project.map.toon._resolve_single_or_error
+- project.map.toon._run_additional_scans
 - project.map.toon._run_default_mode
 - project.map.toon._run_dependency_chain_analysis
 - project.map.toon._run_focus_mode
+- project.map.toon._run_import_analysis
 - project.map.toon._run_llm_or_targeted_analysis
 - project.map.toon._run_module_loader_compliance_check
 - project.map.toon._run_page_implementation_analysis
 - project.map.toon._run_page_registry_compliance_check
+- project.map.toon._run_prescans
+- project.map.toon._run_regress_history_phase
 - project.map.toon._run_seed_mode
 - project.map.toon._run_url_module_analysis
 - project.map.toon._run_vite_runtime_probe
 - project.map.toon._sanitize
+- project.map.toon._save_json_report
 - project.map.toon._save_last_check
+- project.map.toon._save_markdown_report
 - project.map.toon._save_report
 - project.map.toon._save_skip_preference
 - project.map.toon._search_by_name_suffix
+- project.map.toon._setup_analysis_context
+- project.map.toon._setup_url_analysis_context
 - project.map.toon._short_path
 - project.map.toon._should_check
 - project.map.toon._should_skip_file
@@ -3825,6 +4624,7 @@ entry_points:
 - project.map.toon.wrapper_score
 - regres.defscan.Definition.__init__
 - regres.defscan.Definition.__repr__
+- regres.defscan._normalize
 - regres.defscan.main
 - regres.doctor_cli._handle_defscan_refactor
 - regres.doctor_cli._handle_import_errors
@@ -3837,15 +4637,19 @@ entry_points:
 - regres.doctor_orchestrator.DoctorOrchestrator._add_history_candidates
 - regres.doctor_orchestrator.DoctorOrchestrator._analyze_history_patterns
 - regres.doctor_orchestrator.DoctorOrchestrator._analyze_imports
+- regres.doctor_orchestrator.DoctorOrchestrator._apply_fallback_entries
 - regres.doctor_orchestrator.DoctorOrchestrator._apply_file_action
 - regres.doctor_orchestrator.DoctorOrchestrator._apply_shell_command
 - regres.doctor_orchestrator.DoctorOrchestrator._build_candidate_patch_index
 - regres.doctor_orchestrator.DoctorOrchestrator._build_header
 - regres.doctor_orchestrator.DoctorOrchestrator._build_import_entry
+- regres.doctor_orchestrator.DoctorOrchestrator._build_import_nlp_description
 - regres.doctor_orchestrator.DoctorOrchestrator._build_missing_page_diagnosis
 - regres.doctor_orchestrator.DoctorOrchestrator._build_nlp_diagnosis
 - regres.doctor_orchestrator.DoctorOrchestrator._build_playbook
 - regres.doctor_orchestrator.DoctorOrchestrator._build_proposed_fixes
+- regres.doctor_orchestrator.DoctorOrchestrator._build_registry_diagnosis
+- regres.doctor_orchestrator.DoctorOrchestrator._build_registry_nlp
 - regres.doctor_orchestrator.DoctorOrchestrator._build_relation_summary
 - regres.doctor_orchestrator.DoctorOrchestrator._build_section
 - regres.doctor_orchestrator.DoctorOrchestrator._build_shell_commands
@@ -3866,14 +4670,21 @@ entry_points:
 - regres.doctor_orchestrator.DoctorOrchestrator._dedupe_and_limit_candidates
 - regres.doctor_orchestrator.DoctorOrchestrator._detect_content_regression
 - regres.doctor_orchestrator.DoctorOrchestrator._detect_duplicates
+- regres.doctor_orchestrator.DoctorOrchestrator._determine_import_severity
 - regres.doctor_orchestrator.DoctorOrchestrator._diagnose_duplicate
 - regres.doctor_orchestrator.DoctorOrchestrator._diagnose_import_issue
 - regres.doctor_orchestrator.DoctorOrchestrator._diagnose_page_stub
+- regres.doctor_orchestrator.DoctorOrchestrator._discover_backend_only_roots
+- regres.doctor_orchestrator.DoctorOrchestrator._discover_flat_frontend_roots
 - regres.doctor_orchestrator.DoctorOrchestrator._discover_module_path_map
+- regres.doctor_orchestrator.DoctorOrchestrator._discover_monorepo_frontend_roots
+- regres.doctor_orchestrator.DoctorOrchestrator._extract_default_page
 - regres.doctor_orchestrator.DoctorOrchestrator._extract_history_candidates
 - regres.doctor_orchestrator.DoctorOrchestrator._extract_missing_modules
 - regres.doctor_orchestrator.DoctorOrchestrator._extract_module_name
 - regres.doctor_orchestrator.DoctorOrchestrator._extract_page_token
+- regres.doctor_orchestrator.DoctorOrchestrator._extract_registry_keys
+- regres.doctor_orchestrator.DoctorOrchestrator._extract_registry_name
 - regres.doctor_orchestrator.DoctorOrchestrator._extract_relative_imports
 - regres.doctor_orchestrator.DoctorOrchestrator._filter_actionable_diagnoses
 - regres.doctor_orchestrator.DoctorOrchestrator._filter_scoped_files
@@ -3888,17 +4699,23 @@ entry_points:
 - regres.doctor_orchestrator.DoctorOrchestrator._get_file_at_commit
 - regres.doctor_orchestrator.DoctorOrchestrator._get_file_key
 - regres.doctor_orchestrator.DoctorOrchestrator._get_module_path_map
+- regres.doctor_orchestrator.DoctorOrchestrator._get_relative_path
 - regres.doctor_orchestrator.DoctorOrchestrator._get_resolved_rel_path
 - regres.doctor_orchestrator.DoctorOrchestrator._get_url_route_module_hints
+- regres.doctor_orchestrator.DoctorOrchestrator._handle_c2004_alias_import
+- regres.doctor_orchestrator.DoctorOrchestrator._handle_relative_import
 - regres.doctor_orchestrator.DoctorOrchestrator._import_exists_in_source
 - regres.doctor_orchestrator.DoctorOrchestrator._init_relation_structure
+- regres.doctor_orchestrator.DoctorOrchestrator._is_default_page_present
 - regres.doctor_orchestrator.DoctorOrchestrator._map_workspace_to_frontend
 - regres.doctor_orchestrator.DoctorOrchestrator._normalize_diagnoses
 - regres.doctor_orchestrator.DoctorOrchestrator._parse_commit_line
 - regres.doctor_orchestrator.DoctorOrchestrator._parse_history_output
 - regres.doctor_orchestrator.DoctorOrchestrator._parse_ts_errors
 - regres.doctor_orchestrator.DoctorOrchestrator._process_imports_at_file
+- regres.doctor_orchestrator.DoctorOrchestrator._read_registry_file
 - regres.doctor_orchestrator.DoctorOrchestrator._rel_or_abs
+- regres.doctor_orchestrator.DoctorOrchestrator._render_affected_file_entry
 - regres.doctor_orchestrator.DoctorOrchestrator._render_affected_files
 - regres.doctor_orchestrator.DoctorOrchestrator._render_analyze_step
 - regres.doctor_orchestrator.DoctorOrchestrator._render_apply_step
@@ -3907,7 +4724,10 @@ entry_points:
 - regres.doctor_orchestrator.DoctorOrchestrator._render_chain_summary
 - regres.doctor_orchestrator.DoctorOrchestrator._render_decision_workflow
 - regres.doctor_orchestrator.DoctorOrchestrator._render_dependency_chain
+- regres.doctor_orchestrator.DoctorOrchestrator._render_direct_actions
 - regres.doctor_orchestrator.DoctorOrchestrator._render_generic_patch_script
+- regres.doctor_orchestrator.DoctorOrchestrator._render_git_candidate
+- regres.doctor_orchestrator.DoctorOrchestrator._render_git_candidates
 - regres.doctor_orchestrator.DoctorOrchestrator._render_ok_chain_status
 - regres.doctor_orchestrator.DoctorOrchestrator._render_patch_script
 - regres.doctor_orchestrator.DoctorOrchestrator._render_preliminary_refactor_proposals
@@ -3925,6 +4745,7 @@ entry_points:
 - regres.doctor_orchestrator.DoctorOrchestrator._resolve_relative_import
 - regres.doctor_orchestrator.DoctorOrchestrator._run_git_history_query
 - regres.doctor_orchestrator.DoctorOrchestrator._suggest_url_for_path
+- regres.doctor_orchestrator.DoctorOrchestrator._to_rel_path
 - regres.doctor_orchestrator.DoctorOrchestrator._try_extract_candidate
 - regres.doctor_orchestrator.DoctorOrchestrator._try_generate_generic_patch
 - regres.doctor_orchestrator.DoctorOrchestrator._validate_errors

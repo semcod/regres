@@ -1011,6 +1011,26 @@ def _build_argument_parser() -> argparse.ArgumentParser:
 
 def _run_seed_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set):
     """Execute SEED mode: global similarity comparison."""
+    seed_path, scope_path, min_sim = _resolve_seed_params(args, root)
+    _print_seed_header(seed_path, scope_path, min_sim)
+
+    all_defs = _scan_all_definitions(scope_path, args, gitignore_patterns, root, ext_set)
+    seed_defs = _scan_seed_definitions(scope_path, seed_path, args, gitignore_patterns, root, ext_set)
+
+    print(f"  Seed defs: {len(seed_defs)}, all defs: {len(all_defs)}", file=sys.stderr)
+
+    results = _compare_seed_similarity(seed_defs, all_defs, min_sim, args)
+
+    if not results:
+        print("Brak dopasowań spełniających kryteria.", file=sys.stderr)
+        return
+
+    _render_seed_results(results, root_str, args)
+    _print_seed_summary(results)
+
+
+def _resolve_seed_params(args, root: Path) -> tuple[Path, Path, float]:
+    """Resolve and validate seed mode parameters."""
     seed_path = Path(args.seed).resolve()
     if not seed_path.exists():
         print(f"Błąd: seed nie istnieje: {seed_path}", file=sys.stderr)
@@ -1018,20 +1038,34 @@ def _run_seed_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set)
 
     scope_path = Path(args.scope).resolve() if args.scope else root
     min_sim = args.min_sim if args.min_sim > 0 else 60.0
+    return seed_path, scope_path, min_sim
 
+
+def _print_seed_header(seed_path: Path, scope_path: Path, min_sim: float) -> None:
+    """Print SEED mode header information."""
     print(f"Tryb SEED similarity globalna", file=sys.stderr)
     print(f"  Seed:    {seed_path}", file=sys.stderr)
     print(f"  Zakres:  {scope_path}", file=sys.stderr)
     print(f"  min-sim: {min_sim}%  (z --min-sim, domyślnie 60%)", file=sys.stderr)
 
+
+def _scan_all_definitions(
+    scope_path: Path, args, gitignore_patterns, root: Path, ext_set
+) -> list:
+    """Scan for all definitions in scope."""
     full_index = scan(scope_path,
                       name_filter=args.name or None,
                       kind_filter=args.kind or None,
                       gitignore_patterns=gitignore_patterns,
                       gitignore_root=root,
                       ext_filter=ext_set)
-    all_defs = [d for defs in full_index.values() for d in defs]
+    return [d for defs in full_index.values() for d in defs]
 
+
+def _scan_seed_definitions(
+    scope_path: Path, seed_path: Path, args, gitignore_patterns, root: Path, ext_set
+) -> list:
+    """Scan for definitions within seed path."""
     seed_index = scan(scope_path,
                       name_filter=args.name or None,
                       kind_filter=args.kind or None,
@@ -1039,33 +1073,34 @@ def _run_seed_mode(args, root: Path, root_str: str, gitignore_patterns, ext_set)
                       gitignore_patterns=gitignore_patterns,
                       gitignore_root=root,
                       ext_filter=ext_set)
-    seed_defs = [d for defs in seed_index.values() for d in defs]
+    return [d for defs in seed_index.values() for d in defs]
 
-    print(f"  Seed defs: {len(seed_defs)}, all defs: {len(all_defs)}",
-          file=sys.stderr)
 
+def _compare_seed_similarity(seed_defs: list, all_defs: list, min_sim: float, args) -> list:
+    """Compare seed definitions with all definitions for similarity."""
     results = compare_seed_to_all(
         seed_defs, all_defs, min_sim,
         skip_same_name=args.seed_skip_same_name,
     )
-
     if args.top:
         results = results[:args.top]
+    return results
 
-    if not results:
-        print("Brak dopasowań spełniających kryteria.", file=sys.stderr)
-        return
 
+def _render_seed_results(results: list, root_str: str, args) -> None:
+    """Render seed comparison results in appropriate format."""
     if args.json:
         print(render_seed_json(results, root_str))
     elif args.md:
-        print(render_seed_markdown(results, root_str,
-                                   top_per_seed=args.seed_top))
+        print(render_seed_markdown(results, root_str, top_per_seed=args.seed_top))
     else:
         print(render_seed_text(results, root_str,
                                top_per_seed=args.seed_top,
                                show_body_lines=args.preview))
 
+
+def _print_seed_summary(results: list) -> None:
+    """Print SEED mode summary statistics."""
     n_total = sum(len(m) for _, m in results)
     print(f"\nPodsumowanie SEED:", file=sys.stderr)
     print(f"  Seedów z dopasowaniami: {len(results)}", file=sys.stderr)

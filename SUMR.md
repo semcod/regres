@@ -16,7 +16,7 @@ SUMD - Structured Unified Markdown Descriptor for AI-aware project refactorizati
 ## Metadata
 
 - **name**: `regres`
-- **version**: `0.1.55`
+- **version**: `0.1.56`
 - **python_requires**: `>=3.11`
 - **license**: {'text': 'Apache-2.0'}
 - **ai_model**: `openrouter/qwen/qwen3-coder-next`
@@ -36,7 +36,7 @@ SUMD (description) → DOQL/source (code) → taskfile (automation) → testql (
 
 app {
   name: regres;
-  version: 0.1.55;
+  version: 0.1.56;
 }
 
 interface[type="cli"] {
@@ -173,7 +173,12 @@ environment[name="local"] {
 class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def __init__(scan_root, config)  # CC=1
     def resolve_symlink(path)  # CC=2
-    def _discover_module_path_map()  # CC=16 ⚠
+    def _discover_module_path_map()  # CC=1
+    def _to_rel_path(path)  # CC=1
+    def _discover_monorepo_frontend_roots(discovered)  # CC=5
+    def _discover_flat_frontend_roots(discovered)  # CC=5
+    def _discover_backend_only_roots(discovered)  # CC=5
+    def _apply_fallback_entries(discovered)  # CC=4
     def _get_module_path_map()  # CC=2
     def _get_url_route_module_hints()  # CC=1
     def build_project_relation_map()  # CC=3
@@ -198,7 +203,15 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def _find_symlink_base(file_path)  # CC=5
     def probe_vite_runtime(vite_base, file_rel, timeout)  # CC=11 ⚠
     def analyze_module_loader_compliance(module_path, module_name)  # CC=10 ⚠
-    def analyze_page_registry_compliance(module_path, module_name)  # CC=15 ⚠
+    def analyze_page_registry_compliance(module_path, module_name)  # CC=4
+    def _read_registry_file(entry)  # CC=4
+    def _extract_default_page(text)  # CC=2
+    def _extract_registry_name(text)  # CC=2
+    def _extract_registry_keys(text, registry_name)  # CC=3
+    def _is_default_page_present(default_page, keys)  # CC=1
+    def _get_relative_path(entry)  # CC=2
+    def _build_registry_diagnosis(rel, default_page, registry_name, keys)  # CC=3
+    def _build_registry_nlp(rel, default_page, registry_name, keys)  # CC=4
     def analyze_page_implementations(route_path, module_path, module_name)  # CC=5
     def analyze_runtime_console(log_path)  # CC=13 ⚠
     def _extract_page_token(route_path, module_name)  # CC=10 ⚠
@@ -252,7 +265,11 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def _parse_ts_errors(log_path)  # CC=6
     def _validate_errors(file_path, errors)  # CC=4
     def _extract_missing_modules(errors)  # CC=3
-    def _diagnose_import_issue(file_path, missing_modules)  # CC=15 ⚠
+    def _diagnose_import_issue(file_path, missing_modules)  # CC=6
+    def _handle_c2004_alias_import(module, file_path, actions, commands, concrete_fixes)  # CC=2
+    def _handle_relative_import(module, file_path, actions, commands)  # CC=4
+    def _build_import_nlp_description(file_path, missing_modules, concrete_fixes)  # CC=2
+    def _determine_import_severity(missing_modules, concrete_fixes, actions)  # CC=5
     def _diagnose_duplicate(duplicate_data)  # CC=4
     def _find_main_location(locations)  # CC=4
     def _analyze_history_patterns(file_path, history_lines)  # CC=9
@@ -269,7 +286,11 @@ class DoctorOrchestrator:  # Orchestrator analizy i generator akcji.
     def _normalize_diagnoses(diagnoses)  # CC=1
     def _render_decision_workflow(report)  # CC=12 ⚠
     def _fmt_plan_value(value)  # CC=7
-    def _render_affected_files(report)  # CC=22 ⚠
+    def _render_affected_files(report)  # CC=4
+    def _render_affected_file_entry(entry, patch_index)  # CC=10 ⚠
+    def _render_direct_actions(direct)  # CC=4
+    def _render_git_candidates(git_cands, target_path, patch_index)  # CC=3
+    def _render_git_candidate(action, target_path, patch_index)  # CC=5
     def _build_candidate_patch_index(report)  # CC=11 ⚠
     def _render_dependency_chain(report)  # CC=4
     def _render_chain_header()  # CC=1
@@ -299,6 +320,76 @@ class _PatchIndexBuilder:  # Helper class to build patch index file content.
     def add_history_entry(path, problem_type, candidate, target)  # CC=1
     def add_manual_entry(path, problem_type, target)  # CC=1
     def write(out_dir)  # CC=2
+```
+
+### `regres.refactor` (`regres/refactor.py`)
+
+```python
+def iter_files(root, extensions, word_filter, case_sensitive, ext_filter)  # CC=7, fan=4
+def _is_valid_file(p, exts)  # CC=7, fan=4
+def _file_contains_word(p, word_filter, case_sensitive)  # CC=4, fan=2
+def read_text(p)  # CC=2, fan=1
+def md5_file(p)  # CC=2, fan=4
+def count_word(text, word, case_sensitive)  # CC=2, fan=3
+def line_count(text)  # CC=2, fan=1
+def similarity_ratio(a, b)  # CC=3, fan=2
+def normalize_code(text, ext)  # CC=1, fan=2
+def rel(p, root)  # CC=2, fan=2
+def name_prefix(name, depth)  # CC=2, fan=4
+def extract_imports(text)  # CC=5, fan=6
+def extract_symbols_ast(text, filepath)  # CC=10, fan=4 ⚠
+def extract_symbols_regex(text, ext)  # CC=7, fan=11
+def get_symbols(p, text)  # CC=3, fan=4
+def wrapper_score(text)  # CC=1, fan=7
+def _check_wrapper_signatures(text, score, reasons)  # CC=3, fan=2
+def _check_file_length(text, score, reasons)  # CC=4, fan=4
+def _check_import_density(text, score, reasons)  # CC=7, fan=6
+def _check_sys_manipulation(text, score, reasons)  # CC=3, fan=1
+def _check_barrel_export(text, score, reasons)  # CC=2, fan=2
+def _check_dynamic_import(text, score, reasons)  # CC=3, fan=1
+def cmd_find(args, root)  # CC=5, fan=13
+def cmd_duplicates(args, root)  # CC=10, fan=13 ⚠
+def cmd_similar(args, root)  # CC=14, fan=17 ⚠
+def _build_symbol_index(files, root, kind_filter)  # CC=5, fan=6
+def _render_cross_lang_symbols(cross_sorted, args)  # CC=6, fan=5
+def _render_duplicate_symbols(dups_sorted, args)  # CC=6, fan=5
+def _render_file_symbols(file_symbols, kind_filter, args)  # CC=10, fan=5 ⚠
+def cmd_symbols(args, root)  # CC=12, fan=9 ⚠
+def cmd_wrappers(args, root)  # CC=9, fan=11
+def cmd_dead(args, root)  # CC=14, fan=17 ⚠
+def cmd_diff(args, root)  # CC=7, fan=16
+def cmd_hotmap(args, root)  # CC=2, fan=6
+def _collect_and_normalize_files(root, word, normalize)  # CC=5, fan=8
+def _count_files_per_dir(paths_list)  # CC=2, fan=3
+def _count_similar_pairs(paths_list, texts, threshold, dir_file_count)  # CC=6, fan=6
+def _calculate_hotmap(dir_file_count, dir_pair_count)  # CC=2, fan=6
+def _render_hotmap_output(args, hotmap, paths_list, total_pairs, threshold, normalize)  # CC=4, fan=5
+def cmd_cluster(args, root)  # CC=12, fan=15 ⚠
+def _deps_filter_by_word(import_map, word)  # CC=6, fan=3
+def _deps_print_word_results(word, targets, importers)  # CC=5, fan=2
+def _deps_print_all(import_map)  # CC=4, fan=3
+def cmd_deps(args, root)  # CC=6, fan=10
+def _sanitize(value)  # CC=1, fan=1
+def _format_imports(raw_imports)  # CC=4, fan=5
+def _format_preview(raw_preview, max_len)  # CC=4, fan=3
+def _toon_meta_section(meta)  # CC=4, fan=3
+def _toon_files_section(files)  # CC=4, fan=7
+def _toon_clusters_section(clusters)  # CC=3, fan=4
+def _toon_similar_pairs_section(similar_pairs)  # CC=7, fan=6
+def _toon_llm_hint(llm_hint)  # CC=2, fan=0
+def to_json_toon(data)  # CC=1, fan=8
+def _collect_file_infos(files, root, word, args, max_preview)  # CC=6, fan=13
+def _find_md5_duplicates(texts)  # CC=4, fan=8
+def _find_name_clusters(texts, depth, top_n)  # CC=4, fan=8
+def _find_similar_pairs(texts, normalize, threshold, max_files, max_pairs)  # CC=7, fan=11
+def _find_duplicate_symbols(files, root, top_n)  # CC=5, fan=8
+def _find_cross_language_symbols(sym_index, top_n)  # CC=4, fan=6
+def _find_external_importers(files, root, word)  # CC=7, fan=6
+def _build_report(word, root, file_infos, dup_groups, top_clusters, similar_pairs, wrappers_found, dup_symbols, sym_cross, importers, threshold, normalize)  # CC=4, fan=3
+def _save_report(report, out_path, toon_format, word)  # CC=3, fan=6
+def cmd_report(args, root)  # CC=6, fan=13
+def build_parser()  # CC=1, fan=5
+def main()  # CC=2, fan=7
 ```
 
 ### `regres.regres` (`regres/regres.py`)
@@ -346,7 +437,12 @@ def analyze_evolution(repo_root, rel_path, commits, current_text, max_depth)  # 
 def _collect_tree_paths(tree)  # CC=2, fan=3
 def find_last_good_version(evolution, min_lines, min_similarity, max_results)  # CC=7, fan=2
 def llm_context_packet(report)  # CC=11, fan=1 ⚠
-def _render_classification_section(classification, lines)  # CC=15, fan=4 ⚠
+def _render_classification_section(classification, lines)  # CC=2, fan=6
+def _render_classification_header(classification, lines)  # CC=2, fan=2
+def _render_evidence(classification, lines)  # CC=3, fan=2
+def _render_import_problems(classification, lines)  # CC=5, fan=3
+def _render_current_symbols(classification, lines)  # CC=3, fan=4
+def _render_filename_history(classification, lines)  # CC=5, fan=2
 def _render_name_hash_section(nh, lines)  # CC=5, fan=4
 def _render_metrics_section(m, lines)  # CC=1, fan=1
 def _render_references_section(refs, lines)  # CC=3, fan=3
@@ -354,69 +450,17 @@ def _render_duplicates_section(d, lines)  # CC=5, fan=4
 def _render_lineage_section(lineage, lines)  # CC=2, fan=1
 def _render_evolution_section(evolution, lines)  # CC=6, fan=3
 def _render_last_good_section(last_good, lines)  # CC=3, fan=1
-def _render_regression_section(regression, lines)  # CC=12, fan=4 ⚠
+def _render_regression_section(regression, lines)  # CC=3, fan=7
+def _render_broken_imports(regression, lines)  # CC=2, fan=3
+def _render_last_working_commit(regression, lines)  # CC=2, fan=2
+def _render_first_broken_commit(regression, lines)  # CC=2, fan=2
+def _render_missing_imports_history(regression, lines)  # CC=5, fan=2
+def _render_recommendations(regression, lines)  # CC=3, fan=3
 def render_markdown(report)  # CC=1, fan=13
 def analyze_file(target_file, scan_root, max_commits, tree_depth, near_threshold)  # CC=4, fan=22
 def _resolve_output_path(path_str, cwd)  # CC=2, fan=4
 def main()  # CC=6, fan=15
 class GitCommit:
-```
-
-### `regres.refactor` (`regres/refactor.py`)
-
-```python
-def iter_files(root, extensions, word_filter, case_sensitive, ext_filter)  # CC=15, fan=7 ⚠
-def read_text(p)  # CC=2, fan=1
-def md5_file(p)  # CC=2, fan=4
-def count_word(text, word, case_sensitive)  # CC=2, fan=3
-def line_count(text)  # CC=2, fan=1
-def similarity_ratio(a, b)  # CC=3, fan=2
-def normalize_code(text, ext)  # CC=1, fan=2
-def rel(p, root)  # CC=2, fan=2
-def name_prefix(name, depth)  # CC=2, fan=4
-def extract_imports(text)  # CC=5, fan=6
-def extract_symbols_ast(text, filepath)  # CC=10, fan=4 ⚠
-def extract_symbols_regex(text, ext)  # CC=7, fan=11
-def get_symbols(p, text)  # CC=3, fan=4
-def wrapper_score(text)  # CC=15, fan=8 ⚠
-def cmd_find(args, root)  # CC=5, fan=13
-def cmd_duplicates(args, root)  # CC=10, fan=13 ⚠
-def cmd_similar(args, root)  # CC=14, fan=17 ⚠
-def _build_symbol_index(files, root, kind_filter)  # CC=5, fan=6
-def _render_cross_lang_symbols(cross_sorted, args)  # CC=6, fan=5
-def _render_duplicate_symbols(dups_sorted, args)  # CC=6, fan=5
-def _render_file_symbols(file_symbols, kind_filter, args)  # CC=10, fan=5 ⚠
-def cmd_symbols(args, root)  # CC=12, fan=9 ⚠
-def cmd_wrappers(args, root)  # CC=9, fan=11
-def cmd_dead(args, root)  # CC=14, fan=17 ⚠
-def cmd_diff(args, root)  # CC=7, fan=16
-def cmd_hotmap(args, root)  # CC=16, fan=23 ⚠
-def cmd_cluster(args, root)  # CC=12, fan=15 ⚠
-def _deps_filter_by_word(import_map, word)  # CC=6, fan=3
-def _deps_print_word_results(word, targets, importers)  # CC=5, fan=2
-def _deps_print_all(import_map)  # CC=4, fan=3
-def cmd_deps(args, root)  # CC=6, fan=10
-def _sanitize(value)  # CC=1, fan=1
-def _format_imports(raw_imports)  # CC=4, fan=5
-def _format_preview(raw_preview, max_len)  # CC=4, fan=3
-def _toon_meta_section(meta)  # CC=4, fan=3
-def _toon_files_section(files)  # CC=4, fan=7
-def _toon_clusters_section(clusters)  # CC=3, fan=4
-def _toon_similar_pairs_section(similar_pairs)  # CC=7, fan=6
-def _toon_llm_hint(llm_hint)  # CC=2, fan=0
-def to_json_toon(data)  # CC=1, fan=8
-def _collect_file_infos(files, root, word, args, max_preview)  # CC=6, fan=13
-def _find_md5_duplicates(texts)  # CC=4, fan=8
-def _find_name_clusters(texts, depth, top_n)  # CC=4, fan=8
-def _find_similar_pairs(texts, normalize, threshold, max_files, max_pairs)  # CC=7, fan=11
-def _find_duplicate_symbols(files, root, top_n)  # CC=5, fan=8
-def _find_cross_language_symbols(sym_index, top_n)  # CC=4, fan=6
-def _find_external_importers(files, root, word)  # CC=7, fan=6
-def _build_report(word, root, file_infos, dup_groups, top_clusters, similar_pairs, wrappers_found, dup_symbols, sym_cross, importers, threshold, normalize)  # CC=4, fan=3
-def _save_report(report, out_path, toon_format, word)  # CC=3, fan=6
-def cmd_report(args, root)  # CC=6, fan=13
-def build_parser()  # CC=1, fan=5
-def main()  # CC=2, fan=7
 ```
 
 ### `regres.defscan` (`regres/defscan.py`)
@@ -457,7 +501,14 @@ def render_seed_markdown(results, root, top_per_seed)  # CC=7, fan=7
 def render_seed_json(results, root)  # CC=3, fan=8
 def render_json(groups, root)  # CC=7, fan=9
 def _build_argument_parser()  # CC=1, fan=2
-def _run_seed_mode(args, root, root_str, gitignore_patterns, ext_set)  # CC=17, fan=13 ⚠
+def _run_seed_mode(args, root, root_str, gitignore_patterns, ext_set)  # CC=2, fan=9
+def _resolve_seed_params(args, root)  # CC=4, fan=5
+def _print_seed_header(seed_path, scope_path, min_sim)  # CC=1, fan=1
+def _scan_all_definitions(scope_path, args, gitignore_patterns, root, ext_set)  # CC=5, fan=2
+def _scan_seed_definitions(scope_path, seed_path, args, gitignore_patterns, root, ext_set)  # CC=5, fan=2
+def _compare_seed_similarity(seed_defs, all_defs, min_sim, args)  # CC=2, fan=1
+def _render_seed_results(results, root_str, args)  # CC=3, fan=4
+def _print_seed_summary(results)  # CC=2, fan=3
 def _build_focus_groups(focus_index, full_index, min_count)  # CC=8, fan=5
 def _analyse_and_sort_groups(groups_raw)  # CC=3, fan=5
 def _run_focus_mode(args, root, root_str, gitignore_patterns, ext_set)  # CC=11, fan=12 ⚠
@@ -477,7 +528,15 @@ class Definition:  # Pojedyncza definicja (klasa / funkcja / enum / interface / 
 def _append_url_module_not_found_diagnosis(doctor, scan_root, module_name, args_url)  # CC=3, fan=4
 def _run_page_implementation_analysis(args, doctor, scan_root, normalized_path, module_name, module_path)  # CC=2, fan=8
 def _run_module_loader_compliance_check(doctor, module_path, module_name)  # CC=2, fan=4
-def _create_import_chain_diagnoses(doctor, scan_root, chains_data, module_name)  # CC=18, fan=11 ⚠
+def _create_import_chain_diagnoses(doctor, scan_root, chains_data, module_name)  # CC=3, fan=2
+def _create_single_chain_diagnosis(entry, doctor, scan_root, module_name)  # CC=9, fan=7
+def _build_chain_nlp_description(target_rel, broken, stubs)  # CC=1, fan=1
+def _build_file_actions_for_chain(target_rel, doctor, scan_root, module_name)  # CC=4, fan=5
+def _format_history_reason(hc)  # CC=2, fan=1
+def _build_shell_commands_for_chain(broken, stubs, scan_root, doctor)  # CC=1, fan=3
+def _build_commands_for_broken(broken, scan_root, doctor)  # CC=3, fan=6
+def _build_commands_for_stubs(stubs, scan_root, doctor)  # CC=3, fan=5
+def _build_regres_command(scan_root, url_hint, path)  # CC=1, fan=1
 def _derive_vite_base(args)  # CC=6, fan=2
 def _run_vite_runtime_probe(args, doctor, scan_root, chain_targets, vite_base)  # CC=13, fan=16 ⚠
 def _create_vite_runtime_diagnoses(doctor, scan_root, vite_results, vite_base)  # CC=10, fan=7 ⚠
@@ -498,8 +557,23 @@ def _record_module_resolution_step(doctor, module_path, path_exists)  # CC=3, fa
 def _apply_fixes_if_requested(args, doctor)  # CC=5, fan=3
 def _handle_import_errors(args, doctor, scan_root, refresh_fn)  # CC=10, fan=5 ⚠
 def _handle_defscan_refactor(args, doctor)  # CC=4, fan=5
-def _handle_auto_decision_flow(args, doctor, scan_root, refresh_fn)  # CC=18, fan=21 ⚠
-def _save_report(doctor, args)  # CC=20, fan=12 ⚠
+def _handle_auto_decision_flow(args, doctor, scan_root, refresh_fn)  # CC=3, fan=8
+def _setup_analysis_context(args, doctor, scan_root)  # CC=2, fan=6
+def _run_prescans(doctor, scan_root)  # CC=1, fan=4
+def _run_import_analysis(args, doctor, scan_root, refresh_fn)  # CC=5, fan=5
+def _get_import_log_path(args, scan_root)  # CC=2, fan=1
+def _refresh_import_log(doctor, scan_root, import_log, refresh_fn)  # CC=3, fan=2
+def _run_regress_history_phase(doctor, import_diagnoses)  # CC=3, fan=5
+def _collect_affected_files(diagnoses)  # CC=4, fan=3
+def _run_additional_scans(args, doctor, scan_root)  # CC=4, fan=6
+def _save_report(doctor, args)  # CC=5, fan=8
+def _derive_output_basename(args)  # CC=3, fan=1
+def _resolve_patches_dir(args, out_dir)  # CC=3, fan=3
+def _generate_and_attach_patches(doctor, patches_dir, basename, args, report)  # CC=4, fan=2
+def _save_json_report(report, out_json_path)  # CC=1, fan=4
+def _save_markdown_report(doctor, report, out_md_path, generated_patches)  # CC=2, fan=6
+def _print_patches_info(patches, patches_dir)  # CC=6, fan=2
+def _print_report_to_stdout(doctor, report, generated_patches)  # CC=2, fan=4
 def _render_patches_section(patches)  # CC=10, fan=5 ⚠
 def _refresh_import_error_log(project_root, log_path)  # CC=5, fan=7
 def _build_parser()  # CC=1, fan=2
@@ -508,7 +582,7 @@ def main()  # CC=5, fan=13
 
 ## Call Graph
 
-*196 nodes · 260 edges · 9 modules · CC̄=1.1*
+*250 nodes · 331 edges · 10 modules · CC̄=1.0*
 
 ### Hubs (by degree)
 
@@ -519,14 +593,14 @@ def main()  # CC=5, fan=13
 | `main` *(in regres.regres_cli)* | 1 | 0 | 54 | **54** |
 | `build_parser` *(in regres.refactor)* | 1 | 1 | 49 | **50** |
 | `render_seed_text` *(in regres.defscan)* | 10 ⚠ | 1 | 42 | **43** |
-| `cmd_hotmap` *(in regres.refactor)* | 16 ⚠ | 0 | 42 | **42** |
-| `_handle_auto_decision_flow` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 41 | **42** |
-| `_create_import_chain_diagnoses` *(in regres.doctor_cli)* | 18 ⚠ | 1 | 32 | **33** |
+| `extract_go` *(in regres.defscan)* | 6 | 1 | 32 | **33** |
+| `to_toon_global_payload` *(in regres.import_error_toon_report)* | 10 ⚠ | 1 | 31 | **32** |
+| `cmd_diff` *(in regres.refactor)* | 7 | 0 | 31 | **31** |
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 196 | edges: 260 | modules: 9
-# CC̄=1.1
+# nodes: 250 | edges: 331 | modules: 10
+# CC̄=1.0
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -539,41 +613,43 @@ HUBS[20]:
     CC=1  in:1  out:49  total:50
   regres.defscan.render_seed_text
     CC=10  in:1  out:42  total:43
-  regres.refactor.cmd_hotmap
-    CC=16  in:0  out:42  total:42
-  regres.doctor_cli._handle_auto_decision_flow
-    CC=18  in:1  out:41  total:42
-  regres.doctor_cli._create_import_chain_diagnoses
-    CC=18  in:1  out:32  total:33
-  regres.defscan._run_seed_mode
-    CC=17  in:1  out:32  total:33
   regres.defscan.extract_go
     CC=6  in:1  out:32  total:33
-  regres.regres._render_classification_section
-    CC=15  in:1  out:31  total:32
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
-  regres.regres_cli._extend_if_set
-    CC=3  in:28  out:2  total:30
   regres.defscan.c
     CC=2  in:30  out:0  total:30
+  regres.regres_cli._extend_if_set
+    CC=3  in:28  out:2  total:30
   regres.regres.trace_name_and_hash_candidates
     CC=13  in:1  out:28  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
-  regres.doctor_cli._save_report
-    CC=20  in:2  out:25  total:27
   regres.regres_cli._build_doctor_argv
     CC=1  in:1  out:26  total:27
-  regres.regres._render_regression_section
-    CC=12  in:1  out:26  total:27
+  regres.refactor.cmd_similar
+    CC=14  in:0  out:26  total:26
+  regres.regres.analyze_file
+    CC=4  in:1  out:25  total:26
+  regres.doctor_cli._render_patches_section
+    CC=10  in:2  out:24  total:26
+  regres.refactor.cmd_cluster
+    CC=12  in:0  out:25  total:25
+  regres.regres.exact_and_near_duplicates
+    CC=8  in:1  out:24  total:25
+  regres.import_error_toon_report.render_markdown
+    CC=6  in:1  out:23  total:24
+  regres.regres.resolve_target_file
+    CC=13  in:1  out:23  total:24
 
 MODULES:
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
-  regres.defscan  [43 funcs]
+  project.map.toon  [1 funcs]
+    _normalize  CC=0  out:0
+  regres.defscan  [49 funcs]
     __init__  CC=3  out:2
     _advance_past_comment  CC=7  out:6
     _advance_past_string  CC=4  out:1
@@ -581,20 +657,20 @@ MODULES:
     _build_argument_parser  CC=1  out:18
     _build_focus_groups  CC=8  out:6
     _collect_class_method_ids  CC=5  out:6
+    _compare_seed_similarity  CC=2  out:1
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
-    _extract_block_ts  CC=12  out:4
-  regres.doctor_cli  [26 funcs]
+  regres.doctor_cli  [50 funcs]
     _append_url_module_not_found_diagnosis  CC=3  out:4
     _apply_fixes_if_requested  CC=5  out:6
+    _build_chain_nlp_description  CC=1  out:2
+    _build_commands_for_broken  CC=3  out:8
+    _build_commands_for_stubs  CC=3  out:5
+    _build_file_actions_for_chain  CC=4  out:6
     _build_parser  CC=1  out:23
-    _collect_dependency_chain_targets  CC=12  out:6
-    _create_import_chain_diagnoses  CC=18  out:32
-    _derive_vite_base  CC=6  out:2
-    _handle_auto_decision_flow  CC=18  out:41
-    _handle_module_resolution  CC=4  out:8
-    _handle_runtime_log_diagnostics  CC=6  out:8
-    _handle_url_mode  CC=1  out:8
+    _build_regres_command  CC=1  out:1
+    _build_shell_commands_for_chain  CC=1  out:4
+    _collect_affected_files  CC=4  out:3
   regres.doctor_config  [4 funcs]
     print_banner_to  CC=4  out:2
     _ensure_env_file  CC=4  out:10
@@ -611,18 +687,18 @@ MODULES:
     to_toon_compact_per_file  CC=7  out:15
     to_toon_global_payload  CC=10  out:31
     toon_quote  CC=1  out:3
-  regres.refactor  [48 funcs]
+  regres.refactor  [61 funcs]
     _build_symbol_index  CC=5  out:6
+    _calculate_hotmap  CC=2  out:6
+    _check_barrel_export  CC=2  out:2
+    _check_dynamic_import  CC=3  out:1
+    _check_file_length  CC=4  out:5
+    _check_import_density  CC=7  out:10
+    _check_sys_manipulation  CC=3  out:1
+    _check_wrapper_signatures  CC=3  out:2
+    _collect_and_normalize_files  CC=5  out:8
     _collect_file_infos  CC=6  out:14
-    _deps_filter_by_word  CC=6  out:7
-    _deps_print_all  CC=4  out:4
-    _deps_print_word_results  CC=5  out:7
-    _find_duplicate_symbols  CC=5  out:9
-    _find_external_importers  CC=7  out:8
-    _find_md5_duplicates  CC=4  out:8
-    _find_name_clusters  CC=4  out:10
-    _find_similar_pairs  CC=7  out:15
-  regres.regres  [48 funcs]
+  regres.regres  [58 funcs]
     _analyze_evolution  CC=12  out:4
     _analyze_import_problems  CC=7  out:9
     _check_absolute_path  CC=4  out:4
@@ -630,9 +706,9 @@ MODULES:
     _classify_import_problem  CC=4  out:4
     _dedupe_paths  CC=3  out:6
     _determine_primary_type  CC=2  out:3
-    _render_classification_section  CC=15  out:31
-    _render_duplicates_section  CC=5  out:12
-    _render_evolution_section  CC=6  out:10
+    _render_broken_imports  CC=2  out:5
+    _render_classification_header  CC=2  out:5
+    _render_classification_section  CC=2  out:6
   regres.regres_cli  [6 funcs]
     _append_if_true  CC=2  out:1
     _build_defscan_argv  CC=1  out:11
@@ -653,56 +729,56 @@ MODULES:
     check_version  CC=7  out:17
 
 EDGES:
-  regres.regres._check_relative_paths → regres.regres._dedupe_paths
-  regres.regres._search_by_name_suffix → regres.regres._dedupe_paths
-  regres.regres.resolve_target_file → regres.regres._check_absolute_path
-  regres.regres.resolve_target_file → regres.regres._check_relative_paths
-  regres.regres.resolve_target_file → regres.regres._search_by_name_suffix
-  regres.regres.content_metrics → regres.regres.sha256_of_file
-  regres.regres.check_imports_at_commit → regres.regres.extract_local_imports
-  regres.regres.check_imports_at_commit → regres.regres.file_content_at_commit
-  regres.regres.check_imports_at_commit → regres.regres.safe_read_text
-  regres.regres.find_last_working_commit → regres.regres.check_imports_at_commit
-  regres.regres.search_missing_in_history → regres.regres.run_git
-  regres.regres.analyze_regression → regres.regres.check_imports_at_commit
-  regres.regres.analyze_regression → regres.regres.find_last_working_commit
-  regres.regres.analyze_regression → regres.regres.search_missing_in_history
-  regres.regres.track_filename_history → regres.regres.run_git
-  regres.regres._classify_import_problem → regres.regres.find_current_locations
-  regres.regres._determine_primary_type → regres.regres._analyze_evolution
-  regres.regres._determine_primary_type → regres.regres._analyze_import_problems
-  regres.regres.classify_problem → regres.regres.extract_symbols
-  regres.regres.classify_problem → regres.regres._determine_primary_type
-  regres.regres.classify_problem → regres.regres._classify_import_problem
-  regres.regres.classify_problem → regres.regres.track_filename_history
-  regres.regres.dependency_tree → regres.regres.to_rel
-  regres.regres.dependency_tree → regres.regres.safe_read_text
-  regres.regres.dependency_tree → regres.regres.resolve_local_import
-  regres.regres.reverse_references → regres.regres.to_rel
-  regres.regres.reverse_references → regres.regres.safe_read_text
-  regres.regres.reverse_references → regres.regres.resolve_local_import
-  regres.regres.exact_and_near_duplicates → regres.regres.sha256_of_file
-  regres.regres.exact_and_near_duplicates → regres.regres.safe_read_text
-  regres.regres.exact_and_near_duplicates → regres.regres.to_rel
-  regres.regres.trace_name_and_hash_candidates → regres.regres.to_rel
-  regres.regres.trace_name_and_hash_candidates → regres.regres.safe_read_text
-  regres.regres.trace_name_and_hash_candidates → regres.regres.sha256_of_file
-  regres.regres.file_lineage → regres.regres.run_git
-  regres.regres.file_lineage → regres.regres.parse_numstat_block
-  regres.regres.changed_files_for_commit → regres.regres.run_git
-  regres.regres.references_in_recent_commits → regres.regres.changed_files_for_commit
-  regres.regres.file_content_at_commit → regres.regres.run_git
-  regres.regres.historical_dependency_tree → regres.regres.file_content_at_commit
-  regres.regres.historical_dependency_tree → regres.regres.resolve_import_historical
-  regres.regres.analyze_evolution → regres.regres.file_content_at_commit
-  regres.regres.analyze_evolution → regres.regres.historical_dependency_tree
-  regres.regres.render_markdown → regres.regres._render_classification_section
-  regres.regres.render_markdown → regres.regres._render_name_hash_section
-  regres.regres.render_markdown → regres.regres._render_metrics_section
-  regres.regres.render_markdown → regres.regres._render_references_section
-  regres.regres.render_markdown → regres.regres._render_duplicates_section
-  regres.regres.render_markdown → regres.regres._render_lineage_section
-  regres.regres.render_markdown → regres.regres._render_evolution_section
+  regres.doctor_config.DoctorConfig.print_banner_to → docs.DEFSCAN.print
+  regres.doctor_config.load_config → regres.doctor_config._ensure_env_file
+  regres.doctor_config.load_config → regres.doctor_config._parse_env_file
+  regres.version_check._read_env → regres.version_check._find_env_path
+  regres.version_check._write_env → regres.version_check._find_env_path
+  regres.version_check._is_newer → regres.version_check._parse_version
+  regres.version_check._should_check → regres.version_check._read_env
+  regres.version_check._save_last_check → regres.version_check._read_env
+  regres.version_check._save_last_check → regres.version_check._write_env
+  regres.version_check._save_skip_preference → regres.version_check._read_env
+  regres.version_check._save_skip_preference → regres.version_check._write_env
+  regres.version_check.check_version → regres.version_check._get_pypi_version
+  regres.version_check.check_version → regres.version_check._save_last_check
+  regres.version_check.check_version → regres.version_check._is_newer
+  regres.version_check.check_version → regres.version_check._should_check
+  regres.version_check.check_version → docs.DEFSCAN.print
+  regres.doctor_cli._create_import_chain_diagnoses → regres.doctor_cli._create_single_chain_diagnosis
+  regres.doctor_cli._create_single_chain_diagnosis → regres.doctor_cli._build_chain_nlp_description
+  regres.doctor_cli._create_single_chain_diagnosis → regres.doctor_cli._build_file_actions_for_chain
+  regres.doctor_cli._create_single_chain_diagnosis → regres.doctor_cli._build_shell_commands_for_chain
+  regres.doctor_cli._build_file_actions_for_chain → regres.doctor_cli._format_history_reason
+  regres.doctor_cli._build_shell_commands_for_chain → regres.doctor_cli._build_commands_for_broken
+  regres.doctor_cli._build_shell_commands_for_chain → regres.doctor_cli._build_commands_for_stubs
+  regres.doctor_cli._build_commands_for_broken → regres.doctor_cli._build_regres_command
+  regres.doctor_cli._build_commands_for_stubs → regres.doctor_cli._build_regres_command
+  regres.doctor_cli._run_llm_or_targeted_analysis → docs.DEFSCAN.print
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_page_implementation_analysis
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_module_loader_compliance_check
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_page_registry_compliance_check
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._collect_dependency_chain_targets
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_llm_or_targeted_analysis
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_dependency_chain_analysis
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._derive_vite_base
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._create_import_chain_diagnoses
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_vite_runtime_probe
+  regres.doctor_cli._handle_runtime_log_diagnostics → regres.doctor_cli._resolve_runtime_log_path
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._resolve_module_from_url
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._record_url_discovery_step
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._setup_url_analysis_context
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._handle_module_resolution
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._apply_fixes_if_requested
+  regres.doctor_cli._setup_url_analysis_context → regres.doctor_cli._handle_runtime_log_diagnostics
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._record_module_resolution_step
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._record_module_not_found_step
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._append_url_module_not_found_diagnosis
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._run_url_module_analysis
+  regres.doctor_cli._apply_fixes_if_requested → docs.DEFSCAN.print
+  regres.doctor_cli._handle_auto_decision_flow → regres.doctor_cli._setup_analysis_context
+  regres.doctor_cli._handle_auto_decision_flow → regres.doctor_cli._run_import_analysis
+  regres.doctor_cli._handle_auto_decision_flow → regres.doctor_cli._run_additional_scans
 ```
 
 ## Test Contracts
@@ -721,8 +797,8 @@ EDGES:
 
 ```toon markpact:analysis path=project/calls.toon.yaml
 # code2llm call graph | /home/tom/github/semcod/regres
-# nodes: 196 | edges: 260 | modules: 9
-# CC̄=1.1
+# nodes: 250 | edges: 331 | modules: 10
+# CC̄=1.0
 
 HUBS[20]:
   docs.DEFSCAN.print
@@ -735,41 +811,43 @@ HUBS[20]:
     CC=1  in:1  out:49  total:50
   regres.defscan.render_seed_text
     CC=10  in:1  out:42  total:43
-  regres.refactor.cmd_hotmap
-    CC=16  in:0  out:42  total:42
-  regres.doctor_cli._handle_auto_decision_flow
-    CC=18  in:1  out:41  total:42
-  regres.doctor_cli._create_import_chain_diagnoses
-    CC=18  in:1  out:32  total:33
-  regres.defscan._run_seed_mode
-    CC=17  in:1  out:32  total:33
   regres.defscan.extract_go
     CC=6  in:1  out:32  total:33
-  regres.regres._render_classification_section
-    CC=15  in:1  out:31  total:32
   regres.import_error_toon_report.to_toon_global_payload
     CC=10  in:1  out:31  total:32
   regres.refactor.cmd_diff
     CC=7  in:0  out:31  total:31
-  regres.regres_cli._extend_if_set
-    CC=3  in:28  out:2  total:30
   regres.defscan.c
     CC=2  in:30  out:0  total:30
+  regres.regres_cli._extend_if_set
+    CC=3  in:28  out:2  total:30
   regres.regres.trace_name_and_hash_candidates
     CC=13  in:1  out:28  total:29
   regres.refactor.cmd_dead
     CC=14  in:0  out:28  total:28
-  regres.doctor_cli._save_report
-    CC=20  in:2  out:25  total:27
   regres.regres_cli._build_doctor_argv
     CC=1  in:1  out:26  total:27
-  regres.regres._render_regression_section
-    CC=12  in:1  out:26  total:27
+  regres.refactor.cmd_similar
+    CC=14  in:0  out:26  total:26
+  regres.regres.analyze_file
+    CC=4  in:1  out:25  total:26
+  regres.doctor_cli._render_patches_section
+    CC=10  in:2  out:24  total:26
+  regres.refactor.cmd_cluster
+    CC=12  in:0  out:25  total:25
+  regres.regres.exact_and_near_duplicates
+    CC=8  in:1  out:24  total:25
+  regres.import_error_toon_report.render_markdown
+    CC=6  in:1  out:23  total:24
+  regres.regres.resolve_target_file
+    CC=13  in:1  out:23  total:24
 
 MODULES:
   docs.DEFSCAN  [1 funcs]
     print  CC=0  out:0
-  regres.defscan  [43 funcs]
+  project.map.toon  [1 funcs]
+    _normalize  CC=0  out:0
+  regres.defscan  [49 funcs]
     __init__  CC=3  out:2
     _advance_past_comment  CC=7  out:6
     _advance_past_string  CC=4  out:1
@@ -777,20 +855,20 @@ MODULES:
     _build_argument_parser  CC=1  out:18
     _build_focus_groups  CC=8  out:6
     _collect_class_method_ids  CC=5  out:6
+    _compare_seed_similarity  CC=2  out:1
     _count_similarity_levels  CC=5  out:0
     _def_key  CC=1  out:0
-    _extract_block_ts  CC=12  out:4
-  regres.doctor_cli  [26 funcs]
+  regres.doctor_cli  [50 funcs]
     _append_url_module_not_found_diagnosis  CC=3  out:4
     _apply_fixes_if_requested  CC=5  out:6
+    _build_chain_nlp_description  CC=1  out:2
+    _build_commands_for_broken  CC=3  out:8
+    _build_commands_for_stubs  CC=3  out:5
+    _build_file_actions_for_chain  CC=4  out:6
     _build_parser  CC=1  out:23
-    _collect_dependency_chain_targets  CC=12  out:6
-    _create_import_chain_diagnoses  CC=18  out:32
-    _derive_vite_base  CC=6  out:2
-    _handle_auto_decision_flow  CC=18  out:41
-    _handle_module_resolution  CC=4  out:8
-    _handle_runtime_log_diagnostics  CC=6  out:8
-    _handle_url_mode  CC=1  out:8
+    _build_regres_command  CC=1  out:1
+    _build_shell_commands_for_chain  CC=1  out:4
+    _collect_affected_files  CC=4  out:3
   regres.doctor_config  [4 funcs]
     print_banner_to  CC=4  out:2
     _ensure_env_file  CC=4  out:10
@@ -807,18 +885,18 @@ MODULES:
     to_toon_compact_per_file  CC=7  out:15
     to_toon_global_payload  CC=10  out:31
     toon_quote  CC=1  out:3
-  regres.refactor  [48 funcs]
+  regres.refactor  [61 funcs]
     _build_symbol_index  CC=5  out:6
+    _calculate_hotmap  CC=2  out:6
+    _check_barrel_export  CC=2  out:2
+    _check_dynamic_import  CC=3  out:1
+    _check_file_length  CC=4  out:5
+    _check_import_density  CC=7  out:10
+    _check_sys_manipulation  CC=3  out:1
+    _check_wrapper_signatures  CC=3  out:2
+    _collect_and_normalize_files  CC=5  out:8
     _collect_file_infos  CC=6  out:14
-    _deps_filter_by_word  CC=6  out:7
-    _deps_print_all  CC=4  out:4
-    _deps_print_word_results  CC=5  out:7
-    _find_duplicate_symbols  CC=5  out:9
-    _find_external_importers  CC=7  out:8
-    _find_md5_duplicates  CC=4  out:8
-    _find_name_clusters  CC=4  out:10
-    _find_similar_pairs  CC=7  out:15
-  regres.regres  [48 funcs]
+  regres.regres  [58 funcs]
     _analyze_evolution  CC=12  out:4
     _analyze_import_problems  CC=7  out:9
     _check_absolute_path  CC=4  out:4
@@ -826,9 +904,9 @@ MODULES:
     _classify_import_problem  CC=4  out:4
     _dedupe_paths  CC=3  out:6
     _determine_primary_type  CC=2  out:3
-    _render_classification_section  CC=15  out:31
-    _render_duplicates_section  CC=5  out:12
-    _render_evolution_section  CC=6  out:10
+    _render_broken_imports  CC=2  out:5
+    _render_classification_header  CC=2  out:5
+    _render_classification_section  CC=2  out:6
   regres.regres_cli  [6 funcs]
     _append_if_true  CC=2  out:1
     _build_defscan_argv  CC=1  out:11
@@ -849,104 +927,91 @@ MODULES:
     check_version  CC=7  out:17
 
 EDGES:
-  regres.regres._check_relative_paths → regres.regres._dedupe_paths
-  regres.regres._search_by_name_suffix → regres.regres._dedupe_paths
-  regres.regres.resolve_target_file → regres.regres._check_absolute_path
-  regres.regres.resolve_target_file → regres.regres._check_relative_paths
-  regres.regres.resolve_target_file → regres.regres._search_by_name_suffix
-  regres.regres.content_metrics → regres.regres.sha256_of_file
-  regres.regres.check_imports_at_commit → regres.regres.extract_local_imports
-  regres.regres.check_imports_at_commit → regres.regres.file_content_at_commit
-  regres.regres.check_imports_at_commit → regres.regres.safe_read_text
-  regres.regres.find_last_working_commit → regres.regres.check_imports_at_commit
-  regres.regres.search_missing_in_history → regres.regres.run_git
-  regres.regres.analyze_regression → regres.regres.check_imports_at_commit
-  regres.regres.analyze_regression → regres.regres.find_last_working_commit
-  regres.regres.analyze_regression → regres.regres.search_missing_in_history
-  regres.regres.track_filename_history → regres.regres.run_git
-  regres.regres._classify_import_problem → regres.regres.find_current_locations
-  regres.regres._determine_primary_type → regres.regres._analyze_evolution
-  regres.regres._determine_primary_type → regres.regres._analyze_import_problems
-  regres.regres.classify_problem → regres.regres.extract_symbols
-  regres.regres.classify_problem → regres.regres._determine_primary_type
-  regres.regres.classify_problem → regres.regres._classify_import_problem
-  regres.regres.classify_problem → regres.regres.track_filename_history
-  regres.regres.dependency_tree → regres.regres.to_rel
-  regres.regres.dependency_tree → regres.regres.safe_read_text
-  regres.regres.dependency_tree → regres.regres.resolve_local_import
-  regres.regres.reverse_references → regres.regres.to_rel
-  regres.regres.reverse_references → regres.regres.safe_read_text
-  regres.regres.reverse_references → regres.regres.resolve_local_import
-  regres.regres.exact_and_near_duplicates → regres.regres.sha256_of_file
-  regres.regres.exact_and_near_duplicates → regres.regres.safe_read_text
-  regres.regres.exact_and_near_duplicates → regres.regres.to_rel
-  regres.regres.trace_name_and_hash_candidates → regres.regres.to_rel
-  regres.regres.trace_name_and_hash_candidates → regres.regres.safe_read_text
-  regres.regres.trace_name_and_hash_candidates → regres.regres.sha256_of_file
-  regres.regres.file_lineage → regres.regres.run_git
-  regres.regres.file_lineage → regres.regres.parse_numstat_block
-  regres.regres.changed_files_for_commit → regres.regres.run_git
-  regres.regres.references_in_recent_commits → regres.regres.changed_files_for_commit
-  regres.regres.file_content_at_commit → regres.regres.run_git
-  regres.regres.historical_dependency_tree → regres.regres.file_content_at_commit
-  regres.regres.historical_dependency_tree → regres.regres.resolve_import_historical
-  regres.regres.analyze_evolution → regres.regres.file_content_at_commit
-  regres.regres.analyze_evolution → regres.regres.historical_dependency_tree
-  regres.regres.render_markdown → regres.regres._render_classification_section
-  regres.regres.render_markdown → regres.regres._render_name_hash_section
-  regres.regres.render_markdown → regres.regres._render_metrics_section
-  regres.regres.render_markdown → regres.regres._render_references_section
-  regres.regres.render_markdown → regres.regres._render_duplicates_section
-  regres.regres.render_markdown → regres.regres._render_lineage_section
-  regres.regres.render_markdown → regres.regres._render_evolution_section
+  regres.doctor_config.DoctorConfig.print_banner_to → docs.DEFSCAN.print
+  regres.doctor_config.load_config → regres.doctor_config._ensure_env_file
+  regres.doctor_config.load_config → regres.doctor_config._parse_env_file
+  regres.version_check._read_env → regres.version_check._find_env_path
+  regres.version_check._write_env → regres.version_check._find_env_path
+  regres.version_check._is_newer → regres.version_check._parse_version
+  regres.version_check._should_check → regres.version_check._read_env
+  regres.version_check._save_last_check → regres.version_check._read_env
+  regres.version_check._save_last_check → regres.version_check._write_env
+  regres.version_check._save_skip_preference → regres.version_check._read_env
+  regres.version_check._save_skip_preference → regres.version_check._write_env
+  regres.version_check.check_version → regres.version_check._get_pypi_version
+  regres.version_check.check_version → regres.version_check._save_last_check
+  regres.version_check.check_version → regres.version_check._is_newer
+  regres.version_check.check_version → regres.version_check._should_check
+  regres.version_check.check_version → docs.DEFSCAN.print
+  regres.doctor_cli._create_import_chain_diagnoses → regres.doctor_cli._create_single_chain_diagnosis
+  regres.doctor_cli._create_single_chain_diagnosis → regres.doctor_cli._build_chain_nlp_description
+  regres.doctor_cli._create_single_chain_diagnosis → regres.doctor_cli._build_file_actions_for_chain
+  regres.doctor_cli._create_single_chain_diagnosis → regres.doctor_cli._build_shell_commands_for_chain
+  regres.doctor_cli._build_file_actions_for_chain → regres.doctor_cli._format_history_reason
+  regres.doctor_cli._build_shell_commands_for_chain → regres.doctor_cli._build_commands_for_broken
+  regres.doctor_cli._build_shell_commands_for_chain → regres.doctor_cli._build_commands_for_stubs
+  regres.doctor_cli._build_commands_for_broken → regres.doctor_cli._build_regres_command
+  regres.doctor_cli._build_commands_for_stubs → regres.doctor_cli._build_regres_command
+  regres.doctor_cli._run_llm_or_targeted_analysis → docs.DEFSCAN.print
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_page_implementation_analysis
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_module_loader_compliance_check
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_page_registry_compliance_check
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._collect_dependency_chain_targets
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_llm_or_targeted_analysis
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_dependency_chain_analysis
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._derive_vite_base
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._create_import_chain_diagnoses
+  regres.doctor_cli._run_url_module_analysis → regres.doctor_cli._run_vite_runtime_probe
+  regres.doctor_cli._handle_runtime_log_diagnostics → regres.doctor_cli._resolve_runtime_log_path
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._resolve_module_from_url
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._record_url_discovery_step
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._setup_url_analysis_context
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._handle_module_resolution
+  regres.doctor_cli._handle_url_mode → regres.doctor_cli._apply_fixes_if_requested
+  regres.doctor_cli._setup_url_analysis_context → regres.doctor_cli._handle_runtime_log_diagnostics
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._record_module_resolution_step
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._record_module_not_found_step
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._append_url_module_not_found_diagnosis
+  regres.doctor_cli._handle_module_resolution → regres.doctor_cli._run_url_module_analysis
+  regres.doctor_cli._apply_fixes_if_requested → docs.DEFSCAN.print
+  regres.doctor_cli._handle_auto_decision_flow → regres.doctor_cli._setup_analysis_context
+  regres.doctor_cli._handle_auto_decision_flow → regres.doctor_cli._run_import_analysis
+  regres.doctor_cli._handle_auto_decision_flow → regres.doctor_cli._run_additional_scans
 ```
 
 ### Code Analysis (`project/analysis.toon.yaml`)
 
 ```toon markpact:analysis path=project/analysis.toon.yaml
-# code2llm | 44f 22561L | md:17,python:13,yaml:9,shell:2,toml:1,txt:1 | 2026-05-01
-# CC̄=1.1 | critical:12/1805 | dups:0 | cycles:0
+# code2llm | 44f 23686L | md:17,python:13,yaml:9,shell:2,toml:1,txt:1 | 2026-05-01
+# CC̄=1.0 | critical:0/2033 | dups:0 | cycles:0
 
-HEALTH[14]:
-  🔴 GOD   SUMR.md = 1108L, 4 classes, 284m, max CC=0.0
-  🔴 GOD   SUMD.md = 1415L, 4 classes, 644m, max CC=0.0
-  🟡 CC    _render_classification_section CC=15 (limit:15)
-  🟡 CC    iter_files CC=15 (limit:15)
-  🟡 CC    wrapper_score CC=15 (limit:15)
-  🟡 CC    cmd_hotmap CC=16 (limit:15)
-  🟡 CC    _run_seed_mode CC=17 (limit:15)
-  🟡 CC    _create_import_chain_diagnoses CC=18 (limit:15)
-  🟡 CC    _handle_auto_decision_flow CC=18 (limit:15)
-  🟡 CC    _save_report CC=20 (limit:15)
-  🟡 CC    _discover_module_path_map CC=16 (limit:15)
-  🟡 CC    analyze_page_registry_compliance CC=15 (limit:15)
-  🟡 CC    _diagnose_import_issue CC=15 (limit:15)
-  🟡 CC    _render_affected_files CC=22 (limit:15)
+HEALTH[2]:
+  🔴 GOD   SUMR.md = 1140L, 4 classes, 346m, max CC=0.0
+  🔴 GOD   SUMD.md = 1507L, 4 classes, 706m, max CC=0.0
 
-REFACTOR[3]:
+REFACTOR[2]:
   1. split SUMR.md  (god module)
   2. split SUMD.md  (god module)
-  3. split 12 high-CC methods  (CC>15)
 
-PIPELINES[141]:
-  [1] Src [_resolve_single_or_error]: _resolve_single_or_error
+PIPELINES[161]:
+  [1] Src [print_banner_to]: print_banner_to → print
       PURITY: 100% pure
-  [2] Src [main]: main → find_repo_root
+  [2] Src [_handle_import_errors]: _handle_import_errors
       PURITY: 100% pure
-  [3] Src [print_banner_to]: print_banner_to → print
+  [3] Src [_handle_defscan_refactor]: _handle_defscan_refactor
       PURITY: 100% pure
-  [4] Src [cmd_find]: cmd_find → iter_files
+  [4] Src [_refresh_import_error_log]: _refresh_import_error_log → print
       PURITY: 100% pure
-  [5] Src [cmd_duplicates]: cmd_duplicates → iter_files
+  [5] Src [main]: main → check_version → _get_pypi_version
       PURITY: 100% pure
 
 LAYERS:
-  regres/                         CC̄=5.6    ←in:0  →out:132  !! split
-  │ !! doctor_orchestrator       3470L  2C  127m  CC=22     ←0
-  │ !! regres                    1495L  1C   55m  CC=15     ←1
-  │ !! defscan                   1261L  1C   45m  CC=17     ←2
-  │ !! refactor                  1237L  0C   52m  CC=16     ←2
-  │ !! doctor_cli                1197L  0C   30m  CC=20     ←0
+  regres/                         CC̄=4.8    ←in:0  →out:133  !! split
+  │ !! doctor_orchestrator       3586L  2C  148m  CC=14     ←0
+  │ !! regres                    1545L  1C   65m  CC=13     ←1
+  │ !! doctor_cli                1365L  0C   53m  CC=13     ←0
+  │ !! refactor                  1323L  0C   65m  CC=14     ←2
+  │ !! defscan                   1296L  1C   52m  CC=14     ←2
   │ import_error_toon_report   372L  2C   13m  CC=10     ←0
   │ doctor_config              269L  1C    5m  CC=14     ←1
   │ regres_cli                 211L  0C    9m  CC=7      ←0
@@ -963,10 +1028,22 @@ LAYERS:
   │ REFACTOR.md                 87L  0C    0m  CC=0.0    ←0
   │ import-error-toon-report.md    76L  0C    0m  CC=0.0    ←0
   │
+  project/                        CC̄=0.0    ←in:0  →out:0
+  │ !! calls.yaml                4397L  0C    0m  CC=0.0    ←0
+  │ !! map.toon.yaml              658L  0C  558m  CC=0.0    ←1
+  │ !! context.md                 531L  0C    0m  CC=0.0    ←0
+  │ README.md                  339L  0C    0m  CC=0.0    ←0
+  │ calls.toon.yaml            179L  0C    0m  CC=0.0    ←0
+  │ analysis.toon.yaml         104L  0C    0m  CC=0.0    ←0
+  │ evolution.toon.yaml         62L  0C    0m  CC=0.0    ←0
+  │ project.toon.yaml           52L  0C    0m  CC=0.0    ←0
+  │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
+  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
+  │
   ./                              CC̄=0.0    ←in:0  →out:0
-  │ !! SUMD.md                   1415L  4C  644m  CC=0.0    ←0
-  │ !! SUMR.md                   1108L  4C  284m  CC=0.0    ←0
-  │ !! CHANGELOG.md               596L  0C    0m  CC=0.0    ←0
+  │ !! SUMD.md                   1507L  4C  706m  CC=0.0    ←0
+  │ !! SUMR.md                   1140L  4C  346m  CC=0.0    ←0
+  │ !! CHANGELOG.md               622L  0C    0m  CC=0.0    ←0
   │ !! goal.yaml                  512L  0C    0m  CC=0.0    ←0
   │ README.md                  133L  0C    0m  CC=0.0    ←0
   │ pyproject.toml              54L  0C    0m  CC=0.0    ←0
@@ -974,18 +1051,6 @@ LAYERS:
   │ TODO.md                     35L  0C    0m  CC=0.0    ←0
   │ tree.sh                      1L  0C    0m  CC=0.0    ←0
   │ Makefile                     0L  0C    0m  CC=0.0    ←0
-  │
-  project/                        CC̄=0.0    ←in:0  →out:0
-  │ !! calls.yaml                3872L  0C    0m  CC=0.0    ←0
-  │ !! map.toon.yaml              628L  0C  528m  CC=0.0    ←0
-  │ !! context.md                 536L  0C    0m  CC=0.0    ←0
-  │ README.md                  339L  0C    0m  CC=0.0    ←0
-  │ calls.toon.yaml            179L  0C    0m  CC=0.0    ←0
-  │ analysis.toon.yaml         114L  0C    0m  CC=0.0    ←0
-  │ evolution.toon.yaml         82L  0C    0m  CC=0.0    ←0
-  │ project.toon.yaml           52L  0C    0m  CC=0.0    ←0
-  │ prompt.txt                  47L  0C    0m  CC=0.0    ←0
-  │ duplication.toon.yaml        9L  0C    0m  CC=0.0    ←0
   │
   .regres/                        CC̄=0.0    ←in:0  →out:0
   │ !! import-error-toon-report.md   549L  0C    0m  CC=0.0    ←0
@@ -1005,12 +1070,13 @@ LAYERS:
      Makefile                                  0L
 
 COUPLING:
-            docs  regres
-    docs      ──    ←132  hub
-  regres     132      ──  !! fan-out
+                    regres         docs  project.map
+       regres           ──          132            1  !! fan-out
+         docs         ←132           ──               hub
+  project.map           ←1                        ──
   CYCLES: none
   HUB: docs/ (fan-in=132)
-  SMELL: regres/ fan-out=132 → split needed
+  SMELL: regres/ fan-out=133 → split needed
 
 EXTERNAL:
   validation: run `vallm batch .` → validation.toon
@@ -1020,74 +1086,70 @@ EXTERNAL:
 ### Duplication (`project/duplication.toon.yaml`)
 
 ```toon markpact:analysis path=project/duplication.toon.yaml
-# redup/duplication | 0 groups | 13f 9770L | 2026-05-01
+# redup/duplication | 1 groups | 13f 10225L | 2026-05-01
 
 SUMMARY:
   files_scanned: 13
-  total_lines:   9770
-  dup_groups:    0
-  dup_fragments: 0
-  saved_lines:   0
-  scan_ms:       3928
+  total_lines:   10225
+  dup_groups:    1
+  dup_fragments: 2
+  saved_lines:   6
+  scan_ms:       2500
+
+HOTSPOTS[1] (files with most duplication):
+  regres/refactor.py  dup=12L  groups=1  frags=2  (0.1%)
+
+DUPLICATES[1] (ranked by impact):
+  [5e5c4380c75d33c1]   STRU  _check_sys_manipulation  L=6 N=2 saved=6 sim=1.00
+      regres/refactor.py:360-365  (_check_sys_manipulation)
+      regres/refactor.py:376-381  (_check_dynamic_import)
+
+REFACTOR[1] (ranked by priority):
+  [1] ○ extract_function   → regres/utils/_check_sys_manipulation.py
+      WHY: 2 occurrences of 6-line block across 1 files — saves 6 lines
+      FILES: regres/refactor.py
+
+QUICK_WINS[1] (low risk, high savings — do first):
+  [1] extract_function   saved=6L  → regres/utils/_check_sys_manipulation.py
+      FILES: refactor.py
+
+EFFORT_ESTIMATE (total ≈ 0.2h):
+  easy   _check_sys_manipulation             saved=6L  ~12min
+
+METRICS-TARGET:
+  dup_groups:  1 → 0
+  saved_lines: 6 lines recoverable
 ```
 
 ### Evolution / Churn (`project/evolution.toon.yaml`)
 
 ```toon markpact:analysis path=project/evolution.toon.yaml
-# code2llm/evolution | 1805 func | 15f | 2026-05-01
+# code2llm/evolution | 2033 func | 15f | 2026-05-01
 
-NEXT[10] (ranked by impact):
+NEXT[3] (ranked by impact):
   [1] !! SPLIT           regres/doctor_orchestrator.py
-      WHY: 3470L, 2 classes, max CC=22
-      EFFORT: ~4h  IMPACT: 76340
+      WHY: 3586L, 2 classes, max CC=14
+      EFFORT: ~4h  IMPACT: 50204
 
   [2] !! SPLIT           regres/regres.py
-      WHY: 1495L, 1 classes, max CC=15
-      EFFORT: ~4h  IMPACT: 22425
+      WHY: 1545L, 1 classes, max CC=13
+      EFFORT: ~4h  IMPACT: 20085
 
-  [3] !! SPLIT           regres/defscan.py
-      WHY: 1261L, 1 classes, max CC=17
-      EFFORT: ~4h  IMPACT: 21437
-
-  [4] !  SPLIT-FUNC      cmd_hotmap  CC=16  fan=24
-      WHY: CC=16 exceeds 15
-      EFFORT: ~1h  IMPACT: 384
-
-  [5] !  SPLIT-FUNC      _handle_auto_decision_flow  CC=18  fan=21
-      WHY: CC=18 exceeds 15
-      EFFORT: ~1h  IMPACT: 378
-
-  [6] !  SPLIT-FUNC      DoctorOrchestrator.analyze_page_registry_compliance  CC=15  fan=19
-      WHY: CC=15 exceeds 15
-      EFFORT: ~1h  IMPACT: 285
-
-  [7] !  SPLIT-FUNC      _create_import_chain_diagnoses  CC=18  fan=15
-      WHY: CC=18 exceeds 15
-      EFFORT: ~1h  IMPACT: 270
-
-  [8] !  SPLIT-FUNC      _save_report  CC=20  fan=13
-      WHY: CC=20 exceeds 15
-      EFFORT: ~1h  IMPACT: 260
-
-  [9] !  SPLIT-FUNC      _run_seed_mode  CC=17  fan=14
-      WHY: CC=17 exceeds 15
-      EFFORT: ~1h  IMPACT: 238
-
-  [10] !  SPLIT-FUNC      DoctorOrchestrator._render_affected_files  CC=22  fan=10
-      WHY: CC=22 exceeds 15
-      EFFORT: ~1h  IMPACT: 220
+  [3] !! SPLIT           regres/doctor_cli.py
+      WHY: 1365L, 0 classes, max CC=13
+      EFFORT: ~4h  IMPACT: 17745
 
 
 RISKS[3]:
-  ⚠ Splitting regres/doctor_orchestrator.py may break 127 import paths
-  ⚠ Splitting regres/regres.py may break 55 import paths
-  ⚠ Splitting regres/defscan.py may break 45 import paths
+  ⚠ Splitting regres/doctor_orchestrator.py may break 148 import paths
+  ⚠ Splitting regres/regres.py may break 65 import paths
+  ⚠ Splitting regres/doctor_cli.py may break 53 import paths
 
 METRICS-TARGET:
-  CC̄:          1.1 → ≤0.8
-  max-CC:      22 → ≤11
+  CC̄:          1.0 → ≤0.7
+  max-CC:      14 → ≤7
   god-modules: 5 → 0
-  high-CC(≥15): 12 → ≤6
+  high-CC(≥15): 0 → ≤0
   hub-types:   0 → ≤0
 
 PATTERNS (language parser shared logic):
@@ -1115,7 +1177,7 @@ PATTERNS (language parser shared logic):
     - Standardized FunctionInfo/ClassInfo models
 
 HISTORY:
-  prev CC̄=1.1 → now CC̄=1.1
+  prev CC̄=1.0 → now CC̄=1.0
 ```
 
 ## Intent

@@ -4,41 +4,41 @@ flowchart TD
     classDef entry fill:#4dabf7,stroke:#1971c2,color:#fff
 
     subgraph CLI
-        regres__regres_cli__main["main"]
-        regres__regres_cli___build_regres_argv["_build_regres_argv"]
-        regres__regres_cli___build_refactor_argv["_build_refactor_argv"]
-        regres__regres_cli___build_defscan_argv["_build_defscan_argv"]
-        regres__regres_cli___build_doctor_argv["_build_doctor_argv"]
-        regres__regres_cli___build_ier_argv["_build_ier_argv"]
-        regres__regres_cli___extend_if_set["_extend_if_set"]
-        regres__regres_cli___append_if_true["_append_if_true"]
-        regres__regres_cli___dispatch_command["_dispatch_command"]
         regres__doctor_cli___append_url_module_not_found_diagnosis["_append_url_module_not_found_d"]
         regres__doctor_cli___run_page_implementation_analysis["_run_page_implementation_analy"]
         regres__doctor_cli___run_module_loader_compliance_check["_run_module_loader_compliance_"]
         regres__doctor_cli___create_import_chain_diagnoses["_create_import_chain_diagnoses"]
+        regres__doctor_cli___create_single_chain_diagnosis["_create_single_chain_diagnosis"]
+        regres__doctor_cli___build_chain_nlp_description["_build_chain_nlp_description"]
+        regres__doctor_cli___build_file_actions_for_chain["_build_file_actions_for_chain"]
+        regres__doctor_cli___format_history_reason["_format_history_reason"]
+        regres__doctor_cli___build_shell_commands_for_chain["_build_shell_commands_for_chai"]
+        regres__doctor_cli___build_commands_for_broken["_build_commands_for_broken"]
+        regres__doctor_cli___build_commands_for_stubs["_build_commands_for_stubs"]
+        regres__doctor_cli___build_regres_command["_build_regres_command"]
         regres__doctor_cli___derive_vite_base["_derive_vite_base"]
         regres__doctor_cli___run_vite_runtime_probe["_run_vite_runtime_probe"]
-        ...["+24 more"]
+        regres__doctor_cli___create_vite_runtime_diagnoses["_create_vite_runtime_diagnoses"]
+        ...["+47 more"]
     end
 
     subgraph Core
         docs__DOCTOR__analyze_custom_metric["analyze_custom_metric"]
-        regres__regres__run_git["run_git"]
-        regres__regres___resolve_single_or_error["_resolve_single_or_error"]
-        regres__regres__resolve_import_at_commit["resolve_import_at_commit"]
-        regres__regres__check_imports_at_commit("check_imports_at_commit CC=8")
-        regres__regres__find_last_working_commit("find_last_working_commit CC=8")
-        regres__regres__analyze_regression("analyze_regression CC=11")
-        regres__regres__file_content_at_commit["file_content_at_commit"]
-        regres__regres___render_classification_section{{_render_classification_section CC=15}}
-        regres__regres__analyze_file["analyze_file"]
-        regres__regres__main["main"]
         regres__doctor_config__DoctorConfig__banner_lines["banner_lines"]
         regres__doctor_config__DoctorConfig__print_banner_to["print_banner_to"]
-        regres__refactor__iter_files{{iter_files CC=15}}
-        regres__refactor__wrapper_score{{wrapper_score CC=15}}
-        ...["+1584 more"]
+        regres__import_error_toon_report__main["main"]
+        regres__doctor_orchestrator__DoctorOrchestrator__resolve_symlink["resolve_symlink"]
+        regres__doctor_orchestrator__DoctorOrchestrator___discover_module_path_map["_discover_module_path_map"]
+        regres__doctor_orchestrator__DoctorOrchestrator___to_rel_path["_to_rel_path"]
+        regres__doctor_orchestrator__DoctorOrchestrator___discover_monorepo_frontend_roots["_discover_monorepo_frontend_ro"]
+        regres__doctor_orchestrator__DoctorOrchestrator___discover_flat_frontend_roots["_discover_flat_frontend_roots"]
+        regres__doctor_orchestrator__DoctorOrchestrator___discover_backend_only_roots["_discover_backend_only_roots"]
+        regres__doctor_orchestrator__DoctorOrchestrator___apply_fallback_entries["_apply_fallback_entries"]
+        regres__doctor_orchestrator__DoctorOrchestrator___get_module_path_map["_get_module_path_map"]
+        regres__doctor_orchestrator__DoctorOrchestrator___get_url_route_module_hints["_get_url_route_module_hints"]
+        regres__doctor_orchestrator__DoctorOrchestrator__build_project_relation_map["build_project_relation_map"]
+        regres__doctor_orchestrator__DoctorOrchestrator___init_relation_structure["_init_relation_structure"]
+        ...["+1748 more"]
     end
 
     subgraph Exporters
@@ -56,4 +56,4 @@ flowchart TD
         SUMD__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
     end
 
-    class docs__DOCTOR__analyze_custom_metric,regres__regres___resolve_single_or_error,regres__regres__main,regres__doctor_config__DoctorConfig__banner_lines,regres__doctor_config__DoctorConfig__print_banner_to,regres__refactor__cmd_find,regres__refactor__cmd_duplicates,regres__refactor__cmd_similar,regres__refactor__cmd_symbols,regres__refactor__cmd_wrappers entry
+    class docs__DOCTOR__analyze_custom_metric,regres__doctor_config__DoctorConfig__banner_lines,regres__doctor_config__DoctorConfig__print_banner_to,regres__doctor_cli___append_url_module_not_found_diagnosis,regres__doctor_cli___run_page_implementation_analysis,regres__doctor_cli___run_module_loader_compliance_check,regres__doctor_cli___create_import_chain_diagnoses,regres__doctor_cli___create_single_chain_diagnosis,regres__doctor_cli___build_chain_nlp_description,regres__doctor_cli___build_file_actions_for_chain entry

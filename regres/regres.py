@@ -1096,50 +1096,75 @@ def _render_classification_section(classification: dict, lines: list):
     """Render the classification section of the report."""
     if not classification:
         return
-    
+
+    _render_classification_header(classification, lines)
+    _render_evidence(classification, lines)
+    _render_import_problems(classification, lines)
+    _render_current_symbols(classification, lines)
+    _render_filename_history(classification, lines)
+    lines.append("")
+
+
+def _render_classification_header(classification: dict, lines: list) -> None:
+    """Render the classification header with type and description."""
     ptype = classification.get("primary_type", "HEALTHY")
     pdesc = classification.get("primary_type_description", "")
     conf = classification.get("confidence", 0)
     lines.append(f"## Klasyfikacja problemu: **{ptype}** (confidence={conf})")
     if pdesc:
         lines.append(f"> {pdesc}")
-    
+
+
+def _render_evidence(classification: dict, lines: list) -> None:
+    """Render the evidence list."""
     ev = classification.get("evidence", [])
-    if ev:
-        lines.append("")
-        lines.append("**Dowody:**")
-        for e in ev:
-            lines.append(f"- {e}")
-
-    ips = classification.get("import_problems", [])
-    if ips:
-        lines.append("")
-        lines.append("### Klasyfikacja per-import")
-        lines.append("")
-        lines.append("| import | typ | obecne lokalizacje | rekomendacja |")
-        lines.append("|---|---|---|---|")
-        for ip in ips[:30]:
-            locs = ", ".join(f"`{l}`" for l in ip.get("current_locations", [])[:3]) or "—"
-            lines.append(
-                f"| `{ip['import']}` | **{ip['type']}** | {locs} | {ip['recommendation']} |"
-            )
-
-    symbols = classification.get("current_symbols", [])
-    if symbols:
-        lines.append("")
-        lines.append(f"**Eksportowane symbole ({len(symbols)}):** "
-                     + ", ".join(f"`{s}`" for s in symbols[:20]))
-
-    fh = classification.get("filename_history", {})
-    if fh and fh.get("paths_seen"):
-        lines.append("")
-        lines.append(f"### Historia ścieżek dla nazwy `{fh['basename']}`")
-        for p in fh["paths_seen"][:10]:
-            lines.append(f"- `{p}`")
-        if not fh.get("is_basename_unique"):
-            lines.append(f"\n> Nazwa pliku występowała w wielu lokalizacjach — "
-                         f"możliwe rename'y lub duplikaty.")
+    if not ev:
+        return
     lines.append("")
+    lines.append("**Dowody:**")
+    for e in ev:
+        lines.append(f"- {e}")
+
+
+def _render_import_problems(classification: dict, lines: list) -> None:
+    """Render the import problems table."""
+    ips = classification.get("import_problems", [])
+    if not ips:
+        return
+    lines.append("")
+    lines.append("### Klasyfikacja per-import")
+    lines.append("")
+    lines.append("| import | typ | obecne lokalizacje | rekomendacja |")
+    lines.append("|---|---|---|---|")
+    for ip in ips[:30]:
+        locs = ", ".join(f"`{l}`" for l in ip.get("current_locations", [])[:3]) or "—"
+        lines.append(
+            f"| `{ip['import']}` | **{ip['type']}** | {locs} | {ip['recommendation']} |"
+        )
+
+
+def _render_current_symbols(classification: dict, lines: list) -> None:
+    """Render the exported symbols list."""
+    symbols = classification.get("current_symbols", [])
+    if not symbols:
+        return
+    lines.append("")
+    lines.append(f"**Eksportowane symbole ({len(symbols)}):** "
+                 + ", ".join(f"`{s}`" for s in symbols[:20]))
+
+
+def _render_filename_history(classification: dict, lines: list) -> None:
+    """Render the filename history section."""
+    fh = classification.get("filename_history", {})
+    if not fh or not fh.get("paths_seen"):
+        return
+    lines.append("")
+    lines.append(f"### Historia ścieżek dla nazwy `{fh['basename']}`")
+    for p in fh["paths_seen"][:10]:
+        lines.append(f"- `{p}`")
+    if not fh.get("is_basename_unique"):
+        lines.append(f"\n> Nazwa pliku występowała w wielu lokalizacjach — "
+                     f"możliwe rename'y lub duplikaty.")
 
 
 def _render_name_hash_section(nh: dict, lines: list):
@@ -1277,52 +1302,77 @@ def _render_regression_section(regression: dict, lines: list):
     """Render the regression detective section."""
     if not regression or regression.get("current_all_ok", True):
         return
-    
+
     lines.append("## Regression Detective")
     lines.append("")
-    
+
+    _render_broken_imports(regression, lines)
+    _render_last_working_commit(regression, lines)
+    _render_first_broken_commit(regression, lines)
+    _render_missing_imports_history(regression, lines)
+    _render_recommendations(regression, lines)
+
+
+def _render_broken_imports(regression: dict, lines: list) -> None:
+    """Render the currently broken imports section."""
     broken = regression.get("current_broken_imports", [])
     lines.append(f"### Aktualnie popsute importy ({len(broken)})")
     for b in broken:
         lines.append(f"- `{b}` → **NIE ISTNIEJE** w obecnej wersji")
     lines.append("")
 
+
+def _render_last_working_commit(regression: dict, lines: list) -> None:
+    """Render the last working commit information."""
     lw = regression.get("last_working_commit")
-    if lw:
-        lines.append("### Ostatni działający commit")
-        lines.append(
-            f"- `{lw['short_sha']}` {lw['date'][:10]} — {lw['lines']} linii, "
-            f"{lw['ok_count']} importów OK — '{lw['subject']}'"
-        )
-        lines.append("")
+    if not lw:
+        return
+    lines.append("### Ostatni działający commit")
+    lines.append(
+        f"- `{lw['short_sha']}` {lw['date'][:10]} — {lw['lines']} linii, "
+        f"{lw['ok_count']} importów OK — '{lw['subject']}'"
+    )
+    lines.append("")
 
+
+def _render_first_broken_commit(regression: dict, lines: list) -> None:
+    """Render the first broken commit information."""
     fb = regression.get("first_broken_commit")
-    if fb:
-        lines.append("### Pierwszy popsuty commit")
-        lines.append(
-            f"- `{fb['short_sha']}` {fb['date'][:10]} — '{fb['subject']}'"
-        )
-        lines.append("")
+    if not fb:
+        return
+    lines.append("### Pierwszy popsuty commit")
+    lines.append(
+        f"- `{fb['short_sha']}` {fb['date'][:10]} — '{fb['subject']}'"
+    )
+    lines.append("")
 
+
+def _render_missing_imports_history(regression: dict, lines: list) -> None:
+    """Render the missing imports history search results."""
     mh = regression.get("missing_imports_history", [])
-    if mh:
-        lines.append("### Poszukiwanie zaginionych plików w historii")
-        for item in mh:
-            status = "✅ ZNALEZIONO" if item["history_found"] else "❌ NIE ZNALEZIONO"
-            lines.append(
-                f"- `{item['import']}` (stem: `{item['stem']}`) — {status} "
-                f"({item['history_count']} commitów w historii)"
-            )
-            if item["last_commit_line"]:
-                lines.append(f"  - Ostatni commit: `{item['last_commit_line']}`")
-        lines.append("")
+    if not mh:
+        return
+    lines.append("### Poszukiwanie zaginionych plików w historii")
+    for item in mh:
+        status = "✅ ZNALEZIONO" if item["history_found"] else "❌ NIE ZNALEZIONO"
+        lines.append(
+            f"- `{item['import']}` (stem: `{item['stem']}`) — {status} "
+            f"({item['history_count']} commitów w historii)"
+        )
+        if item["last_commit_line"]:
+            lines.append(f"  - Ostatni commit: `{item['last_commit_line']}`")
+    lines.append("")
 
+
+def _render_recommendations(regression: dict, lines: list) -> None:
+    """Render the fix recommendations."""
     recs = regression.get("recommendations", [])
-    if recs:
-        lines.append("### Rekomendacje naprawy")
-        for i, r in enumerate(recs, 1):
-            lines.append(f"{i}. {r}")
-        lines.append("")
+    if not recs:
+        return
+    lines.append("### Rekomendacje naprawy")
+    for i, r in enumerate(recs, 1):
+        lines.append(f"{i}. {r}")
+    lines.append("")
 
 
 def render_markdown(report: Dict[str, Any]) -> str:

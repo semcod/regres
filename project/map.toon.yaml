@@ -1,22 +1,22 @@
-# regres | 27f 13614L | python:24,shell:2,less:1 | 2026-05-01
-# stats: 545 func | 10 cls | 27 mod | CC̄=4.0 | critical:46 | cycles:0
-# alerts[5]: CC _save_report=20; CC _create_import_chain_diagnoses=18; CC _handle_auto_decision_flow=18; CC _run_seed_mode=17; CC cmd_hotmap=16
-# hotspots[5]: cmd_hotmap fan=23; analyze_file fan=22; _handle_auto_decision_flow fan=21; trace_name_and_hash_candidates fan=21; cmd_similar fan=17
+# regres | 27f 14069L | python:24,shell:2,less:1 | 2026-05-01
+# stats: 598 func | 10 cls | 27 mod | CC̄=3.8 | critical:37 | cycles:0
+# alerts[5]: CC test_load_config_uses_defaults_and_creates_env_file=15; CC scan=14; CC render_text=14; CC load_config=14; CC cmd_similar=14
+# hotspots[5]: analyze_file fan=22; trace_name_and_hash_candidates fan=21; cmd_similar fan=17; cmd_dead fan=17; _run_vite_runtime_probe fan=16
 # evolution: baseline
 # Keys: M=modules, D=details, i=imports, e=exports, c=classes, f=functions, m=methods
 M[27]:
   app.doql.less,114
   project.sh,41
   regres/__init__.py,21
-  regres/defscan.py,1261
+  regres/defscan.py,1296
   regres/doctor.py,7
-  regres/doctor_cli.py,1198
+  regres/doctor_cli.py,1366
   regres/doctor_config.py,270
   regres/doctor_models.py,37
-  regres/doctor_orchestrator.py,3471
+  regres/doctor_orchestrator.py,3587
   regres/import_error_toon_report.py,373
-  regres/refactor.py,1237
-  regres/regres.py,1495
+  regres/refactor.py,1323
+  regres/regres.py,1545
   regres/regres_cli.py,212
   regres/version_check.py,186
   scripts/import-error-toon-report.py,12
@@ -35,7 +35,7 @@ M[27]:
 D:
   regres/__init__.py:
   regres/defscan.py:
-    e: c,_normalize,sim,_get_body,_get_decorators,_collect_class_method_ids,_extract_class_definitions,_extract_function_definition,extract_python,_advance_past_string,_advance_past_comment,_extract_block_ts,_lineno_at,extract_typescript,extract_go,extract_rust,extract_file,load_gitignore,_match_anchored_pattern,_match_unanchored_pattern,_path_ignored_by_gitignore,_should_skip_file,scan,_def_key,compare_seed_to_all,analyse_group,classify_similarity,_short_path,render_text,render_markdown,render_seed_text,render_seed_markdown,render_seed_json,render_json,_build_argument_parser,_run_seed_mode,_build_focus_groups,_analyse_and_sort_groups,_run_focus_mode,_run_default_mode,_count_similarity_levels,_print_pair_summary,main,Definition
+    e: c,_normalize,sim,_get_body,_get_decorators,_collect_class_method_ids,_extract_class_definitions,_extract_function_definition,extract_python,_advance_past_string,_advance_past_comment,_extract_block_ts,_lineno_at,extract_typescript,extract_go,extract_rust,extract_file,load_gitignore,_match_anchored_pattern,_match_unanchored_pattern,_path_ignored_by_gitignore,_should_skip_file,scan,_def_key,compare_seed_to_all,analyse_group,classify_similarity,_short_path,render_text,render_markdown,render_seed_text,render_seed_markdown,render_seed_json,render_json,_build_argument_parser,_run_seed_mode,_resolve_seed_params,_print_seed_header,_scan_all_definitions,_scan_seed_definitions,_compare_seed_similarity,_render_seed_results,_print_seed_summary,_build_focus_groups,_analyse_and_sort_groups,_run_focus_mode,_run_default_mode,_count_similarity_levels,_print_pair_summary,main,Definition
     Definition: __init__(9),loc(0),__repr__(0)  # Pojedyncza definicja (klasa / funkcja / enum / interface / m
     c(text;code)
     _normalize(text)
@@ -73,6 +73,13 @@ D:
     render_json(groups;root)
     _build_argument_parser()
     _run_seed_mode(args;root;root_str;gitignore_patterns;ext_set)
+    _resolve_seed_params(args;root)
+    _print_seed_header(seed_path;scope_path;min_sim)
+    _scan_all_definitions(scope_path;args;gitignore_patterns;root;ext_set)
+    _scan_seed_definitions(scope_path;seed_path;args;gitignore_patterns;root;ext_set)
+    _compare_seed_similarity(seed_defs;all_defs;min_sim;args)
+    _render_seed_results(results;root_str;args)
+    _print_seed_summary(results)
     _build_focus_groups(focus_index;full_index;min_count)
     _analyse_and_sort_groups(groups_raw)
     _run_focus_mode(args;root;root_str;gitignore_patterns;ext_set)
@@ -82,11 +89,19 @@ D:
     main()
   regres/doctor.py:
   regres/doctor_cli.py:
-    e: _append_url_module_not_found_diagnosis,_run_page_implementation_analysis,_run_module_loader_compliance_check,_create_import_chain_diagnoses,_derive_vite_base,_run_vite_runtime_probe,_create_vite_runtime_diagnoses,_collect_dependency_chain_targets,_run_dependency_chain_analysis,_run_page_registry_compliance_check,_run_llm_or_targeted_analysis,_run_url_module_analysis,_resolve_runtime_log_path,_handle_runtime_log_diagnostics,_handle_url_mode,_resolve_module_from_url,_record_url_discovery_step,_setup_url_analysis_context,_handle_module_resolution,_record_module_not_found_step,_record_module_resolution_step,_apply_fixes_if_requested,_handle_import_errors,_handle_defscan_refactor,_handle_auto_decision_flow,_save_report,_render_patches_section,_refresh_import_error_log,_build_parser,main
+    e: _append_url_module_not_found_diagnosis,_run_page_implementation_analysis,_run_module_loader_compliance_check,_create_import_chain_diagnoses,_create_single_chain_diagnosis,_build_chain_nlp_description,_build_file_actions_for_chain,_format_history_reason,_build_shell_commands_for_chain,_build_commands_for_broken,_build_commands_for_stubs,_build_regres_command,_derive_vite_base,_run_vite_runtime_probe,_create_vite_runtime_diagnoses,_collect_dependency_chain_targets,_run_dependency_chain_analysis,_run_page_registry_compliance_check,_run_llm_or_targeted_analysis,_run_url_module_analysis,_resolve_runtime_log_path,_handle_runtime_log_diagnostics,_handle_url_mode,_resolve_module_from_url,_record_url_discovery_step,_setup_url_analysis_context,_handle_module_resolution,_record_module_not_found_step,_record_module_resolution_step,_apply_fixes_if_requested,_handle_import_errors,_handle_defscan_refactor,_handle_auto_decision_flow,_setup_analysis_context,_run_prescans,_run_import_analysis,_get_import_log_path,_refresh_import_log,_run_regress_history_phase,_collect_affected_files,_run_additional_scans,_save_report,_derive_output_basename,_resolve_patches_dir,_generate_and_attach_patches,_save_json_report,_save_markdown_report,_print_patches_info,_print_report_to_stdout,_render_patches_section,_refresh_import_error_log,_build_parser,main
     _append_url_module_not_found_diagnosis(doctor;scan_root;module_name;args_url)
     _run_page_implementation_analysis(args;doctor;scan_root;normalized_path;module_name;module_path)
     _run_module_loader_compliance_check(doctor;module_path;module_name)
     _create_import_chain_diagnoses(doctor;scan_root;chains_data;module_name)
+    _create_single_chain_diagnosis(entry;doctor;scan_root;module_name)
+    _build_chain_nlp_description(target_rel;broken;stubs)
+    _build_file_actions_for_chain(target_rel;doctor;scan_root;module_name)
+    _format_history_reason(hc)
+    _build_shell_commands_for_chain(broken;stubs;scan_root;doctor)
+    _build_commands_for_broken(broken;scan_root;doctor)
+    _build_commands_for_stubs(stubs;scan_root;doctor)
+    _build_regres_command(scan_root;url_hint;path)
     _derive_vite_base(args)
     _run_vite_runtime_probe(args;doctor;scan_root;chain_targets;vite_base)
     _create_vite_runtime_diagnoses(doctor;scan_root;vite_results;vite_base)
@@ -108,7 +123,22 @@ D:
     _handle_import_errors(args;doctor;scan_root;refresh_fn)
     _handle_defscan_refactor(args;doctor)
     _handle_auto_decision_flow(args;doctor;scan_root;refresh_fn)
+    _setup_analysis_context(args;doctor;scan_root)
+    _run_prescans(doctor;scan_root)
+    _run_import_analysis(args;doctor;scan_root;refresh_fn)
+    _get_import_log_path(args;scan_root)
+    _refresh_import_log(doctor;scan_root;import_log;refresh_fn)
+    _run_regress_history_phase(doctor;import_diagnoses)
+    _collect_affected_files(diagnoses)
+    _run_additional_scans(args;doctor;scan_root)
     _save_report(doctor;args)
+    _derive_output_basename(args)
+    _resolve_patches_dir(args;out_dir)
+    _generate_and_attach_patches(doctor;patches_dir;basename;args;report)
+    _save_json_report(report;out_json_path)
+    _save_markdown_report(doctor;report;out_md_path;generated_patches)
+    _print_patches_info(patches;patches_dir)
+    _print_report_to_stdout(doctor;report;generated_patches)
     _render_patches_section(patches)
     _refresh_import_error_log(project_root;log_path)
     _build_parser()
@@ -126,7 +156,7 @@ D:
     Diagnosis:  # Diagnoza problemu i plan naprawy.
   regres/doctor_orchestrator.py:
     e: DoctorOrchestrator,_PatchIndexBuilder
-    DoctorOrchestrator: __init__(2),resolve_symlink(1),_discover_module_path_map(0),_get_module_path_map(0),_get_url_route_module_hints(0),build_project_relation_map(0),_init_relation_structure(0),_collect_module_files(1),_filter_scoped_files(2),_analyze_imports(1),_detect_duplicates(1),_build_relation_summary(8),_collect_git_relation_changes(0),_rel_or_abs(1),analyze_from_url(1),analyze_dependency_chain(2),_process_imports_at_file(4),_get_file_key(1),_build_import_entry(4),_check_page_stub(1),_get_resolved_rel_path(1),_extract_relative_imports(1),_resolve_relative_import(2),_map_workspace_to_frontend(1),_find_symlink_base(1),probe_vite_runtime(3),analyze_module_loader_compliance(2),analyze_page_registry_compliance(2),analyze_page_implementations(3),analyze_runtime_console(1),_extract_page_token(2),_find_page_files(2),_check_page_stub_indicators(2),_detect_content_regression(3),_build_stub_diagnosis_actions(8),_add_backup_candidate(5),_add_history_candidates(5),_diagnose_page_stub(3),_collect_page_history_candidates(5),_resolve_history_params(2),_run_git_history_query(2),_parse_history_output(2),_parse_commit_line(2),_try_extract_candidate(4),_get_file_at_commit(2),_dedupe_and_limit_candidates(2),_fingerprint_page_content(1),_find_backup_page_implementation(2),_build_missing_page_diagnosis(4),_filter_actionable_diagnoses(1),_build_url_fallback_diagnosis(2),analyze_import_errors(1),analyze_duplicates(1),analyze_git_history(1),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),generate_report(0),render_markdown(1),reset_analysis_plan(0),add_plan_step(8),update_last_plan_step(0),set_analysis_context(2),summarize_affected_files(0),generate_patch_scripts(2),_extract_history_candidates(1),_find_primary_target(2),_generate_history_patch(9),_try_generate_generic_patch(5),_write_script(2),_render_patch_script(8),_render_generic_patch_script(3),_render_project_relation_map(1),_extract_module_name(1),_resolve_module_path(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_validate_errors(2),_extract_missing_modules(1),_diagnose_import_issue(2),_diagnose_duplicate(1),_find_main_location(1),_analyze_history_patterns(2),_apply_file_action(3),_apply_shell_command(3),_build_header(2),_build_section(2),_build_nlp_diagnosis(1),_build_proposed_fixes(1),_build_shell_commands(1),_build_playbook(1),_build_summary(1),_collect_all_diagnoses(1),_normalize_diagnoses(1),_render_decision_workflow(1),_fmt_plan_value(1),_render_affected_files(1),_build_candidate_patch_index(1),_render_dependency_chain(1),_render_chain_header(0),_render_single_chain_entry(1),_categorize_chain_imports(1),_render_chain_summary(4),_render_broken_imports(1),_render_stub_imports(1),_render_suggested_command(2),_render_ok_chain_status(3),_render_repair_plan_if_needed(1),_suggest_url_for_path(1),_render_structure_snapshot(1),_render_preliminary_refactor_proposals(1),collect_structure_snapshot(1),collect_preliminary_refactor_proposals(0),_render_step_by_step_playbook(2),_render_analyze_step(2),_render_apply_step(2),_render_validate_step(1),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1)  # Orchestrator analizy i generator akcji.
+    DoctorOrchestrator: __init__(2),resolve_symlink(1),_discover_module_path_map(0),_to_rel_path(1),_discover_monorepo_frontend_roots(1),_discover_flat_frontend_roots(1),_discover_backend_only_roots(1),_apply_fallback_entries(1),_get_module_path_map(0),_get_url_route_module_hints(0),build_project_relation_map(0),_init_relation_structure(0),_collect_module_files(1),_filter_scoped_files(2),_analyze_imports(1),_detect_duplicates(1),_build_relation_summary(8),_collect_git_relation_changes(0),_rel_or_abs(1),analyze_from_url(1),analyze_dependency_chain(2),_process_imports_at_file(4),_get_file_key(1),_build_import_entry(4),_check_page_stub(1),_get_resolved_rel_path(1),_extract_relative_imports(1),_resolve_relative_import(2),_map_workspace_to_frontend(1),_find_symlink_base(1),probe_vite_runtime(3),analyze_module_loader_compliance(2),analyze_page_registry_compliance(2),_read_registry_file(1),_extract_default_page(1),_extract_registry_name(1),_extract_registry_keys(2),_is_default_page_present(2),_get_relative_path(1),_build_registry_diagnosis(4),_build_registry_nlp(4),analyze_page_implementations(3),analyze_runtime_console(1),_extract_page_token(2),_find_page_files(2),_check_page_stub_indicators(2),_detect_content_regression(3),_build_stub_diagnosis_actions(8),_add_backup_candidate(5),_add_history_candidates(5),_diagnose_page_stub(3),_collect_page_history_candidates(5),_resolve_history_params(2),_run_git_history_query(2),_parse_history_output(2),_parse_commit_line(2),_try_extract_candidate(4),_get_file_at_commit(2),_dedupe_and_limit_candidates(2),_fingerprint_page_content(1),_find_backup_page_implementation(2),_build_missing_page_diagnosis(4),_filter_actionable_diagnoses(1),_build_url_fallback_diagnosis(2),analyze_import_errors(1),analyze_duplicates(1),analyze_git_history(1),analyze_with_defscan(1),analyze_with_refactor(1),apply_fixes(2),generate_llm_diagnosis(2),generate_report(0),render_markdown(1),reset_analysis_plan(0),add_plan_step(8),update_last_plan_step(0),set_analysis_context(2),summarize_affected_files(0),generate_patch_scripts(2),_extract_history_candidates(1),_find_primary_target(2),_generate_history_patch(9),_try_generate_generic_patch(5),_write_script(2),_render_patch_script(8),_render_generic_patch_script(3),_render_project_relation_map(1),_extract_module_name(1),_resolve_module_path(1),_import_exists_in_source(2),_resolve_alias_target(1),_parse_ts_errors(1),_validate_errors(2),_extract_missing_modules(1),_diagnose_import_issue(2),_handle_c2004_alias_import(5),_handle_relative_import(4),_build_import_nlp_description(3),_determine_import_severity(3),_diagnose_duplicate(1),_find_main_location(1),_analyze_history_patterns(2),_apply_file_action(3),_apply_shell_command(3),_build_header(2),_build_section(2),_build_nlp_diagnosis(1),_build_proposed_fixes(1),_build_shell_commands(1),_build_playbook(1),_build_summary(1),_collect_all_diagnoses(1),_normalize_diagnoses(1),_render_decision_workflow(1),_fmt_plan_value(1),_render_affected_files(1),_render_affected_file_entry(2),_render_direct_actions(1),_render_git_candidates(3),_render_git_candidate(3),_build_candidate_patch_index(1),_render_dependency_chain(1),_render_chain_header(0),_render_single_chain_entry(1),_categorize_chain_imports(1),_render_chain_summary(4),_render_broken_imports(1),_render_stub_imports(1),_render_suggested_command(2),_render_ok_chain_status(3),_render_repair_plan_if_needed(1),_suggest_url_for_path(1),_render_structure_snapshot(1),_render_preliminary_refactor_proposals(1),collect_structure_snapshot(1),collect_preliminary_refactor_proposals(0),_render_step_by_step_playbook(2),_render_analyze_step(2),_render_apply_step(2),_render_validate_step(1),_collect_git_context(1),_collect_structure_context(1),_collect_defscan_context(1),_collect_refactor_context(1)  # Orchestrator analizy i generator akcji.
     _PatchIndexBuilder: __init__(1),add_history_entry(4),add_manual_entry(3),write(1)  # Helper class to build patch index file content.
   regres/import_error_toon_report.py:
     e: toon_quote,parse_args,run_typecheck,normalize_file_rel,parse_ts_errors,suggestions_for_error,grouped_errors,metrics,to_toon_block_legacy,to_toon_global_payload,to_toon_compact_per_file,render_markdown,main,TsError,ReportData
@@ -146,8 +176,10 @@ D:
     render_markdown(report;scan_root;max_files;max_errors_per_file)
     main()
   regres/refactor.py:
-    e: iter_files,read_text,md5_file,count_word,line_count,similarity_ratio,normalize_code,rel,name_prefix,extract_imports,extract_symbols_ast,extract_symbols_regex,get_symbols,wrapper_score,cmd_find,cmd_duplicates,cmd_similar,_build_symbol_index,_render_cross_lang_symbols,_render_duplicate_symbols,_render_file_symbols,cmd_symbols,cmd_wrappers,cmd_dead,cmd_diff,cmd_hotmap,cmd_cluster,_deps_filter_by_word,_deps_print_word_results,_deps_print_all,cmd_deps,_sanitize,_format_imports,_format_preview,_toon_meta_section,_toon_files_section,_toon_clusters_section,_toon_similar_pairs_section,_toon_llm_hint,to_json_toon,_collect_file_infos,_find_md5_duplicates,_find_name_clusters,_find_similar_pairs,_find_duplicate_symbols,_find_cross_language_symbols,_find_external_importers,_build_report,_save_report,cmd_report,build_parser,main
+    e: iter_files,_is_valid_file,_file_contains_word,read_text,md5_file,count_word,line_count,similarity_ratio,normalize_code,rel,name_prefix,extract_imports,extract_symbols_ast,extract_symbols_regex,get_symbols,wrapper_score,_check_wrapper_signatures,_check_file_length,_check_import_density,_check_sys_manipulation,_check_barrel_export,_check_dynamic_import,cmd_find,cmd_duplicates,cmd_similar,_build_symbol_index,_render_cross_lang_symbols,_render_duplicate_symbols,_render_file_symbols,cmd_symbols,cmd_wrappers,cmd_dead,cmd_diff,cmd_hotmap,_collect_and_normalize_files,_count_files_per_dir,_count_similar_pairs,_calculate_hotmap,_render_hotmap_output,cmd_cluster,_deps_filter_by_word,_deps_print_word_results,_deps_print_all,cmd_deps,_sanitize,_format_imports,_format_preview,_toon_meta_section,_toon_files_section,_toon_clusters_section,_toon_similar_pairs_section,_toon_llm_hint,to_json_toon,_collect_file_infos,_find_md5_duplicates,_find_name_clusters,_find_similar_pairs,_find_duplicate_symbols,_find_cross_language_symbols,_find_external_importers,_build_report,_save_report,cmd_report,build_parser,main
     iter_files(root;extensions;word_filter;case_sensitive;ext_filter)
+    _is_valid_file(p;exts)
+    _file_contains_word(p;word_filter;case_sensitive)
     read_text(p)
     md5_file(p)
     count_word(text;word;case_sensitive)
@@ -161,6 +193,12 @@ D:
     extract_symbols_regex(text;ext)
     get_symbols(p;text)
     wrapper_score(text)
+    _check_wrapper_signatures(text;score;reasons)
+    _check_file_length(text;score;reasons)
+    _check_import_density(text;score;reasons)
+    _check_sys_manipulation(text;score;reasons)
+    _check_barrel_export(text;score;reasons)
+    _check_dynamic_import(text;score;reasons)
     cmd_find(args;root)
     cmd_duplicates(args;root)
     cmd_similar(args;root)
@@ -173,6 +211,11 @@ D:
     cmd_dead(args;root)
     cmd_diff(args;root)
     cmd_hotmap(args;root)
+    _collect_and_normalize_files(root;word;normalize)
+    _count_files_per_dir(paths_list)
+    _count_similar_pairs(paths_list;texts;threshold;dir_file_count)
+    _calculate_hotmap(dir_file_count;dir_pair_count)
+    _render_hotmap_output(args;hotmap;paths_list;total_pairs;threshold;normalize)
     cmd_cluster(args;root)
     _deps_filter_by_word(import_map;word)
     _deps_print_word_results(word;targets;importers)
@@ -200,7 +243,7 @@ D:
     build_parser()
     main()
   regres/regres.py:
-    e: run_git,find_repo_root,_dedupe_paths,_check_absolute_path,_check_relative_paths,_search_by_name_suffix,_resolve_single_or_error,resolve_target_file,to_rel,safe_read_text,sha256_of_file,content_metrics,resolve_local_import,extract_local_imports,resolve_import_at_commit,check_imports_at_commit,find_last_working_commit,search_missing_in_history,analyze_regression,extract_symbols,track_filename_history,find_current_locations,_classify_import_problem,_analyze_import_problems,_analyze_evolution,_determine_primary_type,classify_problem,dependency_tree,reverse_references,exact_and_near_duplicates,trace_name_and_hash_candidates,parse_numstat_block,file_lineage,changed_files_for_commit,references_in_recent_commits,file_content_at_commit,resolve_import_historical,historical_dependency_tree,analyze_evolution,_collect_tree_paths,find_last_good_version,llm_context_packet,_render_classification_section,_render_name_hash_section,_render_metrics_section,_render_references_section,_render_duplicates_section,_render_lineage_section,_render_evolution_section,_render_last_good_section,_render_regression_section,render_markdown,analyze_file,_resolve_output_path,main,GitCommit
+    e: run_git,find_repo_root,_dedupe_paths,_check_absolute_path,_check_relative_paths,_search_by_name_suffix,_resolve_single_or_error,resolve_target_file,to_rel,safe_read_text,sha256_of_file,content_metrics,resolve_local_import,extract_local_imports,resolve_import_at_commit,check_imports_at_commit,find_last_working_commit,search_missing_in_history,analyze_regression,extract_symbols,track_filename_history,find_current_locations,_classify_import_problem,_analyze_import_problems,_analyze_evolution,_determine_primary_type,classify_problem,dependency_tree,reverse_references,exact_and_near_duplicates,trace_name_and_hash_candidates,parse_numstat_block,file_lineage,changed_files_for_commit,references_in_recent_commits,file_content_at_commit,resolve_import_historical,historical_dependency_tree,analyze_evolution,_collect_tree_paths,find_last_good_version,llm_context_packet,_render_classification_section,_render_classification_header,_render_evidence,_render_import_problems,_render_current_symbols,_render_filename_history,_render_name_hash_section,_render_metrics_section,_render_references_section,_render_duplicates_section,_render_lineage_section,_render_evolution_section,_render_last_good_section,_render_regression_section,_render_broken_imports,_render_last_working_commit,_render_first_broken_commit,_render_missing_imports_history,_render_recommendations,render_markdown,analyze_file,_resolve_output_path,main,GitCommit
     GitCommit:
     run_git(args;cwd)
     find_repo_root(start)
@@ -245,6 +288,11 @@ D:
     find_last_good_version(evolution;min_lines;min_similarity;max_results)
     llm_context_packet(report)
     _render_classification_section(classification;lines)
+    _render_classification_header(classification;lines)
+    _render_evidence(classification;lines)
+    _render_import_problems(classification;lines)
+    _render_current_symbols(classification;lines)
+    _render_filename_history(classification;lines)
     _render_name_hash_section(nh;lines)
     _render_metrics_section(m;lines)
     _render_references_section(refs;lines)
@@ -253,6 +301,11 @@ D:
     _render_evolution_section(evolution;lines)
     _render_last_good_section(last_good;lines)
     _render_regression_section(regression;lines)
+    _render_broken_imports(regression;lines)
+    _render_last_working_commit(regression;lines)
+    _render_first_broken_commit(regression;lines)
+    _render_missing_imports_history(regression;lines)
+    _render_recommendations(regression;lines)
     render_markdown(report)
     analyze_file(target_file;scan_root;max_commits;tree_depth;near_threshold)
     _resolve_output_path(path_str;cwd)

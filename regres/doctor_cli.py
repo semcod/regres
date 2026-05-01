@@ -144,85 +144,160 @@ def _create_import_chain_diagnoses(
     module_name: str,
 ) -> None:
     """Create diagnoses from import chain analysis results."""
-    from .doctor_models import Diagnosis as _Diag, FileAction as _FA, ShellCommand as _SC
+    from .doctor_models import Diagnosis as _Diag
+
     for entry in chains_data:
-        target_rel = entry["target"]
-        chain = entry["chain"] or []
-        broken = [c for c in chain if not c.get("exists")]
-        stubs = [c for c in chain if c.get("is_page_stub")]
-        if not broken and not stubs:
-            continue
-        nlp_lines = [
-            f"Plik `{target_rel}` zawiera relatywne importy, które nie są zresolwowane "
-            f"({len(broken)} broken, {len(stubs)} stub). Vite zwróci 500 przy próbie "
-            "załadowania strony, dopóki łańcuch nie zostanie naprawiony."
-        ]
-        fa: List[_FA] = [_FA(
+        diagnosis = _create_single_chain_diagnosis(entry, doctor, scan_root, module_name)
+        if diagnosis:
+            doctor.diagnoses.append(diagnosis)
+
+
+def _create_single_chain_diagnosis(
+    entry: Dict[str, Any],
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    module_name: str,
+) -> Optional["Diagnosis"]:
+    """Create a diagnosis for a single import chain entry."""
+    from .doctor_models import Diagnosis as _Diag, FileAction as _FA, ShellCommand as _SC
+
+    target_rel = entry["target"]
+    chain = entry["chain"] or []
+    broken = [c for c in chain if not c.get("exists")]
+    stubs = [c for c in chain if c.get("is_page_stub")]
+
+    if not broken and not stubs:
+        return None
+
+    nlp_lines = _build_chain_nlp_description(target_rel, broken, stubs)
+    fa = _build_file_actions_for_chain(target_rel, doctor, scan_root, module_name)
+    sc = _build_shell_commands_for_chain(broken, stubs, scan_root, doctor)
+
+    return _Diag(
+        summary=(
+            f"Łańcuch importów `{target_rel}` ma {len(broken)} "
+            f"niezresolwowanych i {len(stubs)} placeholder linków"
+        ),
+        problem_type="import_resolution_failure",
+        severity="high" if broken else "medium",
+        nlp_description="\n".join(nlp_lines),
+        file_actions=fa,
+        shell_commands=sc,
+        confidence=0.8,
+    )
+
+
+def _build_chain_nlp_description(target_rel: str, broken: List, stubs: List) -> List[str]:
+    """Build NLP description lines for chain diagnosis."""
+    return [
+        f"Plik `{target_rel}` zawiera relatywne importy, które nie są zresolwowane "
+        f"({len(broken)} broken, {len(stubs)} stub). Vite zwróci 500 przy próbie "
+        "załadowania strony, dopóki łańcuch nie zostanie naprawiony."
+    ]
+
+
+def _build_file_actions_for_chain(
+    target_rel: str,
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    module_name: str,
+) -> List["FileAction"]:
+    """Build file actions including history candidates for a chain."""
+    from .doctor_models import FileAction as _FA
+
+    fa = [_FA(
+        path=target_rel,
+        action="modify",
+        reason="Imports require rewriting or chained restore.",
+    )]
+
+    target_path_obj = scan_root / target_rel
+    page_token = target_path_obj.stem.replace(".page", "")
+
+    try:
+        history = doctor._collect_page_history_candidates(page_token, module_name or "", target_path_obj)
+    except Exception:
+        history = []
+
+    for hc in history[:8]:
+        fa.append(_FA(
             path=target_rel,
             action="modify",
-            reason="Imports require rewriting or chained restore.",
-        )]
-        target_path_obj = scan_root / target_rel
-        page_token_for_target = target_path_obj.stem.replace(".page", "")
-        try:
-            history_for_target = doctor._collect_page_history_candidates(
-                page_token_for_target, module_name or "", target_path_obj,
-            )
-        except Exception:
-            history_for_target = []
-        for hc in history_for_target[:8]:
-            fa.append(_FA(
-                path=target_rel,
-                action="modify",
-                target=f"git:{hc['hash']}:{hc['source_path']}",
-                reason=(
-                    f"[{hc.get('date','?')}] {hc['hash']} • "
-                    f"{hc.get('line_count','?')} linii • {hc['source_path']}"
-                    + (f" • {hc['fingerprint']}" if hc.get("fingerprint") else "")
-                ),
-            ))
-        sc: List[_SC] = []
-        for c in broken[:6]:
-            nlp_lines.append(f"- BROKEN `{c['import']}` z `{c['from_file']}`")
-            sc.append(_SC(
-                command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
-                description=f"Import `{c['import']}` nie znaleziony",
-            ))
-            url_hint = doctor._suggest_url_for_path(c["import"])
-            if url_hint:
-                sc.append(_SC(
-                    command=(
-                        f".venv/bin/python -m regres.regres_cli doctor "
-                        f"--scan-root {scan_root} --url '{url_hint}' --all "
-                        f"--git-history --out-md .regres/{Path(c['import']).stem}-doctor.md"
-                    ),
-                    description=f"Następny krok: regres na {url_hint}",
-                ))
-        for c in stubs[:6]:
-            resolved = c.get("resolved_path", "?")
-            nlp_lines.append(f"- STUB `{resolved}` ← `{c['import']}` (placeholder page)")
-            url_hint = doctor._suggest_url_for_path(resolved)
-            if url_hint:
-                sc.append(_SC(
-                    command=(
-                        f".venv/bin/python -m regres.regres_cli doctor "
-                        f"--scan-root {scan_root} --url '{url_hint}' --all "
-                        f"--git-history --out-md .regres/{Path(resolved).stem}-doctor.md"
-                    ),
-                    description=f"Naprawa łańcuchowa: {url_hint}",
-                ))
-        doctor.diagnoses.append(_Diag(
-            summary=(
-                f"Łańcuch importów `{target_rel}` ma {len(broken)} "
-                "niezresolwowanych i " f"{len(stubs)} placeholder linków"
-            ),
-            problem_type="import_resolution_failure",
-            severity="high" if broken else "medium",
-            nlp_description="\n".join(nlp_lines),
-            file_actions=fa,
-            shell_commands=sc,
-            confidence=0.8,
+            target=f"git:{hc['hash']}:{hc['source_path']}",
+            reason=_format_history_reason(hc),
         ))
+
+    return fa
+
+
+def _format_history_reason(hc: Dict) -> str:
+    """Format history candidate reason string."""
+    fingerprint = f" • {hc['fingerprint']}" if hc.get("fingerprint") else ""
+    return (
+        f"[{hc.get('date','?')}] {hc['hash']} • "
+        f"{hc.get('line_count','?')} linii • {hc['source_path']}{fingerprint}"
+    )
+
+
+def _build_shell_commands_for_chain(
+    broken: List,
+    stubs: List,
+    scan_root: Path,
+    doctor: DoctorOrchestrator,
+) -> List["ShellCommand"]:
+    """Build shell commands for broken imports and stubs."""
+    sc = []
+    sc.extend(_build_commands_for_broken(broken[:6], scan_root, doctor))
+    sc.extend(_build_commands_for_stubs(stubs[:6], scan_root, doctor))
+    return sc
+
+
+def _build_commands_for_broken(
+    broken: List, scan_root: Path, doctor: DoctorOrchestrator
+) -> List["ShellCommand"]:
+    """Build shell commands for broken imports."""
+    from .doctor_models import ShellCommand as _SC
+
+    sc = []
+    for c in broken:
+        sc.append(_SC(
+            command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
+            description=f"Import `{c['import']}` nie znaleziony",
+        ))
+        url_hint = doctor._suggest_url_for_path(c["import"])
+        if url_hint:
+            sc.append(_SC(
+                command=_build_regres_command(scan_root, url_hint, c["import"]),
+                description=f"Następny krok: regres na {url_hint}",
+            ))
+    return sc
+
+
+def _build_commands_for_stubs(
+    stubs: List, scan_root: Path, doctor: DoctorOrchestrator
+) -> List["ShellCommand"]:
+    """Build shell commands for stub imports."""
+    from .doctor_models import ShellCommand as _SC
+
+    sc = []
+    for c in stubs:
+        resolved = c.get("resolved_path", "?")
+        url_hint = doctor._suggest_url_for_path(resolved)
+        if url_hint:
+            sc.append(_SC(
+                command=_build_regres_command(scan_root, url_hint, resolved),
+                description=f"Naprawa łańcuchowa: {url_hint}",
+            ))
+    return sc
+
+
+def _build_regres_command(scan_root: Path, url_hint: str, path: str) -> str:
+    """Build a regres doctor command for URL analysis."""
+    return (
+        f".venv/bin/python -m regres.regres_cli doctor "
+        f"--scan-root {scan_root} --url '{url_hint}' --all "
+        f"--git-history --out-md .regres/{Path(path).stem}-doctor.md"
+    )
 
 
 def _derive_vite_base(args) -> Optional[str]:
@@ -816,6 +891,25 @@ def _handle_auto_decision_flow(args, doctor: DoctorOrchestrator, scan_root: Path
     """Run parameter-driven analysis sequence and record plan/context."""
     doctor.reset_analysis_plan()
 
+    _setup_analysis_context(args, doctor, scan_root)
+
+    if args.all:
+        _run_prescans(doctor, scan_root)
+
+    import_diagnoses = _run_import_analysis(args, doctor, scan_root, refresh_fn)
+    if import_diagnoses:
+        _run_regress_history_phase(doctor, import_diagnoses)
+
+    _run_additional_scans(args, doctor, scan_root)
+
+    doctor.set_analysis_context(
+        "preliminary_refactor_proposals",
+        doctor.collect_preliminary_refactor_proposals(),
+    )
+
+
+def _setup_analysis_context(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
+    """Setup initial analysis context with structure snapshot and relation map."""
     structure_snapshot = doctor.collect_structure_snapshot(max_entries=120)
     if structure_snapshot:
         doctor.set_analysis_context("structure_snapshot", structure_snapshot)
@@ -825,66 +919,100 @@ def _handle_auto_decision_flow(args, doctor: DoctorOrchestrator, scan_root: Path
     )
     _handle_runtime_log_diagnostics(args, doctor, scan_root)
 
-    # When --all is used, prioritize broad structural scans first.
-    if args.all:
-        doctor.add_plan_step(
-            name="defscan pre-scan",
-            reason="Wykrycie duplikatów i kandydatów do konsolidacji przed naprawą importów.",
-            command=f"python -m regres.regres_cli defscan --path {scan_root} --json",
-            status="done",
-        )
-        doctor.diagnoses.extend(doctor.analyze_with_defscan(scan_root))
 
-        doctor.add_plan_step(
-            name="refactor pre-scan",
-            reason="Wykrycie wrapperów i potencjalnych problemów strukturalnych.",
-            command=f"python -m regres.regres_cli refactor wrappers --path {scan_root}",
-            status="done",
-        )
-        doctor.diagnoses.extend(doctor.analyze_with_refactor(scan_root))
+def _run_prescans(doctor: DoctorOrchestrator, scan_root: Path) -> None:
+    """Run defscan and refactor pre-scans when --all is used."""
+    doctor.add_plan_step(
+        name="defscan pre-scan",
+        reason="Wykrycie duplikatów i kandydatów do konsolidacji przed naprawą importów.",
+        command=f"python -m regres.regres_cli defscan --path {scan_root} --json",
+        status="done",
+    )
+    doctor.diagnoses.extend(doctor.analyze_with_defscan(scan_root))
 
-    # Import analysis from provided or refreshed log.
-    import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
+    doctor.add_plan_step(
+        name="refactor pre-scan",
+        reason="Wykrycie wrapperów i potencjalnych problemów strukturalnych.",
+        command=f"python -m regres.regres_cli refactor wrappers --path {scan_root}",
+        status="done",
+    )
+    doctor.diagnoses.extend(doctor.analyze_with_refactor(scan_root))
+
+
+def _run_import_analysis(
+    args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn
+) -> List["Diagnosis"]:
+    """Run import error analysis and return import diagnoses."""
+    import_log = _get_import_log_path(args, scan_root)
+
     if args.all and not args.import_log:
-        refreshed = refresh_fn(scan_root, import_log)
-        doctor.add_plan_step(
-            name="import log refresh",
-            reason="Odświeżenie logu TS, aby uniknąć decyzji na nieaktualnych błędach.",
-            command=f"python -m regres.regres_cli import-error-toon-report --frontend-cwd {scan_root / 'frontend'} --scan-root {scan_root}",
-            status="done" if refreshed else "warning",
-            details="refresh failed; fallback to existing log" if not refreshed else None,
-        )
+        _refresh_import_log(doctor, scan_root, import_log, refresh_fn)
 
-    if args.import_log or args.all:
-        doctor.add_plan_step(
-            name="import diagnostics",
-            reason="Detekcja TS2307/TS2305 i przygotowanie akcji naprawczych.",
-            command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --import-log {import_log}",
-            status="done",
-        )
-        import_diagnoses = doctor.analyze_import_errors(import_log)
-        doctor.diagnoses.extend(import_diagnoses)
+    if not args.import_log and not args.all:
+        return []
 
-        # "regres" phase: history/context over files flagged by import diagnostics.
-        affected_files = []
-        for diag in import_diagnoses:
-            for action in diag.file_actions:
-                if action.path:
-                    affected_files.append(action.path)
-        affected_files = list(dict.fromkeys(affected_files))
+    doctor.add_plan_step(
+        name="import diagnostics",
+        reason="Detekcja TS2307/TS2305 i przygotowanie akcji naprawczych.",
+        command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --import-log {import_log}",
+        status="done",
+    )
+    import_diagnoses = doctor.analyze_import_errors(import_log)
+    doctor.diagnoses.extend(import_diagnoses)
+    return import_diagnoses
 
-        if affected_files:
-            doctor.add_plan_step(
-                name="regres history phase",
-                reason="Analiza historii zmian dla plików z błędami importów.",
-                command="git log --oneline --follow -- <affected-file>",
-                status="done",
-                details=f"files analyzed: {len(affected_files)}",
-            )
-            for p in affected_files:
-                doctor.diagnoses.extend(doctor.analyze_git_history(p))
 
-    # Additional explicit scans requested by parameters.
+def _get_import_log_path(args, scan_root: Path) -> Path:
+    """Get import log path from args or default location."""
+    if args.import_log:
+        return Path(args.import_log)
+    return scan_root / ".regres" / "import-error-toon-report.raw.log"
+
+
+def _refresh_import_log(
+    doctor: DoctorOrchestrator, scan_root: Path, import_log: Path, refresh_fn
+) -> None:
+    """Refresh import log and record the step."""
+    refreshed = refresh_fn(scan_root, import_log)
+    doctor.add_plan_step(
+        name="import log refresh",
+        reason="Odświeżenie logu TS, aby uniknąć decyzji na nieaktualnych błędach.",
+        command=f"python -m regres.regres_cli import-error-toon-report --frontend-cwd {scan_root / 'frontend'} --scan-root {scan_root}",
+        status="done" if refreshed else "warning",
+        details="refresh failed; fallback to existing log" if not refreshed else None,
+    )
+
+
+def _run_regress_history_phase(doctor: DoctorOrchestrator, import_diagnoses: List["Diagnosis"]) -> None:
+    """Run regres history phase on files flagged by import diagnostics."""
+    affected_files = _collect_affected_files(import_diagnoses)
+
+    if not affected_files:
+        return
+
+    doctor.add_plan_step(
+        name="regres history phase",
+        reason="Analiza historii zmian dla plików z błędami importów.",
+        command="git log --oneline --follow -- <affected-file>",
+        status="done",
+        details=f"files analyzed: {len(affected_files)}",
+    )
+    for p in affected_files:
+        doctor.diagnoses.extend(doctor.analyze_git_history(p))
+
+
+def _collect_affected_files(diagnoses: List["Diagnosis"]) -> List[str]:
+    """Collect unique affected files from diagnoses."""
+    files = []
+    for diag in diagnoses:
+        for action in diag.file_actions:
+            if action.path:
+                files.append(action.path)
+    return list(dict.fromkeys(files))
+
+
+def _run_additional_scans(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
+    """Run additional defscan/refactor scans requested by parameters."""
     if args.defscan_report:
         doctor.add_plan_step(
             name="defscan report merge",
@@ -912,21 +1040,32 @@ def _handle_auto_decision_flow(args, doctor: DoctorOrchestrator, scan_root: Path
         )
         doctor.diagnoses.extend(doctor.analyze_with_refactor(Path(args.refactor_scan)))
 
-    doctor.set_analysis_context(
-        "preliminary_refactor_proposals",
-        doctor.collect_preliminary_refactor_proposals(),
-    )
-
 
 def _save_report(doctor: DoctorOrchestrator, args) -> None:
     """Save report to JSON/Markdown or print to stdout."""
     report = doctor.generate_report()
 
-    # c2004-maskservice-patch-v4: derive a stable basename for companion
-    # artifacts (.sh patches, index, future reports). Prefer --out-md, fall
-    # back to --out-json, finally to a generic 'doctor'.
+    basename, out_dir = _derive_output_basename(args)
+    patches_dir = _resolve_patches_dir(args, out_dir)
+    generated_patches = _generate_and_attach_patches(doctor, patches_dir, basename, args, report)
+
+    if args.out_json:
+        _save_json_report(report, args.out_json)
+
+    if args.out_md:
+        _save_markdown_report(doctor, report, args.out_md, generated_patches)
+
+    _print_patches_info(generated_patches, patches_dir)
+
+    if not args.out_json and not args.out_md:
+        _print_report_to_stdout(doctor, report, generated_patches)
+
+
+def _derive_output_basename(args) -> tuple:
+    """Derive basename and output directory from args."""
     basename = "doctor"
     out_dir: Optional[Path] = None
+
     if args.out_md:
         out_md_path = Path(args.out_md)
         basename = out_md_path.stem
@@ -936,46 +1075,75 @@ def _save_report(doctor: DoctorOrchestrator, args) -> None:
         basename = out_json_path.stem
         out_dir = out_json_path.parent
 
-    # Resolve patches output directory.
-    patches_dir: Optional[Path] = None
+    return basename, out_dir
+
+
+def _resolve_patches_dir(args, out_dir: Optional[Path]) -> Optional[Path]:
+    """Resolve patches output directory."""
     out_patches_dir_val = getattr(args, "out_patches_dir", None)
     if out_patches_dir_val and isinstance(out_patches_dir_val, (str, Path)):
-        patches_dir = Path(out_patches_dir_val)
-    elif out_dir is not None:
-        patches_dir = out_dir
+        return Path(out_patches_dir_val)
+    return out_dir
 
-    generated_patches: List[Dict[str, str]] = []
-    if patches_dir is not None and not getattr(args, "no_patches", False):
-        generated_patches = doctor.generate_patch_scripts(patches_dir, basename)
-        if generated_patches:
-            report["generated_patches"] = generated_patches
 
-    if args.out_json:
-        out_json = Path(args.out_json)
-        out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"Report saved to {out_json}")
+def _generate_and_attach_patches(
+    doctor: DoctorOrchestrator,
+    patches_dir: Optional[Path],
+    basename: str,
+    args,
+    report: Dict,
+) -> List[Dict[str, str]]:
+    """Generate patch scripts and attach to report."""
+    if patches_dir is None or getattr(args, "no_patches", False):
+        return []
 
-    if args.out_md:
-        out_md = Path(args.out_md)
-        md_text = doctor.render_markdown(report)
-        # Append patches section so the markdown report points at the .sh files.
-        if generated_patches:
-            md_text = md_text.rstrip() + "\n\n" + _render_patches_section(generated_patches)
-        out_md.write_text(md_text, encoding="utf-8")
-        print(f"Markdown report saved to {out_md}")
-
+    generated_patches = doctor.generate_patch_scripts(patches_dir, basename)
     if generated_patches:
-        non_index = [p for p in generated_patches if p["kind"] != "index"]
-        print(f"Patch scripts generated: {len(non_index)} (in {patches_dir})")
-        for p in generated_patches:
-            kind_tag = "INDEX" if p["kind"] == "index" else p["candidate"]
-            print(f"  [{kind_tag}] {p['path']}")
+        report["generated_patches"] = generated_patches
+    return generated_patches
 
-    if not args.out_json and not args.out_md:
-        md_text = doctor.render_markdown(report)
-        if generated_patches:
-            md_text = md_text.rstrip() + "\n\n" + _render_patches_section(generated_patches)
-        print(md_text)
+
+def _save_json_report(report: Dict, out_json_path: str) -> None:
+    """Save report to JSON file."""
+    out_json = Path(out_json_path)
+    out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"Report saved to {out_json}")
+
+
+def _save_markdown_report(
+    doctor: DoctorOrchestrator,
+    report: Dict,
+    out_md_path: str,
+    generated_patches: List[Dict[str, str]],
+) -> None:
+    """Save report to Markdown file."""
+    out_md = Path(out_md_path)
+    md_text = doctor.render_markdown(report)
+    if generated_patches:
+        md_text = md_text.rstrip() + "\n\n" + _render_patches_section(generated_patches)
+    out_md.write_text(md_text, encoding="utf-8")
+    print(f"Markdown report saved to {out_md}")
+
+
+def _print_patches_info(patches: List[Dict[str, str]], patches_dir: Optional[Path]) -> None:
+    """Print information about generated patches."""
+    if not patches:
+        return
+    non_index = [p for p in patches if p["kind"] != "index"]
+    print(f"Patch scripts generated: {len(non_index)} (in {patches_dir})")
+    for p in patches:
+        kind_tag = "INDEX" if p["kind"] == "index" else p["candidate"]
+        print(f"  [{kind_tag}] {p['path']}")
+
+
+def _print_report_to_stdout(
+    doctor: DoctorOrchestrator, report: Dict, generated_patches: List[Dict[str, str]]
+) -> None:
+    """Print report to stdout."""
+    md_text = doctor.render_markdown(report)
+    if generated_patches:
+        md_text = md_text.rstrip() + "\n\n" + _render_patches_section(generated_patches)
+    print(md_text)
 
 
 def _render_patches_section(patches: List[Dict[str, str]]) -> str:

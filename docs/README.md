@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1931-green)
-> **1931** functions | **19** classes | **47** files | CC̄ = 5.6
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-2213-green)
+> **2213** functions | **19** classes | **47** files | CC̄ = 4.8
 
 > Auto-generated project documentation from source code analysis.
 
@@ -102,13 +102,13 @@ regres/
     ├── regres_cli
     ├── defscan
     ├── doctor_orchestrator
+        ├── toon
+        ├── toon
     ├── prompt
         ├── toon
-        ├── toon
-        ├── toon
+    ├── README
     ├── context
         ├── toon
-    ├── README
     ├── calls
         ├── toon
 ```
@@ -731,7 +731,7 @@ regres/
 - `load_config(scan_root, cli_overrides)` — Build a :class:`DoctorConfig` honoring the resolution order described in
 - `check_version(local_version)` — Check PyPI for a newer version and prompt the user to update.
 - `main()` — Main entry point for doctor CLI.
-- `iter_files(root, extensions, word_filter, case_sensitive)` — —
+- `iter_files(root, extensions, word_filter, case_sensitive)` — Iterate over files in root, applying various filters.
 - `read_text(p)` — —
 - `md5_file(p)` — —
 - `count_word(text, word, case_sensitive)` — —
@@ -792,7 +792,7 @@ regres/
 - `render_seed_json(results, root)` — —
 - `render_json(groups, root)` — —
 - `main()` — —
-- `main()` — —
+- `load_config()` — —
 - `c()` — —
 - `sim()` — —
 - `extract_python()` — —
@@ -811,6 +811,7 @@ regres/
 - `render_seed_markdown()` — —
 - `render_seed_json()` — —
 - `render_json()` — —
+- `main()` — —
 - `iter_files()` — —
 - `read_text()` — —
 - `md5_file()` — —
@@ -871,7 +872,6 @@ regres/
 - `find_last_good_version()` — —
 - `llm_context_packet()` — —
 - `analyze_file()` — —
-- `load_config()` — —
 - `check_version()` — —
 - `toon_quote()` — —
 - `parse_args()` — —
@@ -887,35 +887,6 @@ regres/
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
-- `resolve_symlink()` — —
-- `build_project_relation_map()` — —
-- `analyze_from_url()` — —
-- `analyze_dependency_chain()` — —
-- `probe_vite_runtime()` — —
-- `analyze_module_loader_compliance()` — —
-- `analyze_page_registry_compliance()` — —
-- `analyze_page_implementations()` — —
-- `analyze_runtime_console()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
-- `reset_analysis_plan()` — —
-- `add_plan_step()` — —
-- `update_last_plan_step()` — —
-- `set_analysis_context()` — —
-- `summarize_affected_files()` — —
-- `generate_patch_scripts()` — —
-- `collect_structure_snapshot()` — —
-- `collect_preliminary_refactor_proposals()` — —
-- `add_history_entry()` — —
-- `add_manual_entry()` — —
-- `write()` — —
-- `loc()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -1241,6 +1212,35 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
+- `resolve_symlink()` — —
+- `build_project_relation_map()` — —
+- `analyze_from_url()` — —
+- `analyze_dependency_chain()` — —
+- `probe_vite_runtime()` — —
+- `analyze_module_loader_compliance()` — —
+- `analyze_page_registry_compliance()` — —
+- `analyze_page_implementations()` — —
+- `analyze_runtime_console()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `update_last_plan_step()` — —
+- `set_analysis_context()` — —
+- `summarize_affected_files()` — —
+- `generate_patch_scripts()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
+- `add_history_entry()` — —
+- `add_manual_entry()` — —
+- `write()` — —
+- `loc()` — —
 
 
 ## Project Structure
@@ -1252,8 +1252,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (830 functions, 4 classes)
-📄 `SUMR` (292 functions, 4 classes)
+📄 `SUMD` (922 functions, 4 classes)
+📄 `SUMR` (354 functions, 4 classes)
 📄 `TODO`
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
@@ -1270,20 +1270,20 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1878 functions)
+📄 `project.map.toon` (2115 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
-📄 `regres.defscan` (45 functions, 1 classes)
+📄 `regres.defscan` (52 functions, 1 classes)
 📄 `regres.doctor`
-📄 `regres.doctor_cli` (30 functions)
+📄 `regres.doctor_cli` (53 functions)
 📄 `regres.doctor_config` (5 functions, 1 classes)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (127 functions, 2 classes)
+📄 `regres.doctor_orchestrator` (148 functions, 2 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
-📄 `regres.refactor` (52 functions)
-📄 `regres.regres` (55 functions, 1 classes)
+📄 `regres.refactor` (65 functions)
+📄 `regres.regres` (65 functions, 1 classes)
 📄 `regres.regres_cli` (9 functions)
 📄 `regres.version_check` (10 functions)
 📄 `scripts.import-error-toon-report`

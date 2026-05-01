@@ -144,28 +144,40 @@ WRAPPER_SIGNATURES = [
 def iter_files(root: Path, extensions=None, word_filter: Optional[str] = None,
                case_sensitive: bool = False,
                ext_filter: Optional[set] = None) -> list[Path]:
+    """Iterate over files in root, applying various filters."""
     exts = ext_filter or extensions or DEFAULT_EXTENSIONS
     result = []
     for p in root.rglob('*'):
-        if not p.is_file():
+        if not _is_valid_file(p, exts):
             continue
-        if any(part in IGNORED_DIRS for part in p.parts):
+        if word_filter and not _file_contains_word(p, word_filter, case_sensitive):
             continue
-        if any(part.startswith('.') for part in p.parts):
-            continue
-        if p.suffix.lower() not in exts:
-            continue
-        if word_filter:
-            try:
-                content = p.read_text(encoding='utf-8', errors='ignore')
-                needle = word_filter if case_sensitive else word_filter.lower()
-                hay = content if case_sensitive else content.lower()
-                if needle not in hay:
-                    continue
-            except Exception:
-                continue
         result.append(p)
     return result
+
+
+def _is_valid_file(p: Path, exts: set) -> bool:
+    """Check if path is a valid file (not directory, not ignored, correct extension)."""
+    if not p.is_file():
+        return False
+    if any(part in IGNORED_DIRS for part in p.parts):
+        return False
+    if any(part.startswith('.') for part in p.parts):
+        return False
+    if p.suffix.lower() not in exts:
+        return False
+    return True
+
+
+def _file_contains_word(p: Path, word_filter: str, case_sensitive: bool) -> bool:
+    """Check if file content contains the specified word."""
+    try:
+        content = p.read_text(encoding='utf-8', errors='ignore')
+        needle = word_filter if case_sensitive else word_filter.lower()
+        hay = content if case_sensitive else content.lower()
+        return needle in hay
+    except Exception:
+        return False
 
 
 def read_text(p: Path) -> str:
@@ -305,36 +317,68 @@ def wrapper_score(text: str) -> dict:
     reasons = []
     score = 0
 
+    score, reasons = _check_wrapper_signatures(text, score, reasons)
+    score, reasons = _check_file_length(text, score, reasons)
+    score, reasons = _check_import_density(text, score, reasons)
+    score, reasons = _check_sys_manipulation(text, score, reasons)
+    score, reasons = _check_barrel_export(text, score, reasons)
+    score, reasons = _check_dynamic_import(text, score, reasons)
+
+    return {'score': min(score, 100), 'reasons': reasons}
+
+
+def _check_wrapper_signatures(text: str, score: int, reasons: list) -> tuple[int, list]:
+    """Check for wrapper signatures in text."""
     for sig in WRAPPER_SIGNATURES:
         if re.search(sig, text, re.IGNORECASE):
             score += 30
             reasons.append(f'signature: {sig[:50]}')
             break
+    return score, reasons
 
+
+def _check_file_length(text: str, score: int, reasons: list) -> tuple[int, list]:
+    """Check if file is short (likely a wrapper)."""
     non_blank = [l for l in text.splitlines() if l.strip()]
     if len(non_blank) < 50:
         score += 20
         reasons.append(f'short ({len(non_blank)} non-blank lines)')
+    return score, reasons
 
+
+def _check_import_density(text: str, score: int, reasons: list) -> tuple[int, list]:
+    """Check if file is import-dense."""
+    non_blank = [l for l in text.splitlines() if l.strip()]
     import_lines = [l for l in text.splitlines()
                     if re.match(r'^\s*(import|from|require|export \* from)', l)]
     if non_blank and len(import_lines) / max(len(non_blank), 1) > 0.4:
         score += 25
         reasons.append(f'import-dense ({len(import_lines)}/{len(non_blank)} lines)')
+    return score, reasons
 
+
+def _check_sys_manipulation(text: str, score: int, reasons: list) -> tuple[int, list]:
+    """Check for sys.path/modules manipulation."""
     if 'sys.path' in text or 'sys.modules' in text:
         score += 20
         reasons.append('sys.path/modules manipulation')
+    return score, reasons
 
+
+def _check_barrel_export(text: str, score: int, reasons: list) -> tuple[int, list]:
+    """Check for barrel export pattern."""
     if re.search(r'export\s*\*\s*from', text):
         score += 35
         reasons.append('barrel export (* from)')
+    return score, reasons
 
+
+def _check_dynamic_import(text: str, score: int, reasons: list) -> tuple[int, list]:
+    """Check for dynamic import patterns."""
     if 'runpy' in text or 'importlib' in text:
         score += 25
         reasons.append('dynamic import (runpy/importlib)')
-
-    return {'score': min(score, 100), 'reasons': reasons}
+    return score, reasons
 
 
 # ---------------------------------------------------------------------------
@@ -670,31 +714,66 @@ def cmd_hotmap(args, root: Path):
     normalize = getattr(args, 'normalize', False)
     threshold = getattr(args, 'min_sim', 60.0)
 
+    texts, paths_list = _collect_and_normalize_files(root, word, normalize)
+    dir_file_count = _count_files_per_dir(paths_list)
+    dir_pair_count, total_pairs = _count_similar_pairs(
+        paths_list, texts, threshold, dir_file_count
+    )
+    hotmap = _calculate_hotmap(dir_file_count, dir_pair_count)
+
+    _render_hotmap_output(args, hotmap, paths_list, total_pairs, threshold, normalize)
+
+
+def _collect_and_normalize_files(
+    root: Path, word: str, normalize: bool
+) -> tuple[dict[str, str], list[str]]:
+    """Collect files and optionally normalize their content."""
     files = iter_files(root, word_filter=word or None)
     texts_raw = {rel(p, root): read_text(p) for p in files}
     texts = {k: normalize_code(v, Path(k).suffix) for k, v in texts_raw.items()} \
         if normalize else texts_raw
+    return texts, list(texts.keys())
 
-    paths_list = list(texts.keys())
+
+def _count_files_per_dir(paths_list: list[str]) -> dict[str, int]:
+    """Count files per directory."""
     dir_file_count: dict[str, int] = defaultdict(int)
+    for path in paths_list:
+        dir_file_count[str(Path(path).parent)] += 1
+    return dir_file_count
+
+
+def _count_similar_pairs(
+    paths_list: list[str],
+    texts: dict[str, str],
+    threshold: float,
+    dir_file_count: dict[str, int],
+) -> tuple[dict[str, int], int]:
+    """Count similar file pairs per directory."""
     dir_pair_count: dict[str, int] = defaultdict(int)
     total_pairs = 0
 
-    for path in paths_list:
-        dir_file_count[str(Path(path).parent)] += 1
+    if len(paths_list) > 300:
+        return dir_pair_count, total_pairs
 
-    if len(paths_list) <= 300:
-        for i in range(len(paths_list)):
-            for j in range(i + 1, len(paths_list)):
-                a, b = paths_list[i], paths_list[j]
-                sim = similarity_ratio(texts[a], texts[b])
-                if sim >= threshold:
-                    total_pairs += 1
-                    da, db = str(Path(a).parent), str(Path(b).parent)
-                    dir_pair_count[da] += 1
-                    if da != db:
-                        dir_pair_count[db] += 1
+    for i in range(len(paths_list)):
+        for j in range(i + 1, len(paths_list)):
+            a, b = paths_list[i], paths_list[j]
+            sim = similarity_ratio(texts[a], texts[b])
+            if sim >= threshold:
+                total_pairs += 1
+                da, db = str(Path(a).parent), str(Path(b).parent)
+                dir_pair_count[da] += 1
+                if da != db:
+                    dir_pair_count[db] += 1
 
+    return dir_pair_count, total_pairs
+
+
+def _calculate_hotmap(
+    dir_file_count: dict[str, int], dir_pair_count: dict[str, int]
+) -> list[dict]:
+    """Calculate hotness percentage for each directory."""
     hotmap = []
     for d, fc in dir_file_count.items():
         pairs = dir_pair_count.get(d, 0)
@@ -703,7 +782,14 @@ def cmd_hotmap(args, root: Path):
             'hotness_pct': round(pairs / max(fc, 1) * 100, 1),
         })
     hotmap.sort(key=lambda x: x['similar_pairs'], reverse=True)
+    return hotmap
 
+
+def _render_hotmap_output(
+    args, hotmap: list[dict], paths_list: list[str],
+    total_pairs: int, threshold: float, normalize: bool
+) -> None:
+    """Render hotmap output in JSON or text format."""
     if args.json:
         print(json.dumps({
             'total_files': len(paths_list), 'total_similar_pairs': total_pairs,

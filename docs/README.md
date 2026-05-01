@@ -1,7 +1,7 @@
 <!-- code2docs:start --># regres
 
-![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1644-green)
-> **1644** functions | **16** classes | **47** files | CC̄ = 6.2
+![version](https://img.shields.io/badge/version-0.1.0-blue) ![python](https://img.shields.io/badge/python-%3E%3D3.11-blue) ![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey) ![functions](https://img.shields.io/badge/functions-1931-green)
+> **1931** functions | **19** classes | **47** files | CC̄ = 5.6
 
 > Auto-generated project documentation from source code analysis.
 
@@ -107,8 +107,8 @@ regres/
         ├── toon
         ├── toon
     ├── context
-    ├── README
         ├── toon
+    ├── README
     ├── calls
         ├── toon
 ```
@@ -162,6 +162,9 @@ regres/
 - `generate_patch_scripts()` — —
 - `collect_structure_snapshot()` — —
 - `collect_preliminary_refactor_proposals()` — —
+- `add_history_entry()` — —
+- `add_manual_entry()` — —
+- `write()` — —
 - `run_git()` — —
 - `find_repo_root()` — —
 - `resolve_target_file()` — —
@@ -398,6 +401,11 @@ regres/
 - `test_handle_defscan_refactor_subprocess_mock()` — —
 - `test_handle_auto_decision_flow_runtime_log()` — —
 - `test_full_workflow_with_all_mocks()` — —
+- `test_derive_vite_base_from_explicit_arg()` — —
+- `test_derive_vite_base_from_url()` — —
+- `test_derive_vite_base_no_url()` — —
+- `test_derive_vite_base_invalid_url()` — —
+- `test_derive_vite_base_https_url()` — —
 - `test_load_config_uses_defaults_and_creates_env_file()` — —
 - `test_load_config_priority_env_file_over_default()` — —
 - `test_load_config_priority_environ_over_file()` — —
@@ -523,6 +531,66 @@ regres/
 - `test_page_registry_compliance_flags_empty_registry()` — —
 - `test_page_registry_compliance_flags_default_not_in_registry()` — —
 - `test_page_registry_compliance_returns_none_when_no_index()` — —
+- `test_check_page_stub_indicators_placeholder_text()` — —
+- `test_check_page_stub_indicators_short_stub()` — —
+- `test_check_page_stub_indicators_empty_render()` — —
+- `test_check_page_stub_indicators_normal_page()` — —
+- `test_detect_content_regression()` — —
+- `test_detect_content_regression_no_regression()` — —
+- `test_detect_content_regression_with_placeholder()` — —
+- `test_detect_content_regression_empty_history()` — —
+- `test_add_backup_candidate_none()` — —
+- `test_add_backup_candidate_with_path()` — —
+- `test_add_history_candidates_empty()` — —
+- `test_add_history_candidates_with_data()` — —
+- `test_resolve_symlink_regular_file()` — —
+- `test_resolve_symlink_with_symlink()` — —
+- `test_resolve_symlink_nonexistent()` — —
+- `test_map_workspace_to_frontend_matches_pattern()` — —
+- `test_map_workspace_to_frontend_no_match()` — —
+- `test_map_workspace_to_frontend_different_module_names()` — —
+- `test_find_symlink_base_no_symlink()` — —
+- `test_find_symlink_base_with_symlinked_dir()` — —
+- `test_extract_relative_imports_double_quoted()` — —
+- `test_extract_relative_imports_single_quoted()` — —
+- `test_extract_relative_imports_skips_absolute()` — —
+- `test_extract_relative_imports_deduplicates()` — —
+- `test_extract_relative_imports_empty()` — —
+- `test_resolve_relative_import_finds_ts_file()` — —
+- `test_resolve_relative_import_not_found()` — —
+- `test_resolve_relative_import_with_explicit_extension()` — —
+- `test_resolve_relative_import_maps_workspace_to_frontend()` — —
+- `test_analyze_dependency_chain_no_imports()` — —
+- `test_analyze_dependency_chain_broken_import()` — —
+- `test_analyze_dependency_chain_resolved_import()` — —
+- `test_analyze_dependency_chain_missing_file()` — —
+- `test_analyze_module_loader_compliance_no_entry_file()` — —
+- `test_analyze_module_loader_compliance_has_default_export()` — —
+- `test_analyze_module_loader_compliance_has_module_class()` — —
+- `test_analyze_module_loader_compliance_no_module_export()` — —
+- `test_fingerprint_page_content_extracts_heading()` — —
+- `test_fingerprint_page_content_known_marker()` — —
+- `test_fingerprint_page_content_empty()` — —
+- `test_fingerprint_page_content_max_length()` — —
+- `test_filter_actionable_diagnoses_keeps_with_file_actions()` — —
+- `test_filter_actionable_diagnoses_keeps_import_error()` — —
+- `test_filter_actionable_diagnoses_drops_empty()` — —
+- `test_filter_actionable_diagnoses_mixed()` — —
+- `test_build_url_fallback_diagnosis_returns_diagnosis()` — —
+- `test_build_url_fallback_diagnosis_includes_candidate_file()` — —
+- `test_probe_vite_runtime_transport_error()` — —
+- `test_probe_vite_runtime_ok_response()` — —
+- `test_analyze_runtime_console_no_icon_lines()` — —
+- `test_analyze_runtime_console_single_icon()` — —
+- `test_analyze_runtime_console_many_icons_severity_high()` — —
+- `test_analyze_runtime_console_deduplicates_icons()` — —
+- `test_extract_page_token_module_name_only()` — —
+- `test_extract_page_token_hyphenated_subpage()` — —
+- `test_extract_page_token_empty_path()` — —
+- `test_extract_page_token_unrelated_module()` — —
+- `test_collect_structure_snapshot_empty_dir()` — —
+- `test_collect_structure_snapshot_returns_ts_files()` — —
+- `test_collect_structure_snapshot_respects_max_entries()` — —
 - `test_ts_error_re_matches()` — —
 - `test_ts_error_re_no_match_for_plain_text()` — —
 - `test_missing_module_re()` — —
@@ -618,6 +686,9 @@ regres/
 - `generate_patch_scripts()` — —
 - `collect_structure_snapshot()` — —
 - `collect_preliminary_refactor_proposals()` — —
+- `add_history_entry()` — —
+- `add_manual_entry()` — —
+- `write()` — —
 - `loc()` — —
 - `analyze_custom_metric()` — —
 - `print()` — —
@@ -816,6 +887,35 @@ regres/
 - `analyze_custom_metric()` — —
 - `print()` — —
 - `generate_readme()` — —
+- `resolve_symlink()` — —
+- `build_project_relation_map()` — —
+- `analyze_from_url()` — —
+- `analyze_dependency_chain()` — —
+- `probe_vite_runtime()` — —
+- `analyze_module_loader_compliance()` — —
+- `analyze_page_registry_compliance()` — —
+- `analyze_page_implementations()` — —
+- `analyze_runtime_console()` — —
+- `analyze_import_errors()` — —
+- `analyze_duplicates()` — —
+- `analyze_git_history()` — —
+- `analyze_with_defscan()` — —
+- `analyze_with_refactor()` — —
+- `apply_fixes()` — —
+- `generate_llm_diagnosis()` — —
+- `generate_report()` — —
+- `reset_analysis_plan()` — —
+- `add_plan_step()` — —
+- `update_last_plan_step()` — —
+- `set_analysis_context()` — —
+- `summarize_affected_files()` — —
+- `generate_patch_scripts()` — —
+- `collect_structure_snapshot()` — —
+- `collect_preliminary_refactor_proposals()` — —
+- `add_history_entry()` — —
+- `add_manual_entry()` — —
+- `write()` — —
+- `loc()` — —
 - `test_ext_lang_mappings()` — —
 - `test_ignored_dirs()` — —
 - `test_c_without_color()` — —
@@ -881,6 +981,11 @@ regres/
 - `test_handle_defscan_refactor_subprocess_mock()` — —
 - `test_handle_auto_decision_flow_runtime_log()` — —
 - `test_full_workflow_with_all_mocks()` — —
+- `test_derive_vite_base_from_explicit_arg()` — —
+- `test_derive_vite_base_from_url()` — —
+- `test_derive_vite_base_no_url()` — —
+- `test_derive_vite_base_invalid_url()` — —
+- `test_derive_vite_base_https_url()` — —
 - `test_load_config_uses_defaults_and_creates_env_file()` — —
 - `test_load_config_priority_env_file_over_default()` — —
 - `test_load_config_priority_environ_over_file()` — —
@@ -1006,6 +1111,66 @@ regres/
 - `test_page_registry_compliance_flags_empty_registry()` — —
 - `test_page_registry_compliance_flags_default_not_in_registry()` — —
 - `test_page_registry_compliance_returns_none_when_no_index()` — —
+- `test_check_page_stub_indicators_placeholder_text()` — —
+- `test_check_page_stub_indicators_short_stub()` — —
+- `test_check_page_stub_indicators_empty_render()` — —
+- `test_check_page_stub_indicators_normal_page()` — —
+- `test_detect_content_regression()` — —
+- `test_detect_content_regression_no_regression()` — —
+- `test_detect_content_regression_with_placeholder()` — —
+- `test_detect_content_regression_empty_history()` — —
+- `test_add_backup_candidate_none()` — —
+- `test_add_backup_candidate_with_path()` — —
+- `test_add_history_candidates_empty()` — —
+- `test_add_history_candidates_with_data()` — —
+- `test_resolve_symlink_regular_file()` — —
+- `test_resolve_symlink_with_symlink()` — —
+- `test_resolve_symlink_nonexistent()` — —
+- `test_map_workspace_to_frontend_matches_pattern()` — —
+- `test_map_workspace_to_frontend_no_match()` — —
+- `test_map_workspace_to_frontend_different_module_names()` — —
+- `test_find_symlink_base_no_symlink()` — —
+- `test_find_symlink_base_with_symlinked_dir()` — —
+- `test_extract_relative_imports_double_quoted()` — —
+- `test_extract_relative_imports_single_quoted()` — —
+- `test_extract_relative_imports_skips_absolute()` — —
+- `test_extract_relative_imports_deduplicates()` — —
+- `test_extract_relative_imports_empty()` — —
+- `test_resolve_relative_import_finds_ts_file()` — —
+- `test_resolve_relative_import_not_found()` — —
+- `test_resolve_relative_import_with_explicit_extension()` — —
+- `test_resolve_relative_import_maps_workspace_to_frontend()` — —
+- `test_analyze_dependency_chain_no_imports()` — —
+- `test_analyze_dependency_chain_broken_import()` — —
+- `test_analyze_dependency_chain_resolved_import()` — —
+- `test_analyze_dependency_chain_missing_file()` — —
+- `test_analyze_module_loader_compliance_no_entry_file()` — —
+- `test_analyze_module_loader_compliance_has_default_export()` — —
+- `test_analyze_module_loader_compliance_has_module_class()` — —
+- `test_analyze_module_loader_compliance_no_module_export()` — —
+- `test_fingerprint_page_content_extracts_heading()` — —
+- `test_fingerprint_page_content_known_marker()` — —
+- `test_fingerprint_page_content_empty()` — —
+- `test_fingerprint_page_content_max_length()` — —
+- `test_filter_actionable_diagnoses_keeps_with_file_actions()` — —
+- `test_filter_actionable_diagnoses_keeps_import_error()` — —
+- `test_filter_actionable_diagnoses_drops_empty()` — —
+- `test_filter_actionable_diagnoses_mixed()` — —
+- `test_build_url_fallback_diagnosis_returns_diagnosis()` — —
+- `test_build_url_fallback_diagnosis_includes_candidate_file()` — —
+- `test_probe_vite_runtime_transport_error()` — —
+- `test_probe_vite_runtime_ok_response()` — —
+- `test_analyze_runtime_console_no_icon_lines()` — —
+- `test_analyze_runtime_console_single_icon()` — —
+- `test_analyze_runtime_console_many_icons_severity_high()` — —
+- `test_analyze_runtime_console_deduplicates_icons()` — —
+- `test_extract_page_token_module_name_only()` — —
+- `test_extract_page_token_hyphenated_subpage()` — —
+- `test_extract_page_token_empty_path()` — —
+- `test_extract_page_token_unrelated_module()` — —
+- `test_collect_structure_snapshot_empty_dir()` — —
+- `test_collect_structure_snapshot_returns_ts_files()` — —
+- `test_collect_structure_snapshot_respects_max_entries()` — —
 - `test_ts_error_re_matches()` — —
 - `test_ts_error_re_no_match_for_plain_text()` — —
 - `test_missing_module_re()` — —
@@ -1076,32 +1241,6 @@ regres/
 - `test_extract_symbols_ts()` — —
 - `test_parse_numstat_block()` — —
 - `test_parse_numstat_block_empty()` — —
-- `resolve_symlink()` — —
-- `build_project_relation_map()` — —
-- `analyze_from_url()` — —
-- `analyze_dependency_chain()` — —
-- `probe_vite_runtime()` — —
-- `analyze_module_loader_compliance()` — —
-- `analyze_page_registry_compliance()` — —
-- `analyze_page_implementations()` — —
-- `analyze_runtime_console()` — —
-- `analyze_import_errors()` — —
-- `analyze_duplicates()` — —
-- `analyze_git_history()` — —
-- `analyze_with_defscan()` — —
-- `analyze_with_refactor()` — —
-- `apply_fixes()` — —
-- `generate_llm_diagnosis()` — —
-- `generate_report()` — —
-- `reset_analysis_plan()` — —
-- `add_plan_step()` — —
-- `update_last_plan_step()` — —
-- `set_analysis_context()` — —
-- `summarize_affected_files()` — —
-- `generate_patch_scripts()` — —
-- `collect_structure_snapshot()` — —
-- `collect_preliminary_refactor_proposals()` — —
-- `loc()` — —
 
 
 ## Project Structure
@@ -1113,8 +1252,8 @@ regres/
 📄 `CHANGELOG`
 📄 `Makefile`
 📄 `README`
-📄 `SUMD` (715 functions, 3 classes)
-📄 `SUMR` (252 functions, 3 classes)
+📄 `SUMD` (830 functions, 4 classes)
+📄 `SUMR` (292 functions, 4 classes)
 📄 `TODO`
 📄 `docs.DEFSCAN` (1 functions)
 📄 `docs.DOCTOR` (1 functions, 1 classes)
@@ -1131,17 +1270,17 @@ regres/
 📄 `project.context`
 📄 `project.duplication.toon`
 📄 `project.evolution.toon`
-📄 `project.map.toon` (1641 functions)
+📄 `project.map.toon` (1878 functions)
 📄 `project.project.toon`
 📄 `project.prompt`
 📄 `pyproject`
 📦 `regres`
 📄 `regres.defscan` (45 functions, 1 classes)
 📄 `regres.doctor`
-📄 `regres.doctor_cli` (23 functions)
+📄 `regres.doctor_cli` (30 functions)
 📄 `regres.doctor_config` (5 functions, 1 classes)
 📄 `regres.doctor_models` (3 classes)
-📄 `regres.doctor_orchestrator` (91 functions, 1 classes)
+📄 `regres.doctor_orchestrator` (127 functions, 2 classes)
 📄 `regres.import_error_toon_report` (13 functions, 2 classes)
 📄 `regres.refactor` (52 functions)
 📄 `regres.regres` (55 functions, 1 classes)

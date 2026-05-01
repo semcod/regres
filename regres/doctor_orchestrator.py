@@ -134,29 +134,56 @@ class DoctorOrchestrator:
         include_git: bool = False,
         max_files: int = 1500,
     ) -> Dict[str, Any]:
+        """Build a comprehensive project relation map with modules, imports, and duplicates."""
         cache_key = f"git={int(include_git)}|max={max_files}"
         cached = self._project_relation_map_cache.get(cache_key)
         if cached is not None:
             return cached
 
         module_map = self._get_module_path_map()
-        relation: Dict[str, Any] = {
+        relation = self._init_relation_structure()
+        module_nodes, module_files = self._collect_module_files(module_map)
+        relation["modules"] = module_nodes
+
+        scoped_files = self._filter_scoped_files(module_files, max_files)
+        imports_edges, missing_imports = self._analyze_imports(scoped_files)
+        relation["imports"]["edges"] = imports_edges
+        relation["imports"]["missing"] = missing_imports
+
+        by_name, by_content = self._detect_duplicates(scoped_files)
+        relation["duplicates"]["by_name"] = by_name
+        relation["duplicates"]["by_content"] = by_content
+
+        if include_git:
+            relation["git"] = self._collect_git_relation_changes()
+
+        relation["summary"] = self._build_relation_summary(
+            module_nodes, scoped_files, module_files,
+            imports_edges, missing_imports, by_name, by_content,
+            include_git
+        )
+
+        self._project_relation_map_cache[cache_key] = relation
+        return relation
+
+    def _init_relation_structure(self) -> Dict[str, Any]:
+        """Initialize the base relation structure."""
+        return {
             "scan_root": str(self.scan_root),
             "modules": {},
             "route_hints": self._get_url_route_module_hints(),
             "summary": {},
-            "imports": {
-                "edges": [],
-                "missing": [],
-            },
-            "duplicates": {
-                "by_name": [],
-                "by_content": [],
-            },
+            "imports": {"edges": [], "missing": []},
+            "duplicates": {"by_name": [], "by_content": []},
         }
 
+    def _collect_module_files(
+        self, module_map: Dict[str, str]
+    ) -> tuple:
+        """Collect files from all modules and build module nodes."""
         module_files: List[Path] = []
         module_nodes: Dict[str, Dict[str, Any]] = {}
+
         for module_name, rel_path in module_map.items():
             full = self.scan_root / rel_path
             exists = full.exists()
@@ -171,12 +198,18 @@ class DoctorOrchestrator:
                 "file_count": file_count,
                 "kind": "backend" if rel_path.endswith("/backend") else "frontend",
             }
-        relation["modules"] = module_nodes
+        return module_nodes, module_files
 
+    def _filter_scoped_files(
+        self, module_files: List[Path], max_files: int
+    ) -> List[Path]:
+        """Filter files to relevant extensions and limit count."""
+        allowed = {".ts", ".tsx", ".js", ".jsx", ".json", ".yaml", ".yml"}
         scoped_files: List[Path] = []
         seen_files: set = set()
+
         for f in module_files:
-            if f.suffix.lower() not in {".ts", ".tsx", ".js", ".jsx", ".json", ".yaml", ".yml"}:
+            if f.suffix.lower() not in allowed:
                 continue
             key = str(f)
             if key in seen_files:
@@ -185,11 +218,18 @@ class DoctorOrchestrator:
             scoped_files.append(f)
             if len(scoped_files) >= max_files:
                 break
+        return scoped_files
 
+    def _analyze_imports(
+        self, scoped_files: List[Path]
+    ) -> tuple:
+        """Analyze imports in scoped files and detect missing ones."""
+        allowed_src = {".ts", ".tsx", ".js", ".jsx"}
         imports_edges: List[Dict[str, str]] = []
         missing_imports: List[Dict[str, Any]] = []
+
         for src_file in scoped_files:
-            if src_file.suffix.lower() not in {".ts", ".tsx", ".js", ".jsx"}:
+            if src_file.suffix.lower() not in allowed_src:
                 continue
             try:
                 text = src_file.read_text(encoding="utf-8")
@@ -199,22 +239,22 @@ class DoctorOrchestrator:
             for raw in self._extract_relative_imports(text):
                 resolved, _tried = self._resolve_relative_import(src_file, raw)
                 if resolved is None:
-                    missing_imports.append({
-                        "from": rel_from,
-                        "import": raw,
-                    })
+                    missing_imports.append({"from": rel_from, "import": raw})
                     continue
                 imports_edges.append({
                     "from": rel_from,
                     "to": self._rel_or_abs(resolved),
                     "import": raw,
                 })
+        return imports_edges, missing_imports
 
-        relation["imports"]["edges"] = imports_edges
-        relation["imports"]["missing"] = missing_imports
-
+    def _detect_duplicates(
+        self, scoped_files: List[Path]
+    ) -> tuple:
+        """Detect duplicate files by name and content."""
         name_index: Dict[str, List[str]] = {}
         content_index: Dict[str, List[str]] = {}
+
         for f in scoped_files:
             rel = self._rel_or_abs(f)
             name_index.setdefault(f.name.lower(), []).append(rel)
@@ -224,34 +264,41 @@ class DoctorOrchestrator:
                 continue
             content_index.setdefault(digest, []).append(rel)
 
-        relation["duplicates"]["by_name"] = [
+        by_name = [
             {"name": name, "paths": paths}
             for name, paths in sorted(name_index.items())
             if len(paths) > 1
         ]
-        relation["duplicates"]["by_content"] = [
+        by_content = [
             {"sha1": sha, "paths": paths}
             for sha, paths in content_index.items()
             if len(paths) > 1
         ]
+        return by_name, by_content
 
-        if include_git:
-            relation["git"] = self._collect_git_relation_changes()
-
-        relation["summary"] = {
+    def _build_relation_summary(
+        self,
+        module_nodes: Dict[str, Dict[str, Any]],
+        scoped_files: List[Path],
+        module_files: List[Path],
+        imports_edges: List[Dict[str, str]],
+        missing_imports: List[Dict[str, Any]],
+        by_name: List[Dict],
+        by_content: List[Dict],
+        include_git: bool,
+    ) -> Dict[str, Any]:
+        """Build the summary section of the relation map."""
+        return {
             "module_count": len(module_nodes),
             "module_existing_count": sum(1 for v in module_nodes.values() if v["exists"]),
             "scanned_files": len(scoped_files),
             "imports_edges": len(imports_edges),
             "missing_imports": len(missing_imports),
-            "duplicate_names": len(relation["duplicates"]["by_name"]),
-            "duplicate_contents": len(relation["duplicates"]["by_content"]),
+            "duplicate_names": len(by_name),
+            "duplicate_contents": len(by_content),
             "truncated": len(module_files) > len(scoped_files),
             "include_git": include_git,
         }
-
-        self._project_relation_map_cache[cache_key] = relation
-        return relation
 
     def _collect_git_relation_changes(self) -> Dict[str, Any]:
         if not (self.scan_root / ".git").exists():
@@ -414,80 +461,111 @@ class DoctorOrchestrator:
         target_file: Path,
         max_depth: int = 1,
     ) -> List[Dict[str, Any]]:
-        """Walk relative imports of `target_file` and report resolution status.
-
-        For each import, returns:
-          {
-            "depth": int,
-            "from_file": str (relative to scan_root),
-            "import": str (raw import path),
-            "resolved_path": Optional[str] (relative; first existing match),
-            "exists": bool,
-            "is_page_stub": bool,            # True if resolved file is a placeholder page
-            "tried": List[str],              # full list of paths tried
-          }
-
-        The walk is breadth-first up to `max_depth`. Depth 1 = direct imports of
-        the target. We deliberately keep the depth shallow because each broken
-        import is itself a candidate for an independent regres analysis run; the
-        markdown report links them so the user can perform a chained repair.
-        """
+        """Walk relative imports of `target_file` and report resolution status."""
         results: List[Dict[str, Any]] = []
         if not target_file.exists():
             return results
         visited: set = set()
         queue: List[tuple] = [(target_file, 1)]
+
         while queue:
             current, depth = queue.pop(0)
-            if depth > max_depth:
-                continue
-            try:
-                key = str(current.resolve())
-            except OSError:
-                key = str(current)
-            if key in visited:
-                continue
-            visited.add(key)
-            try:
-                text = current.read_text(encoding="utf-8")
-            except (OSError, UnicodeDecodeError):
-                continue
-            imports = self._extract_relative_imports(text)
-            try:
-                from_rel = str(current.relative_to(self.scan_root)).replace("\\", "/")
-            except ValueError:
-                from_rel = str(current)
-            for raw in imports:
-                resolved, tried = self._resolve_relative_import(current, raw)
-                exists = resolved is not None
-                is_page_stub = False
-                if exists and resolved is not None:
-                    if resolved.suffix in (".ts", ".tsx") and resolved.name.endswith(".page.ts"):
-                        try:
-                            sample = resolved.read_text(encoding="utf-8")
-                            lower = sample.lower()
-                            if any(p in lower for p in self.PLACEHOLDER_TEXT_PATTERNS):
-                                is_page_stub = True
-                        except (OSError, UnicodeDecodeError):
-                            pass
-                resolved_rel = None
-                if resolved is not None:
-                    try:
-                        resolved_rel = str(resolved.relative_to(self.scan_root)).replace("\\", "/")
-                    except ValueError:
-                        resolved_rel = str(resolved)
-                results.append({
-                    "depth": depth,
-                    "from_file": from_rel,
-                    "import": raw,
-                    "resolved_path": resolved_rel,
-                    "exists": exists,
-                    "is_page_stub": is_page_stub,
-                    "tried": tried,
-                })
-                if exists and resolved is not None and depth < max_depth:
-                    queue.append((resolved, depth + 1))
+            entry_results, new_files = self._process_imports_at_file(
+                current, depth, max_depth, visited
+            )
+            results.extend(entry_results)
+            queue.extend(new_files)
+
         return results
+
+    def _process_imports_at_file(
+        self,
+        current: Path,
+        depth: int,
+        max_depth: int,
+        visited: set,
+    ) -> tuple:
+        """Process all imports at a single file, returning results and new files for queue."""
+        if depth > max_depth:
+            return [], []
+
+        key = self._get_file_key(current)
+        if key in visited:
+            return [], []
+        visited.add(key)
+
+        try:
+            text = current.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return [], []
+
+        imports = self._extract_relative_imports(text)
+        from_rel = self._rel_or_abs(current)
+
+        results: List[Dict[str, Any]] = []
+        new_files: List[tuple] = []
+
+        for raw in imports:
+            entry = self._build_import_entry(current, from_rel, raw, depth)
+            results.append(entry)
+            if entry["exists"] and depth < max_depth:
+                resolved_path = self.scan_root / entry["resolved_path"] if entry["resolved_path"] else None
+                if resolved_path and resolved_path.exists():
+                    new_files.append((resolved_path, depth + 1))
+
+        return results, new_files
+
+    def _get_file_key(self, file_path: Path) -> str:
+        """Get a unique key for a file for visited tracking."""
+        try:
+            return str(file_path.resolve())
+        except OSError:
+            return str(file_path)
+
+    def _build_import_entry(
+        self,
+        current: Path,
+        from_rel: str,
+        raw: str,
+        depth: int,
+    ) -> Dict[str, Any]:
+        """Build a single import entry result."""
+        resolved, tried = self._resolve_relative_import(current, raw)
+        exists = resolved is not None
+        is_page_stub = self._check_page_stub(resolved)
+        resolved_rel = self._get_resolved_rel_path(resolved)
+
+        return {
+            "depth": depth,
+            "from_file": from_rel,
+            "import": raw,
+            "resolved_path": resolved_rel,
+            "exists": exists,
+            "is_page_stub": is_page_stub,
+            "tried": tried,
+        }
+
+    def _check_page_stub(self, resolved: Optional[Path]) -> bool:
+        """Check if resolved file is a placeholder page."""
+        if resolved is None:
+            return False
+        if resolved.suffix not in (".ts", ".tsx") or not resolved.name.endswith(".page.ts"):
+            return False
+        try:
+            sample = resolved.read_text(encoding="utf-8")
+            lower = sample.lower()
+            return any(p in lower for p in self.PLACEHOLDER_TEXT_PATTERNS)
+        except (OSError, UnicodeDecodeError):
+            return False
+
+    def _get_resolved_rel_path(self, resolved: Optional[Path]) -> Optional[str]:
+        """Get relative path string for resolved file."""
+        if resolved is None:
+            return None
+        try:
+            return str(resolved.relative_to(self.scan_root)).replace("\\", "/")
+        except ValueError:
+            return str(resolved)
 
     def _extract_relative_imports(self, text: str) -> List[str]:
         """Extract relative-only imports (./ or ../) from TS/JS source."""
@@ -1369,7 +1447,16 @@ class DoctorOrchestrator:
         if not (self.scan_root / ".git").exists():
             return []
 
-        # Resolve days/iterations: explicit args > config > class defaults.
+        days, iterations = self._resolve_history_params(days, iterations)
+        stdout = self._run_git_history_query(page_token, iterations)
+        if not stdout:
+            return []
+
+        candidates = self._parse_history_output(stdout, page_token)
+        return self._dedupe_and_limit_candidates(candidates, iterations)
+
+    def _resolve_history_params(self, days: Optional[int], iterations: Optional[int]) -> tuple:
+        """Resolve days/iterations: explicit args > config > class defaults."""
         days = (
             days
             if days is not None
@@ -1384,12 +1471,12 @@ class DoctorOrchestrator:
                 self.HISTORY_DEFAULT_ITERATIONS,
             )
         )
+        return days, iterations
 
-        # Pathspecs: any file ending in `<token>.page.ts` anywhere in the repo.
+    def _run_git_history_query(self, page_token: str, iterations: int) -> Optional[str]:
+        """Run git log query for page history and return stdout."""
         pathspec = f"*{page_token}.page.ts"
         try:
-            since_arg = f"--since={days}.days.ago"
-            # Get a wider window initially: max(days*5, iterations*3) commits.
             log_cmd = [
                 "git", "log", "--all",
                 "--pretty=format:%H|%ad",
@@ -1403,63 +1490,102 @@ class DoctorOrchestrator:
                 capture_output=True, text=True, timeout=30,
             )
         except (FileNotFoundError, subprocess.TimeoutExpired):
-            return []
+            return None
         if res.returncode != 0 or not res.stdout.strip():
-            return []
+            return None
+        return res.stdout
 
-        # Parse commits — alternating "hash|date" lines and file paths.
+    def _parse_history_output(
+        self, stdout: str, page_token: str
+    ) -> List[Dict[str, Any]]:
+        """Parse git log output and collect history candidates."""
         candidates: List[Dict[str, Any]] = []
         seen_keys: set = set()
         current_commit: Optional[Dict[str, Any]] = None
-        for line in res.stdout.splitlines():
-            if not line.strip():
-                current_commit = None
-                continue
-            if "|" in line and len(line.split("|", 1)[0]) == 40:
-                commit_hash, date_str = line.split("|", 1)
-                current_commit = {"hash": commit_hash[:8], "full_hash": commit_hash, "date": date_str}
+
+        for line in stdout.splitlines():
+            commit = self._parse_commit_line(line, current_commit)
+            if commit is not None:
+                current_commit = commit
                 continue
             if current_commit is None:
                 continue
-            file_path = line.strip()
-            if not file_path.endswith(f"{page_token}.page.ts") and not file_path.endswith(".page.ts"):
-                continue
-            # Match the page token in the basename
-            base = file_path.rsplit("/", 1)[-1].lower().replace(".page.ts", "")
-            tok = page_token.lower()
-            if not (base == tok or base.endswith("-" + tok)):
-                continue
-            key = (current_commit["full_hash"], file_path)
-            if key in seen_keys:
-                continue
-            seen_keys.add(key)
 
-            # Read content at this commit
-            try:
-                show = subprocess.run(
-                    ["git", "show", f"{current_commit['full_hash']}:{file_path}"],
-                    cwd=str(self.scan_root),
-                    capture_output=True, text=True, timeout=10,
-                )
-            except (FileNotFoundError, subprocess.TimeoutExpired):
-                continue
-            if show.returncode != 0:
-                continue
-            content = show.stdout
-            line_count = content.count("\n") + (0 if content.endswith("\n") else 1)
-            fingerprint = self._fingerprint_page_content(content)
-            candidates.append({
-                "hash": current_commit["hash"],
-                "full_hash": current_commit["full_hash"],
-                "date": current_commit["date"],
-                "source_path": file_path,
-                "line_count": line_count,
-                "fingerprint": fingerprint,
-            })
+            candidate = self._try_extract_candidate(line, page_token, current_commit, seen_keys)
+            if candidate:
+                candidates.append(candidate)
+                seen_keys.add((current_commit["full_hash"], candidate["source_path"]))
 
-        # Sort newest first by date+hash; cap to iterations.
+        return candidates
+
+    def _parse_commit_line(
+        self, line: str, current_commit: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        """Parse a commit line and return commit dict or None."""
+        if not line.strip():
+            return None
+        if "|" in line and len(line.split("|", 1)[0]) == 40:
+            commit_hash, date_str = line.split("|", 1)
+            return {"hash": commit_hash[:8], "full_hash": commit_hash, "date": date_str}
+        return current_commit
+
+    def _try_extract_candidate(
+        self,
+        line: str,
+        page_token: str,
+        commit: Dict[str, Any],
+        seen_keys: set,
+    ) -> Optional[Dict[str, Any]]:
+        """Try to extract a candidate from a file path line."""
+        file_path = line.strip()
+        if not file_path.endswith(".page.ts"):
+            return None
+
+        base = file_path.rsplit("/", 1)[-1].lower().replace(".page.ts", "")
+        tok = page_token.lower()
+        if not (base == tok or base.endswith("-" + tok)):
+            return None
+
+        key = (commit["full_hash"], file_path)
+        if key in seen_keys:
+            return None
+
+        content = self._get_file_at_commit(commit["full_hash"], file_path)
+        if content is None:
+            return None
+
+        line_count = content.count("\n") + (0 if content.endswith("\n") else 1)
+        fingerprint = self._fingerprint_page_content(content)
+
+        return {
+            "hash": commit["hash"],
+            "full_hash": commit["full_hash"],
+            "date": commit["date"],
+            "source_path": file_path,
+            "line_count": line_count,
+            "fingerprint": fingerprint,
+        }
+
+    def _get_file_at_commit(self, full_hash: str, file_path: str) -> Optional[str]:
+        """Get file content at a specific commit."""
+        try:
+            show = subprocess.run(
+                ["git", "show", f"{full_hash}:{file_path}"],
+                cwd=str(self.scan_root),
+                capture_output=True, text=True, timeout=10,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+        if show.returncode != 0:
+            return None
+        return show.stdout
+
+    def _dedupe_and_limit_candidates(
+        self, candidates: List[Dict[str, Any]], iterations: int
+    ) -> List[Dict[str, Any]]:
+        """Sort, dedupe by (path, line_count) and limit results."""
         candidates.sort(key=lambda c: (c["date"], c["full_hash"]), reverse=True)
-        # De-dupe near-identical sizes from same source_path keeping newest.
+
         deduped: List[Dict[str, Any]] = []
         size_seen: set = set()
         for c in candidates:
@@ -1991,6 +2117,7 @@ class DoctorOrchestrator:
                     seen[key]["diagnoses"].append(diag.summary)
         return list(seen.values())
 
+
     # c2004-maskservice-patch-v4: per-candidate `.sh` patch generator.
     # When a diagnosis lists several restore candidates (e.g. multiple git
     # history hashes for a `page_content_regression`), we want the user to
@@ -2011,113 +2138,38 @@ class DoctorOrchestrator:
         """
         out_dir.mkdir(parents=True, exist_ok=True)
         generated: List[Dict[str, str]] = []
-        index_lines: List[str] = [
-            "#!/usr/bin/env bash",
-            "# Auto-generated patch index by regres doctor",
-            f"# Basename: {basename}",
-            "# Use: bash <patch-file>.sh",
-            "",
-            "set -euo pipefail",
-            "",
-            'cat <<"EOF"',
-            "Available patches (run any of them individually):",
-            "EOF",
-            "",
-        ]
-
+        index_builder = _PatchIndexBuilder(basename)
         counter = 0
-        for diag_idx, diag in enumerate(self.diagnoses, 1):
-            # Group git history candidates per diagnosis.
-            history_candidates = [
-                a for a in diag.file_actions
-                if a.action == "modify" and (a.target or "").startswith("git:")
-            ]
-            if history_candidates:
-                # Detect target file (the "modify" action without git target).
-                primary_target_path = None
-                for a in diag.file_actions:
-                    if a.action == "modify" and not (a.target or "").startswith("git:"):
-                        primary_target_path = a.path
-                        break
-                if primary_target_path is None and history_candidates:
-                    primary_target_path = history_candidates[0].path
 
+        for diag_idx, diag in enumerate(self.diagnoses, 1):
+            history_candidates = self._extract_history_candidates(diag)
+            if history_candidates:
+                primary_target = self._find_primary_target(diag, history_candidates)
                 for cand_idx, cand_action in enumerate(history_candidates, 1):
                     counter += 1
-                    target_spec = cand_action.target or ""
-                    # target format: git:<short_hash>:<source_path>
-                    parts = target_spec.split(":", 2)
-                    if len(parts) != 3:
-                        continue
-                    _, git_hash, source_path = parts
-                    script_path = out_dir / (
-                        f"{basename}-patch-{counter:02d}-{git_hash}.sh"
+                    patch_meta = self._generate_history_patch(
+                        diag, diag_idx, cand_idx, cand_action,
+                        history_candidates, primary_target,
+                        out_dir, basename, counter
                     )
-                    script_lines = self._render_patch_script(
-                        diag=diag,
-                        diag_idx=diag_idx,
-                        cand_idx=cand_idx,
-                        total_cands=len(history_candidates),
-                        git_hash=git_hash,
-                        source_path=source_path,
-                        target_path=primary_target_path or "",
-                        reason=cand_action.reason,
+                    if patch_meta:
+                        generated.append(patch_meta)
+                        index_builder.add_history_entry(
+                            patch_meta["path"], diag.problem_type,
+                            patch_meta["candidate"], primary_target or ""
+                        )
+            elif diag.shell_commands:
+                counter, patch_meta = self._try_generate_generic_patch(
+                    diag, diag_idx, out_dir, basename, counter
+                )
+                if patch_meta:
+                    generated.append(patch_meta)
+                    index_builder.add_manual_entry(
+                        patch_meta["path"], diag.problem_type, patch_meta["target"]
                     )
-                    script_path.write_text("\n".join(script_lines), encoding="utf-8")
-                    try:
-                        script_path.chmod(0o755)
-                    except OSError:
-                        pass
-                    generated.append({
-                        "path": str(script_path),
-                        "diagnosis": diag.summary,
-                        "candidate": git_hash,
-                        "kind": "git_history_restore",
-                    })
-                    index_lines.append(
-                        f'echo "  bash {script_path.name}  # [{diag.problem_type}] {git_hash} → {primary_target_path}"'
-                    )
-
-            # Fallback: plain shell commands not tied to candidate hashes.
-            if not history_candidates and diag.shell_commands:
-                # Only generate a script if there is a real "modify" action.
-                modify_action = next(
-                    (a for a in diag.file_actions if a.action == "modify"), None,
-                )
-                if modify_action is None:
-                    continue
-                counter += 1
-                script_path = out_dir / (
-                    f"{basename}-patch-{counter:02d}-{diag.problem_type}.sh"
-                )
-                script_lines = self._render_generic_patch_script(
-                    diag=diag,
-                    diag_idx=diag_idx,
-                    target_path=modify_action.path,
-                )
-                script_path.write_text("\n".join(script_lines), encoding="utf-8")
-                try:
-                    script_path.chmod(0o755)
-                except OSError:
-                    pass
-                generated.append({
-                    "path": str(script_path),
-                    "diagnosis": diag.summary,
-                    "candidate": diag.problem_type,
-                    "kind": "manual_fix",
-                })
-                index_lines.append(
-                    f'echo "  bash {script_path.name}  # [{diag.problem_type}] manual fix → {modify_action.path}"'
-                )
 
         if generated:
-            index_path = out_dir / f"{basename}-patches-index.sh"
-            index_lines.append("")
-            index_path.write_text("\n".join(index_lines), encoding="utf-8")
-            try:
-                index_path.chmod(0o755)
-            except OSError:
-                pass
+            index_path = index_builder.write(out_dir)
             generated.insert(0, {
                 "path": str(index_path),
                 "diagnosis": "INDEX",
@@ -2126,6 +2178,96 @@ class DoctorOrchestrator:
             })
 
         return generated
+
+    def _extract_history_candidates(self, diag: "Diagnosis") -> List["FileAction"]:
+        """Extract git history candidates from diagnosis file actions."""
+        return [
+            a for a in diag.file_actions
+            if a.action == "modify" and (a.target or "").startswith("git:")
+        ]
+
+    def _find_primary_target(self, diag: "Diagnosis", history_candidates: List["FileAction"]) -> Optional[str]:
+        """Find primary target path from diagnosis actions."""
+        for a in diag.file_actions:
+            if a.action == "modify" and not (a.target or "").startswith("git:"):
+                return a.path
+        return history_candidates[0].path if history_candidates else None
+
+    def _generate_history_patch(
+        self,
+        diag: "Diagnosis",
+        diag_idx: int,
+        cand_idx: int,
+        cand_action: "FileAction",
+        history_candidates: List["FileAction"],
+        primary_target: Optional[str],
+        out_dir: Path,
+        basename: str,
+        counter: int,
+    ) -> Optional[Dict[str, str]]:
+        """Generate a single history restore patch script."""
+        target_spec = cand_action.target or ""
+        parts = target_spec.split(":", 2)
+        if len(parts) != 3:
+            return None
+        _, git_hash, source_path = parts
+        script_path = out_dir / f"{basename}-patch-{counter:02d}-{git_hash}.sh"
+
+        script_lines = self._render_patch_script(
+            diag=diag,
+            diag_idx=diag_idx,
+            cand_idx=cand_idx,
+            total_cands=len(history_candidates),
+            git_hash=git_hash,
+            source_path=source_path,
+            target_path=primary_target or "",
+            reason=cand_action.reason,
+        )
+        self._write_script(script_path, script_lines)
+        return {
+            "path": str(script_path),
+            "diagnosis": diag.summary,
+            "candidate": git_hash,
+            "kind": "git_history_restore",
+        }
+
+    def _try_generate_generic_patch(
+        self,
+        diag: "Diagnosis",
+        diag_idx: int,
+        out_dir: Path,
+        basename: str,
+        counter: int,
+    ) -> tuple:
+        """Try to generate a generic patch for shell commands."""
+        modify_action = next(
+            (a for a in diag.file_actions if a.action == "modify"), None,
+        )
+        if modify_action is None:
+            return counter, None
+        counter += 1
+        script_path = out_dir / f"{basename}-patch-{counter:02d}-{diag.problem_type}.sh"
+        script_lines = self._render_generic_patch_script(
+            diag=diag,
+            diag_idx=diag_idx,
+            target_path=modify_action.path,
+        )
+        self._write_script(script_path, script_lines)
+        return counter, {
+            "path": str(script_path),
+            "diagnosis": diag.summary,
+            "candidate": diag.problem_type,
+            "kind": "manual_fix",
+            "target": modify_action.path,
+        }
+
+    def _write_script(self, path: Path, lines: List[str]) -> None:
+        """Write script to file with proper permissions."""
+        path.write_text("\n".join(lines), encoding="utf-8")
+        try:
+            path.chmod(0o755)
+        except OSError:
+            pass
 
     def _render_patch_script(
         self,
@@ -2928,80 +3070,117 @@ class DoctorOrchestrator:
     def _render_dependency_chain(self, report: Dict[str, Any]) -> List[str]:
         """Render the per-target dependency chain results stored in context."""
         chains = report.get("analysis_context", {}).get("dependency_chains", []) or []
-        lines: List[str] = ["## Dependency Chain", ""]
         if not chains:
             return []
-        lines.append(
+        lines = self._render_chain_header()
+        for entry in chains:
+            lines.extend(self._render_single_chain_entry(entry))
+        lines.extend(self._render_repair_plan_if_needed(chains))
+        return lines
+
+    def _render_chain_header(self) -> List[str]:
+        """Render the header section for dependency chain."""
+        return [
+            "## Dependency Chain",
+            "",
             "Po analizie strony URL, regres prześledził relatywne importy każdego "
             "wykrytego pliku celu. Niespójne importy oznaczają, że po przywróceniu "
-            "treści historycznej trzeba wykonać dodatkowe kroki naprawy."
-        )
+            "treści historycznej trzeba wykonać dodatkowe kroki naprawy.",
+            "",
+        ]
+
+    def _render_single_chain_entry(self, entry: Dict[str, Any]) -> List[str]:
+        """Render a single chain entry with its imports."""
+        target = entry.get("target", "")
+        chain = entry.get("chain", []) or []
+        lines = [f"### `{target}`"]
+        if not chain:
+            lines.extend(["Brak relatywnych importów (lub plik niedostępny).", ""])
+            return lines
+        broken, stubs, ok = self._categorize_chain_imports(chain)
+        lines.extend(self._render_chain_summary(len(chain), len(ok), len(broken), len(stubs)))
+        lines.extend(self._render_broken_imports(broken))
+        lines.extend(self._render_stub_imports(stubs))
+        lines.extend(self._render_ok_chain_status(ok, broken, stubs))
+        return lines
+
+    def _categorize_chain_imports(self, chain: List[Dict[str, Any]]) -> tuple:
+        """Categorize imports into broken, stubs, and ok."""
+        broken = [c for c in chain if not c.get("exists")]
+        stubs = [c for c in chain if c.get("is_page_stub")]
+        ok = [c for c in chain if c.get("exists") and not c.get("is_page_stub")]
+        return broken, stubs, ok
+
+    def _render_chain_summary(self, total: int, ok: int, broken: int, stubs: int) -> List[str]:
+        """Render the summary line for chain imports."""
+        return [
+            f"_Imports total:_ {total} | _OK:_ {ok} | _Broken:_ {broken} | _Page stubs (transitive):_ {stubs}",
+            "",
+        ]
+
+    def _render_broken_imports(self, broken: List[Dict[str, Any]]) -> List[str]:
+        """Render broken imports section."""
+        if not broken:
+            return []
+        lines = ["**Niezresolwowane importy (wymagają dalszej analizy):**", ""]
+        for c in broken:
+            lines.append(f"- `{c['import']}` z `{c['from_file']}`")
+            tried = c.get('tried', [])[:4]
+            lines.append(f"  - Tried: {', '.join('`' + t + '`' for t in tried)}")
+            lines.extend(self._render_suggested_command(c['import'], 'import'))
         lines.append("")
-        for entry in chains:
-            target = entry.get("target", "")
-            chain = entry.get("chain", []) or []
-            lines.append(f"### `{target}`")
-            if not chain:
-                lines.append("Brak relatywnych importów (lub plik niedostępny).")
-                lines.append("")
-                continue
-            broken = [c for c in chain if not c.get("exists")]
-            stubs = [c for c in chain if c.get("is_page_stub")]
-            ok = [c for c in chain if c.get("exists") and not c.get("is_page_stub")]
-            lines.append(
-                f"_Imports total:_ {len(chain)} | "
-                f"_OK:_ {len(ok)} | "
-                f"_Broken:_ {len(broken)} | "
-                f"_Page stubs (transitive):_ {len(stubs)}"
-            )
-            lines.append("")
-            if broken:
-                lines.append("**Niezresolwowane importy (wymagają dalszej analizy):**")
-                lines.append("")
-                for c in broken:
-                    lines.append(f"- `{c['import']}` z `{c['from_file']}`")
-                    lines.append(f"  - Tried: {', '.join('`' + t + '`' for t in c.get('tried', [])[:4])}")
-                    suggested_url = self._suggest_url_for_path(c['import'])
-                    if suggested_url:
-                        lines.append(
-                            f"  - **Następny krok:** `regres doctor --scan-root {self.scan_root} "
-                            f"--url '{suggested_url}' --all --git-history --out-md "
-                            f".regres/{Path(c['import']).stem}-doctor.md`"
-                        )
-                lines.append("")
-            if stubs:
-                lines.append("**Importy wskazujące na placeholder pages (cascade repair):**")
-                lines.append("")
-                for c in stubs:
-                    resolved = c.get("resolved_path", "?")
-                    lines.append(f"- `{resolved}` ← imported as `{c['import']}` z `{c['from_file']}`")
-                    suggested_url = self._suggest_url_for_path(resolved)
-                    if suggested_url:
-                        lines.append(
-                            f"  - **Naprawa łańcuchowa:** `regres doctor --scan-root {self.scan_root} "
-                            f"--url '{suggested_url}' --all --git-history --out-md "
-                            f".regres/{Path(resolved).stem}-doctor.md`"
-                        )
-                lines.append("")
-            if ok and not broken and not stubs:
-                lines.append("Wszystkie importy są poprawne — łańcuch zależności jest spójny.")
-                lines.append("")
-        # Append a guidance block when there is at least one broken/stub link.
-        if any(
+        return lines
+
+    def _render_stub_imports(self, stubs: List[Dict[str, Any]]) -> List[str]:
+        """Render stub imports section."""
+        if not stubs:
+            return []
+        lines = ["**Importy wskazujące na placeholder pages (cascade repair):**", ""]
+        for c in stubs:
+            resolved = c.get("resolved_path", "?")
+            lines.append(f"- `{resolved}` ← imported as `{c['import']}` z `{c['from_file']}`")
+            lines.extend(self._render_suggested_command(resolved, 'stub'))
+        lines.append("")
+        return lines
+
+    def _render_suggested_command(self, path: str, kind: str) -> List[str]:
+        """Render suggested regres command for a path."""
+        suggested_url = self._suggest_url_for_path(path)
+        if not suggested_url:
+            return []
+        label = "Następny krok" if kind == 'import' else "Naprawa łańcuchowa"
+        return [
+            f"  - **{label}:** `regres doctor --scan-root {self.scan_root} "
+            f"--url '{suggested_url}' --all --git-history --out-md "
+            f".regres/{Path(path).stem}-doctor.md`"
+        ]
+
+    def _render_ok_chain_status(self, ok: List[Dict[str, Any]], broken: List, stubs: List) -> List[str]:
+        """Render status when all imports are ok."""
+        if ok and not broken and not stubs:
+            return ["Wszystkie importy są poprawne — łańcuch zależności jest spójny.", ""]
+        return []
+
+    def _render_repair_plan_if_needed(self, chains: List[Dict[str, Any]]) -> List[str]:
+        """Render repair plan if there are any broken or stub imports."""
+        has_issues = any(
             (not c.get("exists")) or c.get("is_page_stub")
             for entry in chains for c in (entry.get("chain") or [])
-        ):
-            lines.append("### Multi-step repair plan")
-            lines.append("")
-            lines.append("Wieloetapowy plan naprawy łańcuchowej:")
-            lines.append("")
-            lines.append("1. **Napraw najpierw plik celu** (URL z błędem) używając jednego z patchy `.sh` powyżej.")
-            lines.append("2. **Zrefreshuj stronę**. Jeśli runtime nadal pokazuje błąd, zobacz Vite/console.")
-            lines.append("3. **Uruchom regres na każdym broken/stub imporcie** — komendy są podane wyżej.")
-            lines.append("4. **Powtórz krok 1-3** dla każdego pliku w łańcuchu, aż wszystkie importy są zresolwowane.")
-            lines.append("5. **Zweryfikuj** poprzez `curl -s -o /dev/null -w '%{http_code}' <vite_url>` — oczekiwany 200.")
-            lines.append("")
-        return lines
+        )
+        if not has_issues:
+            return []
+        return [
+            "### Multi-step repair plan",
+            "",
+            "Wieloetapowy plan naprawy łańcuchowej:",
+            "",
+            "1. **Napraw najpierw plik celu** (URL z błędem) używając jednego z patchy `.sh` powyżej.",
+            "2. **Zrefreshuj stronę**. Jeśli runtime nadal pokazuje błąd, zobacz Vite/console.",
+            "3. **Uruchom regres na każdym broken/stub imporcie** — komendy są podane wyżej.",
+            "4. **Powtórz krok 1-3** dla każdego pliku w łańcuchu, aż wszystkie importy są zresolwowane.",
+            "5. **Zweryfikuj** poprzez `curl -s -o /dev/null -w '%{http_code}' <vite_url>` — oczekiwany 200.",
+            "",
+        ]
 
     def _suggest_url_for_path(self, raw_or_path: str) -> Optional[str]:
         """Best-effort guess: given a TS path, propose a URL/route to feed back into regres.
@@ -3242,3 +3421,50 @@ class DoctorOrchestrator:
         except Exception as e:
             lines.append(f"Refactor analysis error: {str(e)}")
         return "\n".join(lines)
+
+
+class _PatchIndexBuilder:
+    """Helper class to build patch index file content."""
+
+    def __init__(self, basename: str):
+        self.basename = basename
+        self.entries: List[str] = []
+
+    def add_history_entry(self, path: str, problem_type: str, candidate: str, target: str) -> None:
+        """Add a history restore patch entry."""
+        script_name = Path(path).name
+        self.entries.append(
+            f'echo "  bash {script_name}  # [{problem_type}] {candidate} → {target}"'
+        )
+
+    def add_manual_entry(self, path: str, problem_type: str, target: str) -> None:
+        """Add a manual fix patch entry."""
+        script_name = Path(path).name
+        self.entries.append(
+            f'echo "  bash {script_name}  # [{problem_type}] manual fix → {target}"'
+        )
+
+    def write(self, out_dir: Path) -> Path:
+        """Write the index file and return its path."""
+        lines = [
+            "#!/usr/bin/env bash",
+            "# Auto-generated patch index by regres doctor",
+            f"# Basename: {self.basename}",
+            "# Use: bash <patch-file>.sh",
+            "",
+            "set -euo pipefail",
+            "",
+            'cat <<"EOF"',
+            "Available patches (run any of them individually):",
+            "EOF",
+            "",
+        ]
+        lines.extend(self.entries)
+        lines.append("")
+        index_path = out_dir / f"{self.basename}-patches-index.sh"
+        index_path.write_text("\n".join(lines), encoding="utf-8")
+        try:
+            index_path.chmod(0o755)
+        except OSError:
+            pass
+        return index_path

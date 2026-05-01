@@ -33,6 +33,7 @@ Doctor podejmuje kolejność działań na podstawie przekazanych parametrów.
 - `--defscan-report` / `--defscan-scan` → dołączenie dodatkowych wyników defscan
 - `--refactor-scan` → dołączenie dodatkowych wyników refactor
 - `--url --llm` → raport modułowy z sekcjami kontekstowymi + playbook
+- `--runtime-log` → analiza logów runtime (np. brakujące ikony w rejestrze SVG)
 
 ## Użycie
 
@@ -64,7 +65,7 @@ regres doctor --all --out-json .regres/doctor-report.json
 Każda diagnoza zawiera:
 
 - **summary** — krótki podsumowanie problemu
-- **problem_type** — typ problemu (import_error, duplicate, regression)
+- **problem_type** — typ problemu (import_error, duplicate, regression, vite_runtime_failure, module_loader_no_class, page_registry_default_missing, runtime_icon_registry_miss, placeholder_page)
 - **severity** — poziom ważności (low, medium, high, critical)
 - **nlp_description** — szczegółowy opis w języku naturalnym
 - **file_actions** — lista akcji na plikach
@@ -177,6 +178,31 @@ regres doctor --all --scan-root . --out-md .regres/doctor-report.md
 #    (Analyze -> Apply changes -> Validate)
 ```
 
+### Workflow 3: Analiza logów runtime (brakujące ikony)
+
+```bash
+# Analiza logów runtime z wykrywaniem brakujących ikon w rejestrze
+regres doctor --runtime-log .regres/runtime.log --scan-root . --out-md .regres/runtime-report.md
+
+# Połączona analiza URL + runtime log
+regres doctor --url http://localhost:8100/connect-config-labels \
+  --runtime-log .regres/runtime.log \
+  --scan-root . \
+  --out-md .regres/combined-report.md
+```
+
+### Obsługa nested routes
+
+Doctor obsługuje parsowanie zagnieżdżonych ścieżek URL (np. `connect-test/operator-workshop`):
+
+```bash
+# Dla URL z nested route, doctor poprawnie wyciąga page token
+regres doctor --url http://localhost:8100/connect-test/operator-workshop \
+  --scan-root . \
+  --all --git-history \
+  --out-md .regres/operator-workshop-report.md
+```
+
 ## Rozszerzalność
 
 Doctor jest zaprojektowany jako rozszerzalny orchestrator. Możesz dodawać nowe analizatory:
@@ -192,7 +218,10 @@ class DoctorOrchestrator:
 
 ## Przyszłe rozszerzenia
 
-- Integracja z LLM dla generowania bardziej inteligentnych sugestii
-- Automatyczne wykonywanie bezpiecznych akcji
-- Integracja z CI/CD
-- Historia diagnoz i śledzenie postępu napraw
+- [ ] **`module_view_signature_mismatch`** — wykrywać klasy `*View extends BaseConnectView` które nie implementują `renderContainer()`/`loadCurrentPage()`/`_syncFromUrlInner()`.
+- [ ] **`menu_container_missing`** — gdy `app.initializer` loguje `Sidebar menu container not found`, identyfikować brakujący selektor.
+- [ ] **Submodule mirror import resolver** — lepsza obsługa symlink-ów do `<submodule>/frontend/src/modules/<name>`.
+- [ ] `--auto-apply-low-risk` — automatyczne stosowanie patch-y dla diagnoz z `confidence >= 0.95`.
+- [ ] `--watch` — pętla URL-probe → diagnoza → patch dla CI.
+- [ ] Integracja z CI/CD
+- [ ] Historia diagnoz i śledzenie postępu napraw

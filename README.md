@@ -9,15 +9,27 @@ Narzędzia do analizy regresji, refaktoryzacji i duplikatów kodu — z naciskie
 pip install -e .
 ```
 
-## What's new (0.1.40)
+## What's new (0.1.55)
 
-- **Page-registry compliance check** (`page_registry_default_missing`) — parsuje `<module>/pages-index.ts`, weryfikuje że `defaultPage` istnieje w rejestrze stron (z pominięciem zakomentowanych wpisów). Brak → krytyczna diagnoza z gotową instrukcją naprawy. Wykrywa runtime symptom: tysiące powtórzeń `Page '...' not found, using default` + głęboki stos `base-page-manager.ts:67` (nieskończona rekurencja w fallback do nieistniejącego defaultPage).
-- **Module-loader compliance check** (`module_loader_no_class`) — wykrywa pliki `<name>.module.ts`, które nie eksportują klasy `*Module` ani `default`. Bez nich host `frontend/src/modules/index.ts` rzuca runtime: `No Module class found in ./<name>/<name>.module.ts`. Diagnoza pokazuje gotowy fragment `BaseModule` do wklejenia.
-- **Vite runtime probe** (`--vite-base`, autoderywowane z `--url`) — pobiera plik celu z dev-servera Vite i parsuje błędy 500 typu `Failed to resolve import "X" from "Y"`. Łańcuchowo dodaje plik źródłowy błędu do kolejki i kontynuuje sondowanie.
-- **Dependency chain analysis** — BFS po relatywnych importach pliku celu (depth=1); zaznacza `BROKEN`/`STUB`. Każdy broken link generuje gotową komendę regres do naprawy chained.
-- **Decision-tree workflow w raporcie** — README, ścieżka decyzyjna, snapshot struktury, plan kroków (`status`, `inputs`, `outputs`, `decision`).
-- **Patch scripts z `--preview` / `--diff` / `--apply`** + automatycznym przepisywaniem ścieżek importów po przywróceniu pliku z innego głębokiego poziomu.
-- Nowy mapping `connect-deleted` w `MODULE_PATH_MAP`.
+- **`--runtime-log` end-to-end** — doctor_cli + regres_cli forwarding dla diagnostyki runtime z logów konsoli (np. `[IconComponent] SVG icon not found`).
+- **`runtime_icon_registry_miss` diagnosis** — wykrywa brakujące wpisy w rejestrze ikon na podstawie logów runtime (emoji-tokeny używane w UI bez definicji SVG).
+- **Fixed `DoctorOrchestrator._extract_page_token`** — poprawione parsowanie nested routes (np. `connect-test/operator-workshop`), wcześniej zwracało `None`.
+- **Rozszerzone wzorce placeholderów** — dodano generic 'w trakcie migracji' do `PLACEHOLDER_TEXT_PATTERNS`.
+- **Page-registry compliance check** (`page_registry_default_missing`) — parsuje `<module>/pages-index.ts`, weryfikuje że `defaultPage` istnieje w rejestrze stron (z pominięciem zakomentowanych wpisów). Brak → krytyczna diagnoza z gotową instrukcją naprawy.
+- **Module-loader compliance check** (`module_loader_no_class`) — wykrywa pliki `<name>.module.ts`, które nie eksportują klasy `*Module` ani `default`.
+- **Vite runtime probe** (`--vite-base`, autoderywowane z `--url`) — pobiera plik celu z dev-servera Vite i parsuje błędy 500.
+- **Dependency chain analysis** — BFS po relatywnych importach pliku celu (depth=1); zaznacza `BROKEN`/`STUB`.
+- **Decision-tree workflow w raporcie** — ścieżka decyzyjna, snapshot struktury, plan kroków.
+- **Patch scripts z `--preview` / `--diff` / `--apply`** + automatyczne przepisywanie ścieżek importów.
+- Nowe workflows: `.windsurf/workflows/c2004-preanalysis-predeploy.md` i `.windsurf/workflows/c2004-security-settings-baseline.md`.
+
+### What's new (0.1.40-0.1.45)
+
+- **`DoctorConfig` + `.regres/.env` loader** — 4-tier priority chain: CLI > os.environ > .regres/.env > defaults.
+- **Startup banner** — pokazuje aktywne okno analizy (history days, max iterations, shrinkage factor, vite base).
+- **Nowe flagi CLI**: `--history-window-days`, `--history-max-iterations`, `--history-shrinkage-factor`, `--no-banner`.
+- **Defaults bumped**: `HISTORY_DEFAULT_DAYS` 2→30, `HISTORY_DEFAULT_ITERATIONS` 10→30.
+- Mapping `connect-deleted` w `MODULE_PATH_MAP`.
 
 ## Usage
 
@@ -87,12 +99,13 @@ regres import-error-toon-report
 | `problem_type`               | Severity   | Wykrycie |
 |-----------------------------|------------|----------|
 | `page_content_regression`   | high       | git history pokazuje znacznie większą poprzednią wersję pliku |
-| `placeholder_page`          | high       | tekst pasuje do `PLACEHOLDER_TEXT_PATTERNS` |
+| `placeholder_page`          | high       | tekst pasuje do `PLACEHOLDER_TEXT_PATTERNS` (w tym 'w trakcie migracji') |
 | `import_resolution_failure` | high/medium| BFS po relatywnych importach — nie rozwiązany / placeholder |
 | `vite_runtime_failure`      | critical   | HTTP probe Vite zwraca 500 z `Failed to resolve import` |
 | `module_loader_no_class`    | critical   | `<name>.module.ts` bez `*Module` / `export default` |
 | `page_registry_default_missing` | critical | `pages-index.ts` ma `defaultPage` nieobecny w rejestrze → ryzyko nieskończonej rekurencji w `BasePageManager` |
-| `module_not_found`          | medium     | URL prefix bez modułu w `MODULE_PATH_MAP` |
+| `runtime_icon_registry_miss`| medium/high| Logi runtime z `[IconComponent] SVG icon not found: <emoji>` — brak definicji ikony w rejestrze |
+| `module_not_found`          | medium     | URL prefix bez modułu w `MODULE_PATH_MAP` (obsługa nested routes: `connect-test/operator-workshop`) |
 | `import_error`              | medium     | TS2307/TS2305 z logu kompilatora |
 
 ## Documentation
@@ -105,13 +118,13 @@ regres import-error-toon-report
 
 ## AI Cost Tracking
 
-![PyPI](https://img.shields.io/badge/pypi-costs-blue) ![Version](https://img.shields.io/badge/version-0.1.55-blue) ![Python](https://img.shields.io/badge/python-3.9+-blue) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
-![AI Cost](https://img.shields.io/badge/AI%20Cost-$7.50-orange) ![Human Time](https://img.shields.io/badge/Human%20Time-11.9h-blue) ![Model](https://img.shields.io/badge/Model-openrouter%2Fqwen%2Fqwen3--coder--next-lightgrey)
+![PyPI](https://img.shields.io/badge/pypi-costs-blue) ![Version](https://img.shields.io/badge/version-0.1.56-blue) ![Python](https://img.shields.io/badge/python-3.9+-blue) ![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![AI Cost](https://img.shields.io/badge/AI%20Cost-$7.50-orange) ![Human Time](https://img.shields.io/badge/Human%20Time-12.2h-blue) ![Model](https://img.shields.io/badge/Model-openrouter%2Fqwen%2Fqwen3--coder--next-lightgrey)
 
-- 🤖 **LLM usage:** $7.5000 (52 commits)
-- 👤 **Human dev:** ~$1185 (11.9h @ $100/h, 30min dedup)
+- 🤖 **LLM usage:** $7.5000 (53 commits)
+- 👤 **Human dev:** ~$1215 (12.2h @ $100/h, 30min dedup)
 
-Generated on 2026-04-29 using [openrouter/qwen/qwen3-coder-next](https://openrouter.ai/qwen/qwen3-coder-next)
+Generated on 2026-05-01 using [openrouter/qwen/qwen3-coder-next](https://openrouter.ai/qwen/qwen3-coder-next)
 
 ---
 

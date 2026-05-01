@@ -7,16 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.55] - 2026-04-29
+## [0.1.56] - 2026-05-01
 
 ### Docs
+- Update CHANGELOG.md
 - Update README.md
-
-### Test
-- Update tests/test_doctor_config.py
+- Update SUMD.md
+- Update SUMR.md
+- Update TODO.md
+- Update docs/DOCTOR.md
+- Update docs/README.md
+- Update project/README.md
+- Update project/context.md
 
 ### Other
-- Update regres/doctor_config.py
+- Update app.doql.less
+- Update project/analysis.toon.yaml
+- Update project/calls.mmd
+- Update project/calls.png
+- Update project/calls.toon.yaml
+- Update project/calls.yaml
+- Update project/compact_flow.mmd
+- Update project/compact_flow.png
+- Update project/duplication.toon.yaml
+- Update project/evolution.toon.yaml
+- ... and 9 more files
+
+## [0.1.55] - 2026-05-01
+
+### Added
+- **`--runtime-log` end-to-end** — doctor_cli + regres_cli forwarding dla diagnostyki runtime z logów konsoli
+- **`runtime_icon_registry_miss` diagnosis** — wykrywa brakujące wpisy w rejestrze ikon na podstawie logów runtime (emoji-tokeny używane w UI bez definicji SVG)
+- **Rozszerzone wzorce placeholderów** — dodano generic 'w trakcie migracji' do `PLACEHOLDER_TEXT_PATTERNS`
+- Nowe workflows: `.windsurf/workflows/c2004-preanalysis-predeploy.md` i `.windsurf/workflows/c2004-security-settings-baseline.md`
+
+### Fixed
+- **`DoctorOrchestrator._extract_page_token`** — poprawione parsowanie nested routes (np. `connect-test/operator-workshop`), wcześniej zwracało `None`
+
+### Test
+- **109 testów przechodzi** — `test_doctor_orchestrator.py` + `test_doctor_cli.py`
+
+### Docs
+- Aktualizacja README.md, TODO.md, docs/DOCTOR.md o nowe funkcjonalności
 
 ## [0.1.54] - 2026-04-29
 

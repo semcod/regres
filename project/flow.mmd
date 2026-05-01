@@ -19,7 +19,7 @@ flowchart TD
         regres__doctor_cli___create_import_chain_diagnoses["_create_import_chain_diagnoses"]
         regres__doctor_cli___derive_vite_base["_derive_vite_base"]
         regres__doctor_cli___run_vite_runtime_probe["_run_vite_runtime_probe"]
-        ...["+17 more"]
+        ...["+24 more"]
     end
 
     subgraph Core
@@ -38,16 +38,20 @@ flowchart TD
         regres__doctor_config__DoctorConfig__print_banner_to["print_banner_to"]
         regres__refactor__iter_files{{iter_files CC=15}}
         regres__refactor__wrapper_score{{wrapper_score CC=15}}
-        ...["+1335 more"]
+        ...["+1584 more"]
     end
 
     subgraph Exporters
         project__map__toon__test_module_loader_compliance_passes_with_default_export["test_module_loader_compliance_"]
         project__map__toon__test_module_loader_compliance_flags_view_only_export["test_module_loader_compliance_"]
+        project__map__toon__test_analyze_module_loader_compliance_has_default_export["test_analyze_module_loader_com"]
+        project__map__toon__test_analyze_module_loader_compliance_no_module_export["test_analyze_module_loader_com"]
         project__map__toon__test_exported_member_re["test_exported_member_re"]
         project__map__toon__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
         SUMD__test_module_loader_compliance_passes_with_default_export["test_module_loader_compliance_"]
         SUMD__test_module_loader_compliance_flags_view_only_export["test_module_loader_compliance_"]
+        SUMD__test_analyze_module_loader_compliance_has_default_export["test_analyze_module_loader_com"]
+        SUMD__test_analyze_module_loader_compliance_no_module_export["test_analyze_module_loader_com"]
         SUMD__test_exported_member_re["test_exported_member_re"]
         SUMD__test_wrapper_score_high_for_reexport["test_wrapper_score_high_for_re"]
     end

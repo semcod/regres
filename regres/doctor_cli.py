@@ -615,6 +615,20 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
 
     parsed = urlparse(args.url)
     normalized_path = parsed.path.strip('/')
+
+    module_name, route_hint = _resolve_module_from_url(
+        doctor, normalized_path
+    )
+    _record_url_discovery_step(doctor, scan_root, args.url, normalized_path, module_name, route_hint)
+    _setup_url_analysis_context(args, doctor, normalized_path, module_name, route_hint)
+    _handle_module_resolution(args, doctor, scan_root, normalized_path, module_name)
+    _apply_fixes_if_requested(args, doctor)
+
+
+def _resolve_module_from_url(
+    doctor: DoctorOrchestrator, normalized_path: str
+) -> tuple:
+    """Resolve module name from URL path using route hints and module map."""
     module_name = None
     route_hint = None
 
@@ -624,10 +638,8 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
             module_name = mapped_module
             break
 
-    module_path_map = doctor._get_module_path_map()
-
     if not module_name:
-        for possible_module in module_path_map.keys():
+        for possible_module in doctor._get_module_path_map().keys():
             if normalized_path.startswith(possible_module):
                 module_name = possible_module
                 break
@@ -637,17 +649,29 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
         if parts:
             module_name = parts[0]
 
+    return module_name, route_hint
+
+
+def _record_url_discovery_step(
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    url: str,
+    normalized_path: str,
+    module_name: Optional[str],
+    route_hint: Optional[str],
+) -> None:
+    """Record the URL discovery step in the analysis plan."""
     doctor.add_plan_step(
         name="url discovery",
         reason="Wyznaczenie modułu docelowego i zakresu analizy na podstawie URL.",
-        command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {args.url}",
+        command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {url}",
         status="done",
         details=(
             f"route hint matched: {route_hint}" if route_hint
             else f"module inferred: {module_name or 'unknown'}"
         ),
         inputs={
-            "url": args.url,
+            "url": url,
             "url_path": normalized_path,
             "had_route_hint": bool(route_hint),
         },
@@ -662,6 +686,15 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
         ),
     )
 
+
+def _setup_url_analysis_context(
+    args,
+    doctor: DoctorOrchestrator,
+    normalized_path: str,
+    module_name: Optional[str],
+    route_hint: Optional[str],
+) -> None:
+    """Setup analysis context for URL-based analysis."""
     doctor.set_analysis_context("url_target", {
         "url": args.url,
         "path": normalized_path,
@@ -672,64 +705,77 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
     structure_snapshot = doctor.collect_structure_snapshot(max_entries=120)
     if structure_snapshot:
         doctor.set_analysis_context("structure_snapshot", structure_snapshot)
+
     doctor.set_analysis_context(
         "project_relation_map",
         doctor.build_project_relation_map(include_git=bool(getattr(args, "git_history", False))),
     )
-    _handle_runtime_log_diagnostics(args, doctor, scan_root)
+    _handle_runtime_log_diagnostics(args, doctor, doctor.scan_root)
 
-    module_path_str = module_path_map.get(module_name)
+
+def _handle_module_resolution(
+    args,
+    doctor: DoctorOrchestrator,
+    scan_root: Path,
+    normalized_path: str,
+    module_name: Optional[str],
+) -> None:
+    """Handle module path resolution and analysis."""
+    module_path_map = doctor._get_module_path_map()
+    module_path_str = module_path_map.get(module_name) if module_name else None
+
     if not module_path_str:
-        doctor.add_plan_step(
-            name="module scope resolution",
-            reason="Mapowanie modułu URL na ścieżkę w repozytorium.",
-            command="# no module mapping found",
-            status="warning",
-            details="Moduł nie istnieje w strukturze projektu.",
-        )
+        _record_module_not_found_step(doctor)
+        _append_url_module_not_found_diagnosis(doctor, scan_root, module_name, args.url)
+        return
+
+    module_path = scan_root / module_path_str
+    path_exists = module_path.exists()
+    _record_module_resolution_step(doctor, module_path, path_exists)
+
+    if not path_exists:
         _append_url_module_not_found_diagnosis(
-            doctor,
-            scan_root,
-            module_name,
-            args.url,
+            doctor, scan_root, module_name, args.url, resolved_module_path=module_path
         )
     else:
-        module_path = scan_root / module_path_str
-        path_exists = module_path.exists()
-        doctor.add_plan_step(
-            name="module scope resolution",
-            reason="Mapowanie modułu URL na ścieżkę w repozytorium.",
-            command=f"# resolved module path: {module_path}",
-            status="done" if path_exists else "warning",
-            details=None if path_exists else "resolved path does not exist",
-        )
+        _run_url_module_analysis(args, doctor, scan_root, normalized_path, module_name, module_path)
 
-        if not path_exists:
-            _append_url_module_not_found_diagnosis(
-                doctor,
-                scan_root,
-                module_name,
-                args.url,
-                resolved_module_path=module_path,
-            )
-        else:
-            _run_url_module_analysis(
-                args,
-                doctor,
-                scan_root,
-                normalized_path,
-                module_name,
-                module_path,
-            )
 
-    if args.apply:
-        dry_run = not args.dry_run if args.dry_run else True
-        fix_results = doctor.apply_fixes(doctor.diagnoses, dry_run=dry_run)
-        print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
-        if fix_results['errors']:
-            print("Errors:")
-            for err in fix_results['errors']:
-                print(f"  - {err}")
+def _record_module_not_found_step(doctor: DoctorOrchestrator) -> None:
+    """Record step when module mapping is not found."""
+    doctor.add_plan_step(
+        name="module scope resolution",
+        reason="Mapowanie modułu URL na ścieżkę w repozytorium.",
+        command="# no module mapping found",
+        status="warning",
+        details="Moduł nie istnieje w strukturze projektu.",
+    )
+
+
+def _record_module_resolution_step(
+    doctor: DoctorOrchestrator, module_path: Path, path_exists: bool
+) -> None:
+    """Record the module resolution step."""
+    doctor.add_plan_step(
+        name="module scope resolution",
+        reason="Mapowanie modułu URL na ścieżkę w repozytorium.",
+        command=f"# resolved module path: {module_path}",
+        status="done" if path_exists else "warning",
+        details=None if path_exists else "resolved path does not exist",
+    )
+
+
+def _apply_fixes_if_requested(args, doctor: DoctorOrchestrator) -> None:
+    """Apply fixes if --apply flag was requested."""
+    if not args.apply:
+        return
+    dry_run = not args.dry_run if args.dry_run else True
+    fix_results = doctor.apply_fixes(doctor.diagnoses, dry_run=dry_run)
+    print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
+    if fix_results['errors']:
+        print("Errors:")
+        for err in fix_results['errors']:
+            print(f"  - {err}")
 
 
 def _handle_import_errors(args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn) -> None:

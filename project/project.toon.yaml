@@ -1,55 +1,52 @@
-# regres | 1544 func | 15f | 25320L | md | 2026-04-29
+# regres | 1805 func | 15f | 26956L | md | 2026-05-01
 
 HEALTH:
-  CC̄=1.2  critical=66 (limit:10)  dup=3  cycles=0
+  CC̄=1.1  critical=61 (limit:10)  dup=4  cycles=0
 
 ALERTS[20]:
-  !!! high_fan_out     DoctorOrchestrator.build_project_relation_map = 37 (limit:10)
-  !!! cc_exceeded      DoctorOrchestrator._render_dependency_chain = 28 (limit:15)
-  !!! cc_exceeded      DoctorOrchestrator.build_project_relation_map = 26 (limit:15)
-  !!! cc_exceeded      DoctorOrchestrator.generate_patch_scripts = 26 (limit:15)
-  !!! high_fan_out     DoctorOrchestrator._collect_page_history_candidates = 25 (limit:10)
   !!! high_fan_out     cmd_hotmap = 24 (limit:10)
   !!! high_fan_out     analyze_file = 23 (limit:10)
-  !!! high_fan_out     _handle_url_mode = 23 (limit:10)
   !!! high_fan_out     trace_name_and_hash_candidates = 22 (limit:10)
   !!! high_fan_out     _handle_auto_decision_flow = 21 (limit:10)
+  !!  cc_exceeded      DoctorOrchestrator._render_affected_files = 22 (limit:15)
+  !!  cc_exceeded      _save_report = 20 (limit:15)
+  !!  high_fan_out     exact_and_near_duplicates = 19 (limit:10)
+  !!  high_fan_out     cmd_diff = 19 (limit:10)
+  !!  high_fan_out     DoctorOrchestrator.analyze_page_registry_compliance = 19 (limit:10)
+  !!  high_fan_out     cmd_dead = 18 (limit:10)
 
 MODULES[44] (top by size):
-  M[project/calls.yaml] 3470L C:0 F:0 CC↑0 D:0 (yaml)
-  M[regres/doctor_orchestrator.py] 3244L C:1 F:91 CC↑28 D:0 (python)
+  M[project/calls.yaml] 3872L C:0 F:0 CC↑0 D:0 (yaml)
+  M[regres/doctor_orchestrator.py] 3470L C:2 F:127 CC↑22 D:0 (python)
   M[regres/regres.py] 1495L C:1 F:55 CC↑15 D:0 (python)
-  M[SUMD.md] 1296L C:3 F:540 CC↑0 D:0 (md)
+  M[SUMD.md] 1415L C:4 F:644 CC↑0 D:0 (md)
+  M[docs/README.md] 1320L C:0 F:1 CC↑0 D:0 (md)
   M[regres/defscan.py] 1261L C:1 F:45 CC↑17 D:0 (python)
   M[regres/refactor.py] 1237L C:0 F:52 CC↑16 D:0 (python)
-  M[docs/README.md] 1173L C:0 F:1 CC↑0 D:0 (md)
-  M[regres/doctor_cli.py] 1151L C:0 F:23 CC↑21 D:0 (python)
-  M[SUMR.md] 1066L C:3 F:245 CC↑0 D:0 (md)
-  M[CHANGELOG.md] 552L C:0 F:0 CC↑0 D:0 (md)
-  M[project/map.toon.yaml] 552L C:0 F:453 CC↑0 D:0 (yaml)
+  M[regres/doctor_cli.py] 1197L C:0 F:30 CC↑20 D:0 (python)
+  M[SUMR.md] 1108L C:4 F:284 CC↑0 D:0 (md)
+  M[project/map.toon.yaml] 628L C:0 F:528 CC↑0 D:0 (yaml)
+  M[CHANGELOG.md] 596L C:0 F:0 CC↑0 D:0 (md)
   M[.regres/import-error-toon-report.md] 549L C:0 F:0 CC↑0 D:0 (md)
-  M[project/context.md] 528L C:0 F:0 CC↑0 D:0 (md)
+  M[project/context.md] 536L C:0 F:0 CC↑0 D:0 (md)
   M[goal.yaml] 512L C:0 F:0 CC↑0 D:0 (yaml)
   M[regres/import_error_toon_report.py] 372L C:2 F:13 CC↑10 D:0 (python)
   LANGS: md:17/python:13/yaml:9/shell:2/other:1/txt:1/toml:1
 
 HOTSPOTS[10]:
-  ★ DoctorOrchestrator.build_project_relation_map fan=37  // Orchestrates 37 calls
-  ★ DoctorOrchestrator._collect_page_history_candidates fan=25  // Zbiera kandydatów z historii git dla danej strony.
-
-Strategia:
-1. Wyszukaj wszys
   ★ cmd_hotmap fan=24  // Mapa katalogów wg koncentracji podobnych plików.
 Wskaźnik 'hotness' = liczba par
   ★ analyze_file fan=23  // Analysis pipeline, 23 stages
-  ★ _handle_url_mode fan=23  // Handle URL-based discovery and analysis mode.
+  ★ trace_name_and_hash_candidates fan=22  // Orchestrates 22 calls
+  ★ _handle_auto_decision_flow fan=21  // Run parameter-driven analysis sequence and record plan/context.
+  ★ exact_and_near_duplicates fan=19  // Orchestrates 19 calls
 
 REFACTOR[15]:
-  [1] H/L Split DoctorOrchestrator.build_project_relation_map (CC=26)
-  [2] H/L Split DoctorOrchestrator.generate_patch_scripts (CC=26)
-  [3] H/L Split DoctorOrchestrator._render_dependency_chain (CC=28)
-  [4] H/H Split god module regres/doctor_orchestrator.py (3244L, 1 classes)
-  [5] H/H Split god module regres/doctor_cli.py (1151L, 0 classes)
+  [1] H/H Split god module regres/doctor_orchestrator.py (3470L, 2 classes)
+  [2] H/H Split god module regres/doctor_cli.py (1197L, 0 classes)
+  [3] H/H Split god module regres/defscan.py (1261L, 1 classes)
+  [4] H/H Split god module regres/refactor.py (1237L, 0 classes)
+  [5] H/H Split god module regres/regres.py (1495L, 1 classes)
 
 EVOLUTION:
-  2026-04-29 CC̄=1.2 crit=66 25320L // Automated analysis
+  2026-05-01 CC̄=1.1 crit=61 26956L // Automated analysis

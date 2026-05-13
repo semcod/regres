@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .version_check import check_version
+
 try:
     from importlib.metadata import version as _get_version
 except ImportError:
@@ -52,8 +53,15 @@ def toon_quote(value: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Create compact Toon markdown from TS errors")
-    parser.add_argument("--input-log", type=Path, default=None, help="Use existing log instead of running type-check")
+    parser = argparse.ArgumentParser(
+        description="Create compact Toon markdown from TS errors"
+    )
+    parser.add_argument(
+        "--input-log",
+        type=Path,
+        default=None,
+        help="Use existing log instead of running type-check",
+    )
     parser.add_argument("--frontend-cwd", type=Path, default=DEFAULT_FRONTEND_CWD)
     parser.add_argument("--typecheck-cmd", default="npm run -s type-check")
     parser.add_argument("--out-md", type=Path, default=DEFAULT_OUT_MD)
@@ -80,7 +88,11 @@ def run_typecheck(cwd: Path, command: str) -> str:
         capture_output=True,
         check=False,
     )
-    out = (proc.stdout or "") + ("\n" if proc.stdout and proc.stderr else "") + (proc.stderr or "")
+    out = (
+        (proc.stdout or "")
+        + ("\n" if proc.stdout and proc.stderr else "")
+        + (proc.stderr or "")
+    )
     return out.strip()
 
 
@@ -125,17 +137,25 @@ def suggestions_for_error(err: TsError) -> list[str]:
     if err.code == "TS2307":
         mod = err.module_path or ""
         if mod.startswith("@c2004/"):
-            out.append("Sprawdź alias w `frontend/vite.config.ts` i czy docelowy plik istnieje.")
+            out.append(
+                "Sprawdź alias w `frontend/vite.config.ts` i czy docelowy plik istnieje."
+            )
         elif mod.startswith("./") or mod.startswith("../"):
-            out.append("Zweryfikuj relatywną ścieżkę i poziom zagnieżdżenia po refaktorze.")
+            out.append(
+                "Zweryfikuj relatywną ścieżkę i poziom zagnieżdżenia po refaktorze."
+            )
             if mod.count("../") >= 3:
                 out.append("Rozważ zamianę głębokiej ścieżki na alias `@c2004/*`.")
         else:
             out.append("Sprawdź czy import wskazuje na poprawny pakiet/moduł.")
     elif err.code == "TS2305":
-        out.append("Sprawdź eksporty docelowego modułu i ewentualny cykl wrapperów re-export.")
+        out.append(
+            "Sprawdź eksporty docelowego modułu i ewentualny cykl wrapperów re-export."
+        )
         if err.member_name:
-            out.append(f"Zweryfikuj, czy symbol `{err.member_name}` jest rzeczywiście eksportowany.")
+            out.append(
+                f"Zweryfikuj, czy symbol `{err.member_name}` jest rzeczywiście eksportowany."
+            )
     return out
 
 
@@ -214,22 +234,26 @@ def to_toon_global_payload(
     for mod, cnt in module_counter.most_common(20):
         lines.append(f"    {toon_quote(mod)} {cnt}")
 
-    lines.extend([
-        "",
-        "  files[]:",
-        "    file error_count ts2307 ts2305",
-    ])
+    lines.extend(
+        [
+            "",
+            "  files[]:",
+            "    file error_count ts2307 ts2305",
+        ]
+    )
     for file_rel, errs in file_order[:max_files]:
         c = Counter(e.code for e in errs)
         lines.append(
             f"    {toon_quote(file_rel)} {len(errs)} {c.get('TS2307', 0)} {c.get('TS2305', 0)}"
         )
 
-    lines.extend([
-        "",
-        "  file_error_rows[]:",
-        "    file code line col module member message",
-    ])
+    lines.extend(
+        [
+            "",
+            "  file_error_rows[]:",
+            "    file code line col module member message",
+        ]
+    )
     for file_rel, errs in file_order[:max_files]:
         for e in errs[:max_errors_per_file]:
             lines.append(
@@ -251,7 +275,9 @@ def to_toon_global_payload(
     return "\n".join(lines)
 
 
-def to_toon_compact_per_file(grouped: dict[str, list[TsError]], max_files: int, max_errors: int) -> str:
+def to_toon_compact_per_file(
+    grouped: dict[str, list[TsError]], max_files: int, max_errors: int
+) -> str:
     file_order = sorted(grouped.items(), key=lambda kv: len(kv[1]), reverse=True)
     lines: list[str] = [
         "```toon",
@@ -259,14 +285,18 @@ def to_toon_compact_per_file(grouped: dict[str, list[TsError]], max_files: int, 
         "  file error_count primary_code",
     ]
     for file_rel, errs in file_order[:max_files]:
-        primary_code = Counter(e.code for e in errs).most_common(1)[0][0] if errs else ""
+        primary_code = (
+            Counter(e.code for e in errs).most_common(1)[0][0] if errs else ""
+        )
         lines.append(f"  {toon_quote(file_rel)} {len(errs)} {primary_code}")
 
-    lines.extend([
-        "",
-        "ticket_errors[]:",
-        "  file code line col module message",
-    ])
+    lines.extend(
+        [
+            "",
+            "ticket_errors[]:",
+            "  file code line col module message",
+        ]
+    )
     for file_rel, errs in file_order[:max_files]:
         for e in errs[:max_errors]:
             lines.append(
@@ -277,7 +307,9 @@ def to_toon_compact_per_file(grouped: dict[str, list[TsError]], max_files: int, 
     return "\n".join(lines)
 
 
-def render_markdown(report: ReportData, scan_root: str, max_files: int, max_errors_per_file: int) -> str:
+def render_markdown(
+    report: ReportData, scan_root: str, max_files: int, max_errors_per_file: int
+) -> str:
     grouped = grouped_errors(report.errors)
     m = metrics(report.errors)
 
@@ -308,20 +340,24 @@ def render_markdown(report: ReportData, scan_root: str, max_files: int, max_erro
     ]
 
     if module_counter:
-        out.extend([
-            "## Top Missing Modules",
-            "",
-            "| module | count |",
-            "|---|---:|",
-        ])
+        out.extend(
+            [
+                "## Top Missing Modules",
+                "",
+                "| module | count |",
+                "|---|---:|",
+            ]
+        )
         for mod, cnt in module_counter.most_common(20):
             out.append(f"| `{mod}` | {cnt} |")
         out.append("")
 
-    out.extend([
-        "## Files (Toon blocks - legacy ticket style)",
-        "",
-    ])
+    out.extend(
+        [
+            "## Files (Toon blocks - legacy ticket style)",
+            "",
+        ]
+    )
 
     for file_rel, errs in file_order[:max_files]:
         out.append(f"### `{file_rel}` ({len(errs)})")
@@ -329,14 +365,16 @@ def render_markdown(report: ReportData, scan_root: str, max_files: int, max_erro
         out.append(to_toon_block_legacy(file_rel, errs, max_errors_per_file))
         out.append("")
 
-    out.extend([
-        "## Raw Log (truncated)",
-        "",
-        "```text",
-        "\n".join(report.raw_log.splitlines()[:200]),
-        "```",
-        "",
-    ])
+    out.extend(
+        [
+            "## Raw Log (truncated)",
+            "",
+            "```text",
+            "\n".join(report.raw_log.splitlines()[:200]),
+            "```",
+            "",
+        ]
+    )
 
     return "\n".join(out)
 
@@ -354,7 +392,9 @@ def main() -> int:
     errs = parse_ts_errors(raw_log, args.frontend_cwd, include_codes)
 
     report = ReportData(errors=errs, raw_log=raw_log)
-    md = render_markdown(report, args.scan_root, args.max_files, args.max_errors_per_file)
+    md = render_markdown(
+        report, args.scan_root, args.max_files, args.max_errors_per_file
+    )
 
     args.out_md.parent.mkdir(parents=True, exist_ok=True)
     args.out_md.write_text(md, encoding="utf-8")
@@ -363,7 +403,9 @@ def main() -> int:
 
     print(f"[import-error-toon-report] saved markdown: {args.out_md}")
     print(f"[import-error-toon-report] saved raw log: {args.out_raw_log}")
-    print(f"[import-error-toon-report] parsed errors: {len(errs)} in {len({e.file_rel for e in errs})} files")
+    print(
+        f"[import-error-toon-report] parsed errors: {len(errs)} in {len({e.file_rel for e in errs})} files"
+    )
 
     return 0
 

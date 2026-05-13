@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .doctor_config import DoctorConfig, load_config
+from .doctor_config import DoctorConfig
 from .doctor_models import Diagnosis, FileAction, ShellCommand
 
 
@@ -25,8 +25,12 @@ class DoctorOrchestrator:
         # behavior (e.g. unit tests) need not construct one explicitly.
         # When omitted we fall back to a minimal config with the historical
         # defaults, *without* writing a .regres/.env file (load_config does).
-        self.config: DoctorConfig = config if config is not None else DoctorConfig(
-            scan_root=self.scan_root,
+        self.config: DoctorConfig = (
+            config
+            if config is not None
+            else DoctorConfig(
+                scan_root=self.scan_root,
+            )
         )
         self.diagnoses: List[Diagnosis] = []
         self.analysis_plan: List[Dict[str, Any]] = []
@@ -168,9 +172,14 @@ class DoctorOrchestrator:
             relation["git"] = self._collect_git_relation_changes()
 
         relation["summary"] = self._build_relation_summary(
-            module_nodes, scoped_files, module_files,
-            imports_edges, missing_imports, by_name, by_content,
-            include_git
+            module_nodes,
+            scoped_files,
+            module_files,
+            imports_edges,
+            missing_imports,
+            by_name,
+            by_content,
+            include_git,
         )
 
         self._project_relation_map_cache[cache_key] = relation
@@ -187,9 +196,7 @@ class DoctorOrchestrator:
             "duplicates": {"by_name": [], "by_content": []},
         }
 
-    def _collect_module_files(
-        self, module_map: Dict[str, str]
-    ) -> tuple:
+    def _collect_module_files(self, module_map: Dict[str, str]) -> tuple:
         """Collect files from all modules and build module nodes."""
         module_files: List[Path] = []
         module_nodes: Dict[str, Dict[str, Any]] = {}
@@ -230,9 +237,7 @@ class DoctorOrchestrator:
                 break
         return scoped_files
 
-    def _analyze_imports(
-        self, scoped_files: List[Path]
-    ) -> tuple:
+    def _analyze_imports(self, scoped_files: List[Path]) -> tuple:
         """Analyze imports in scoped files and detect missing ones."""
         allowed_src = {".ts", ".tsx", ".js", ".jsx"}
         imports_edges: List[Dict[str, str]] = []
@@ -251,16 +256,16 @@ class DoctorOrchestrator:
                 if resolved is None:
                     missing_imports.append({"from": rel_from, "import": raw})
                     continue
-                imports_edges.append({
-                    "from": rel_from,
-                    "to": self._rel_or_abs(resolved),
-                    "import": raw,
-                })
+                imports_edges.append(
+                    {
+                        "from": rel_from,
+                        "to": self._rel_or_abs(resolved),
+                        "import": raw,
+                    }
+                )
         return imports_edges, missing_imports
 
-    def _detect_duplicates(
-        self, scoped_files: List[Path]
-    ) -> tuple:
+    def _detect_duplicates(self, scoped_files: List[Path]) -> tuple:
         """Detect duplicate files by name and content."""
         name_index: Dict[str, List[str]] = {}
         content_index: Dict[str, List[str]] = {}
@@ -300,7 +305,9 @@ class DoctorOrchestrator:
         """Build the summary section of the relation map."""
         return {
             "module_count": len(module_nodes),
-            "module_existing_count": sum(1 for v in module_nodes.values() if v["exists"]),
+            "module_existing_count": sum(
+                1 for v in module_nodes.values() if v["exists"]
+            ),
             "scanned_files": len(scoped_files),
             "imports_edges": len(imports_edges),
             "missing_imports": len(missing_imports),
@@ -319,8 +326,14 @@ class DoctorOrchestrator:
                 "touch_counts": {},
             }
 
-        days = int(getattr(self.config, "history_window_days", self.HISTORY_DEFAULT_DAYS))
-        max_iterations = int(getattr(self.config, "history_max_iterations", self.HISTORY_DEFAULT_ITERATIONS))
+        days = int(
+            getattr(self.config, "history_window_days", self.HISTORY_DEFAULT_DAYS)
+        )
+        max_iterations = int(
+            getattr(
+                self.config, "history_max_iterations", self.HISTORY_DEFAULT_ITERATIONS
+            )
+        )
         cmd = [
             "git",
             "log",
@@ -368,10 +381,12 @@ class DoctorOrchestrator:
             if line.startswith("R"):
                 parts = line.split("\t")
                 if len(parts) >= 3:
-                    renames.append({
-                        "from": parts[1],
-                        "to": parts[2],
-                    })
+                    renames.append(
+                        {
+                            "from": parts[1],
+                            "to": parts[2],
+                        }
+                    )
                     touch_counts[parts[1]] = touch_counts.get(parts[1], 0) + 1
                     touch_counts[parts[2]] = touch_counts.get(parts[2], 0) + 1
                 continue
@@ -386,7 +401,9 @@ class DoctorOrchestrator:
             "max_iterations": max_iterations,
             "commits_scanned": min(commit_count, max_iterations),
             "renames": renames[:200],
-            "touch_counts": dict(sorted(touch_counts.items(), key=lambda kv: kv[1], reverse=True)[:500]),
+            "touch_counts": dict(
+                sorted(touch_counts.items(), key=lambda kv: kv[1], reverse=True)[:500]
+            ),
         }
 
     def _rel_or_abs(self, path: Path) -> str:
@@ -403,10 +420,11 @@ class DoctorOrchestrator:
         """Analizuje moduł na podstawie URL."""
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
-            path = parsed.path.strip('/')
+            path = parsed.path.strip("/")
         except Exception:
-            path = url.strip('/')
+            path = url.strip("/")
 
         module_name = self._extract_module_name(path)
         if not module_name:
@@ -424,7 +442,9 @@ class DoctorOrchestrator:
         # c2004-maskservice-patch-v2: page implementation analysis runs first
         # so URL-targeted page stubs (e.g. "Strona w trakcie migracji") are
         # detected before broader structural scans.
-        diagnoses.extend(self.analyze_page_implementations(path, full_module_path, module_name))
+        diagnoses.extend(
+            self.analyze_page_implementations(path, full_module_path, module_name)
+        )
         diagnoses.extend(self.analyze_with_defscan(full_module_path))
         diagnoses.extend(self.analyze_with_refactor(full_module_path))
 
@@ -461,10 +481,20 @@ class DoctorOrchestrator:
     # is consistent between detection and remediation.
     _RELATIVE_IMPORT_DQ = re.compile(r'(?:from|import)\s+"(\.{1,2}/[^"]+)"')
     _RELATIVE_IMPORT_SQ = re.compile(r"(?:from|import)\s+'(\.{1,2}/[^']+)'")
-    _RUNTIME_ICON_NOT_FOUND_RE = re.compile(r"SVG icon not found:\s*(.+?)\s*-\s*Available icons:\s*(\d+)", re.IGNORECASE)
+    _RUNTIME_ICON_NOT_FOUND_RE = re.compile(
+        r"SVG icon not found:\s*(.+?)\s*-\s*Available icons:\s*(\d+)", re.IGNORECASE
+    )
 
     # File extensions tried when resolving an import without explicit suffix.
-    _IMPORT_RESOLUTION_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.tsx", "/index.js")
+    _IMPORT_RESOLUTION_SUFFIXES = (
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        "/index.ts",
+        "/index.tsx",
+        "/index.js",
+    )
 
     def analyze_dependency_chain(
         self,
@@ -519,7 +549,11 @@ class DoctorOrchestrator:
             entry = self._build_import_entry(current, from_rel, raw, depth)
             results.append(entry)
             if entry["exists"] and depth < max_depth:
-                resolved_path = self.scan_root / entry["resolved_path"] if entry["resolved_path"] else None
+                resolved_path = (
+                    self.scan_root / entry["resolved_path"]
+                    if entry["resolved_path"]
+                    else None
+                )
                 if resolved_path and resolved_path.exists():
                     new_files.append((resolved_path, depth + 1))
 
@@ -559,7 +593,9 @@ class DoctorOrchestrator:
         """Check if resolved file is a placeholder page."""
         if resolved is None:
             return False
-        if resolved.suffix not in (".ts", ".tsx") or not resolved.name.endswith(".page.ts"):
+        if resolved.suffix not in (".ts", ".tsx") or not resolved.name.endswith(
+            ".page.ts"
+        ):
             return False
         try:
             sample = resolved.read_text(encoding="utf-8")
@@ -636,13 +672,14 @@ class DoctorOrchestrator:
         # Pattern: <scan_root>/<module>/frontend/src/modules/<module>/...
         # Map to: <scan_root>/frontend/src/modules/<module>/...
         import re
-        pattern = rf'^{re.escape(str(self.scan_root))}/(connect-\w+)/frontend/src/modules/(\1)/(.*)$'
+
+        pattern = rf"^{re.escape(str(self.scan_root))}/(connect-\w+)/frontend/src/modules/(\1)/(.*)$"
         match = re.match(pattern, path_str)
         if match:
             module_name = match.group(1)
             rest = match.group(3)
             # Map to frontend location
-            return self.scan_root / 'frontend' / 'src' / 'modules' / module_name / rest
+            return self.scan_root / "frontend" / "src" / "modules" / module_name / rest
         return file_path
 
     def _find_symlink_base(self, file_path: Path) -> Optional[Path]:
@@ -711,7 +748,7 @@ class DoctorOrchestrator:
         # Map repo-relative path to Vite-served URL.
         normalized = file_rel.replace("\\", "/")
         # Strip e.g. "connect-config/frontend/" or "frontend/" prefixes.
-        m = re.match(r'^(?:[^/]+/)?frontend/(.*)$', normalized)
+        m = re.match(r"^(?:[^/]+/)?frontend/(.*)$", normalized)
         if not m:
             return {
                 "url": "",
@@ -750,7 +787,9 @@ class DoctorOrchestrator:
             # Vite serves a 500 HTML wrapper containing JSON describing the
             # error. Try the embedded JSON first, then fall back to a regex on
             # the raw body.
-            for candidate_match in re.finditer(r'const\s+error\s*=\s*(\{.*?\});', body, re.DOTALL):
+            for candidate_match in re.finditer(
+                r"const\s+error\s*=\s*(\{.*?\});", body, re.DOTALL
+            ):
                 try:
                     err_obj = _json.loads(candidate_match.group(1))
                     error_message = err_obj.get("message") or error_message
@@ -782,9 +821,7 @@ class DoctorOrchestrator:
     _MODULE_CLASS_EXPORT_RE = re.compile(
         r"export\s+(?:abstract\s+)?class\s+([A-Z]\w*Module)\b"
     )
-    _ANY_CLASS_EXPORT_RE = re.compile(
-        r"export\s+(?:abstract\s+)?class\s+([A-Z]\w*)\b"
-    )
+    _ANY_CLASS_EXPORT_RE = re.compile(r"export\s+(?:abstract\s+)?class\s+([A-Z]\w*)\b")
 
     def analyze_module_loader_compliance(
         self,
@@ -816,8 +853,7 @@ class DoctorOrchestrator:
         except ValueError:
             rel = str(entry)
         suggested_class = (
-            "".join(part.capitalize() for part in module_name.split("-"))
-            + "Module"
+            "".join(part.capitalize() for part in module_name.split("-")) + "Module"
         )
         view_class = exports[0] if exports else "YourView"
         suggestion_block = (
@@ -853,14 +889,16 @@ class DoctorOrchestrator:
             problem_type="module_loader_no_class",
             severity="critical",
             nlp_description=nlp,
-            file_actions=[FileAction(
-                path=rel,
-                action="modify",
-                reason=(
-                    f"Dodaj `export class {suggested_class} extends BaseModule "
-                    f"{{ ... }}` oraz `export default {suggested_class};`."
-                ),
-            )],
+            file_actions=[
+                FileAction(
+                    path=rel,
+                    action="modify",
+                    reason=(
+                        f"Dodaj `export class {suggested_class} extends BaseModule "
+                        f"{{ ... }}` oraz `export default {suggested_class};`."
+                    ),
+                )
+            ],
             shell_commands=[
                 ShellCommand(
                     command=f"sed -n '1,40p' {rel}",
@@ -880,14 +918,10 @@ class DoctorOrchestrator:
     # the `pages-index.ts` registry is empty (or missing the `defaultPage`
     # entry), so the BasePageManager's fallback to `defaultPage` itself misses,
     # and recurses on the same missing key.
-    _PAGES_INDEX_DEFAULT_PAGE_RE = re.compile(
-        r"defaultPage\s*:\s*['\"]([^'\"]+)['\"]"
-    )
+    _PAGES_INDEX_DEFAULT_PAGE_RE = re.compile(r"defaultPage\s*:\s*['\"]([^'\"]+)['\"]")
     # Match `pages: <Identifier>` (registry referenced by name) — typical:
     #   pages: ConnectWorkshopPages as any
-    _PAGES_INDEX_PAGES_REF_RE = re.compile(
-        r"pages\s*:\s*([A-Z]\w*)\b"
-    )
+    _PAGES_INDEX_PAGES_REF_RE = re.compile(r"pages\s*:\s*([A-Z]\w*)\b")
     # Extract registry key strings from a `const Foo = { 'k1': X, 'k2': Y };`
     # declaration. Keys may be single- or double-quoted; we ignore comments.
     _REGISTRY_KEY_RE = re.compile(r"^\s*['\"]([^'\"]+)['\"]\s*:", re.MULTILINE)
@@ -935,7 +969,9 @@ class DoctorOrchestrator:
         m_ref = self._PAGES_INDEX_PAGES_REF_RE.search(text)
         return m_ref.group(1) if m_ref else None
 
-    def _extract_registry_keys(self, text: str, registry_name: Optional[str]) -> List[str]:
+    def _extract_registry_keys(
+        self, text: str, registry_name: Optional[str]
+    ) -> List[str]:
         """Extract keys from the named registry block."""
         if not registry_name:
             return []
@@ -981,14 +1017,16 @@ class DoctorOrchestrator:
             problem_type="page_registry_default_missing",
             severity="critical",
             nlp_description=nlp,
-            file_actions=[FileAction(
-                path=rel,
-                action="modify",
-                reason=(
-                    f"Dodaj wpis `'{default_page}': <PageClass>` do "
-                    f"`{registry_name or 'rejestru stron'}` lub zmień `defaultPage`."
-                ),
-            )],
+            file_actions=[
+                FileAction(
+                    path=rel,
+                    action="modify",
+                    reason=(
+                        f"Dodaj wpis `'{default_page}': <PageClass>` do "
+                        f"`{registry_name or 'rejestru stron'}` lub zmień `defaultPage`."
+                    ),
+                )
+            ],
             shell_commands=[
                 ShellCommand(
                     command=f"sed -n '1,80p' {rel}",
@@ -1012,8 +1050,8 @@ class DoctorOrchestrator:
         """Build the NLP description for registry compliance diagnosis."""
         keys_info = (
             f"`{registry_name}` zawiera tylko: {keys or '(brak — wszystkie wpisy zakomentowane)'}"
-            if registry_name else
-            f"nie został znaleziony statycznie (sprawdź ręcznie)."
+            if registry_name
+            else "nie został znaleziony statycznie (sprawdź ręcznie)."
         )
         return (
             f"`{rel}` konfiguruje `defaultPage: '{default_page}'`, ale rejestr stron "
@@ -1048,9 +1086,15 @@ class DoctorOrchestrator:
         if not page_token:
             return []
 
-        candidates = self._find_page_files(module_path, page_token, module_name=module_name)
+        candidates = self._find_page_files(
+            module_path, page_token, module_name=module_name
+        )
         if not candidates:
-            return [self._build_missing_page_diagnosis(route_path, module_path, module_name, page_token)]
+            return [
+                self._build_missing_page_diagnosis(
+                    route_path, module_path, module_name, page_token
+                )
+            ]
 
         diagnoses: List[Diagnosis] = []
         for page_file in candidates:
@@ -1142,8 +1186,8 @@ class DoctorOrchestrator:
                 f"Brakuje mapowania dla ikon: {icon_preview}. "
                 + (
                     f"Rejestr raportuje około {available_hint} dostępnych ikon. "
-                    if available_hint is not None else
-                    ""
+                    if available_hint is not None
+                    else ""
                 )
                 + "To zwykle oznacza przekazanie emoji/label zamiast klucza SVG albo brak fallbacku."
             ),
@@ -1157,8 +1201,8 @@ class DoctorOrchestrator:
         """Zwraca sub-token URL po nazwie modułu (np. 'sitemap')."""
         if not route_path:
             return None
-        path = route_path.strip('/').split('?', 1)[0]
-        parts = [segment for segment in path.split('/') if segment]
+        path = route_path.strip("/").split("?", 1)[0]
+        parts = [segment for segment in path.split("/") if segment]
         if not parts:
             return None
 
@@ -1169,7 +1213,7 @@ class DoctorOrchestrator:
             return parts[1]
         if first_segment == module_name:
             return None
-        if first_segment.startswith(module_name + '-'):
+        if first_segment.startswith(module_name + "-"):
             return first_segment[len(module_name) + 1 :]
         return None
 
@@ -1202,8 +1246,12 @@ class DoctorOrchestrator:
 
         def _consider(file_path: Path) -> None:
             name = file_path.name.lower()
-            base = name.replace('.page.ts', '')
-            if base == token or base.endswith('-' + token) or base.endswith('.' + token):
+            base = name.replace(".page.ts", "")
+            if (
+                base == token
+                or base.endswith("-" + token)
+                or base.endswith("." + token)
+            ):
                 key = str(file_path.resolve())
                 if key not in seen:
                     seen.add(key)
@@ -1243,28 +1291,36 @@ class DoctorOrchestrator:
     HISTORY_DEFAULT_ITERATIONS = 30
     HISTORY_SHRINKAGE_FACTOR = 0.5  # current must be < factor * recent_max to flag
 
-    def _check_page_stub_indicators(
-        self, text: str, line_count: int
-    ) -> tuple:
+    def _check_page_stub_indicators(self, text: str, line_count: int) -> tuple:
         """Check if page file has stub/placeholder indicators.
-        
+
         Returns (has_placeholder, is_short_stub, empty_render).
         """
         lower_text = text.lower()
         has_placeholder = any(p in lower_text for p in self.PLACEHOLDER_TEXT_PATTERNS)
-        is_short_stub = line_count <= 15 and 'render' in text and 'placeholder' in lower_text
-        empty_render = bool(re.search(r"render\s*\([^)]*\)\s*[:\w\s<>|]*\{\s*return\s+['\"`]['\"`]\s*;?\s*\}", text))
+        is_short_stub = (
+            line_count <= 15 and "render" in text and "placeholder" in lower_text
+        )
+        empty_render = bool(
+            re.search(
+                r"render\s*\([^)]*\)\s*[:\w\s<>|]*\{\s*return\s+['\"`]['\"`]\s*;?\s*\}",
+                text,
+            )
+        )
         return has_placeholder, is_short_stub, empty_render
 
     def _detect_content_regression(
         self, line_count: int, history_candidates: List[Dict], has_placeholder: bool
     ) -> bool:
         """Detect if page has undergone content regression."""
-        max_historical_lines = max((c["line_count"] for c in history_candidates), default=0)
+        max_historical_lines = max(
+            (c["line_count"] for c in history_candidates), default=0
+        )
         return (
             history_candidates
             and max_historical_lines > 0
-            and line_count < max(
+            and line_count
+            < max(
                 40,
                 int(
                     max_historical_lines
@@ -1290,7 +1346,7 @@ class DoctorOrchestrator:
         page_token: str,
     ) -> tuple:
         """Build file actions and shell commands for stub diagnosis.
-        
+
         Returns (actions, commands, problem_type, summary, nlp_lines).
         """
         actions: List[FileAction] = [
@@ -1414,11 +1470,11 @@ class DoctorOrchestrator:
         commands.append(
             ShellCommand(
                 command=(
-                    f"for h in "
-                    + " ".join(c['hash'] for c in history_candidates[:5])
-                    + f"; do echo \"=== $h ===\"; "
+                    "for h in "
+                    + " ".join(c["hash"] for c in history_candidates[:5])
+                    + '; do echo "=== $h ==="; '
                     + "git show $h:"
-                    + history_candidates[0]['source_path']
+                    + history_candidates[0]["source_path"]
                     + " | wc -l; done"
                 ),
                 description="Porównaj statystyki wszystkich kandydatów",
@@ -1438,7 +1494,9 @@ class DoctorOrchestrator:
             return None
 
         line_count = sum(1 for _ in text.splitlines())
-        has_placeholder, is_short_stub, empty_render = self._check_page_stub_indicators(text, line_count)
+        has_placeholder, is_short_stub, empty_render = self._check_page_stub_indicators(
+            text, line_count
+        )
 
         try:
             relative = page_file.relative_to(self.scan_root)
@@ -1447,26 +1505,46 @@ class DoctorOrchestrator:
         relative_str = str(relative).replace("\\", "/")
 
         history_candidates = self._collect_page_history_candidates(
-            page_token, module_name, page_file,
+            page_token,
+            module_name,
+            page_file,
         )
 
-        max_historical_lines = max((c["line_count"] for c in history_candidates), default=0)
+        max_historical_lines = max(
+            (c["line_count"] for c in history_candidates), default=0
+        )
         is_content_regression = self._detect_content_regression(
             line_count, history_candidates, has_placeholder
         )
 
-        if not (has_placeholder or is_short_stub or empty_render or is_content_regression):
+        if not (
+            has_placeholder or is_short_stub or empty_render or is_content_regression
+        ):
             return None
 
-        backup_candidate = self._find_backup_page_implementation(page_token, module_name)
-
-        actions, commands, problem_type, summary, nlp_lines = self._build_stub_diagnosis_actions(
-            relative_str, line_count, max_historical_lines,
-            has_placeholder, is_short_stub, empty_render, is_content_regression, page_token
+        backup_candidate = self._find_backup_page_implementation(
+            page_token, module_name
         )
 
-        self._add_backup_candidate(backup_candidate, relative_str, actions, commands, nlp_lines)
-        self._add_history_candidates(history_candidates, relative_str, actions, commands, nlp_lines)
+        actions, commands, problem_type, summary, nlp_lines = (
+            self._build_stub_diagnosis_actions(
+                relative_str,
+                line_count,
+                max_historical_lines,
+                has_placeholder,
+                is_short_stub,
+                empty_render,
+                is_content_regression,
+                page_token,
+            )
+        )
+
+        self._add_backup_candidate(
+            backup_candidate, relative_str, actions, commands, nlp_lines
+        )
+        self._add_history_candidates(
+            history_candidates, relative_str, actions, commands, nlp_lines
+        )
 
         confidence = 0.9 if (has_placeholder or is_short_stub or empty_render) else 0.7
 
@@ -1508,7 +1586,9 @@ class DoctorOrchestrator:
         candidates = self._parse_history_output(stdout, page_token)
         return self._dedupe_and_limit_candidates(candidates, iterations)
 
-    def _resolve_history_params(self, days: Optional[int], iterations: Optional[int]) -> tuple:
+    def _resolve_history_params(
+        self, days: Optional[int], iterations: Optional[int]
+    ) -> tuple:
         """Resolve days/iterations: explicit args > config > class defaults."""
         days = (
             days
@@ -1531,16 +1611,22 @@ class DoctorOrchestrator:
         pathspec = f"*{page_token}.page.ts"
         try:
             log_cmd = [
-                "git", "log", "--all",
+                "git",
+                "log",
+                "--all",
                 "--pretty=format:%H|%ad",
                 "--date=short",
                 "--name-only",
                 f"-n{max(iterations * 3, 30)}",
-                "--", pathspec,
+                "--",
+                pathspec,
             ]
             res = subprocess.run(
-                log_cmd, cwd=str(self.scan_root),
-                capture_output=True, text=True, timeout=30,
+                log_cmd,
+                cwd=str(self.scan_root),
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return None
@@ -1564,7 +1650,9 @@ class DoctorOrchestrator:
             if current_commit is None:
                 continue
 
-            candidate = self._try_extract_candidate(line, page_token, current_commit, seen_keys)
+            candidate = self._try_extract_candidate(
+                line, page_token, current_commit, seen_keys
+            )
             if candidate:
                 candidates.append(candidate)
                 seen_keys.add((current_commit["full_hash"], candidate["source_path"]))
@@ -1625,7 +1713,9 @@ class DoctorOrchestrator:
             show = subprocess.run(
                 ["git", "show", f"{full_hash}:{file_path}"],
                 cwd=str(self.scan_root),
-                capture_output=True, text=True, timeout=10,
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
         except (FileNotFoundError, subprocess.TimeoutExpired):
             return None
@@ -1655,17 +1745,28 @@ class DoctorOrchestrator:
         """Krótki opis zawartości — wyciąga znaczące nagłówki/tytuły z HTML/string."""
         keywords: List[str] = []
         # Extract <h1>..<h3>, page-header titles, and known section markers.
-        for match in re.finditer(r"<h[1-3][^>]*>([^<]{3,80})</h[1-3]>", content, re.IGNORECASE):
+        for match in re.finditer(
+            r"<h[1-3][^>]*>([^<]{3,80})</h[1-3]>", content, re.IGNORECASE
+        ):
             keywords.append(match.group(1).strip())
             if len(keywords) >= 3:
                 break
-        for match in re.finditer(r"\b(label|title)>([^<]{3,80})<", content, re.IGNORECASE):
+        for match in re.finditer(
+            r"\b(label|title)>([^<]{3,80})<", content, re.IGNORECASE
+        ):
             keywords.append(match.group(2).strip())
             if len(keywords) >= 5:
                 break
         # Detect signature sections in the page (Polish UI hints).
-        for marker in ("Wszystkie dostępne strony", "Sitemap", "Konfiguracja",
-                       "Lista", "Tabela", "Routes", "discoveredRoutes"):
+        for marker in (
+            "Wszystkie dostępne strony",
+            "Sitemap",
+            "Konfiguracja",
+            "Lista",
+            "Tabela",
+            "Routes",
+            "discoveredRoutes",
+        ):
             if marker in content and marker not in keywords:
                 keywords.append(marker)
         return "; ".join(dict.fromkeys(keywords))[:200]
@@ -1684,8 +1785,8 @@ class DoctorOrchestrator:
         best_size = 0
         for path in modules_dir.rglob("*.page.ts"):
             name = path.name.lower()
-            base = name.replace('.page.ts', '')
-            if not (base == token or base.endswith('-' + token)):
+            base = name.replace(".page.ts", "")
+            if not (base == token or base.endswith("-" + token)):
                 continue
             try:
                 text = path.read_text(encoding="utf-8")
@@ -1780,7 +1881,9 @@ class DoctorOrchestrator:
                 actionable.append(diag)
         return actionable
 
-    def _build_url_fallback_diagnosis(self, route_path: str, module_path: Path) -> Optional[Diagnosis]:
+    def _build_url_fallback_diagnosis(
+        self, route_path: str, module_path: Path
+    ) -> Optional[Diagnosis]:
         """Create a targeted guidance diagnosis when no actionable findings were generated."""
         candidates: List[str] = []
         token_candidates = [
@@ -1795,7 +1898,11 @@ class DoctorOrchestrator:
                 name = file_path.name.lower()
                 if token.lower() in name:
                     try:
-                        candidates.append(str(file_path.relative_to(self.scan_root)).replace("\\", "/"))
+                        candidates.append(
+                            str(file_path.relative_to(self.scan_root)).replace(
+                                "\\", "/"
+                            )
+                        )
                     except ValueError:
                         continue
         candidates = list(dict.fromkeys(candidates))[:5]
@@ -1882,15 +1989,11 @@ class DoctorOrchestrator:
         try:
             cmd = ["git", "log", "--oneline", "--follow", "--", file_path]
             result = subprocess.run(
-                cmd,
-                cwd=str(self.scan_root),
-                capture_output=True,
-                text=True,
-                timeout=30
+                cmd, cwd=str(self.scan_root), capture_output=True, text=True, timeout=30
             )
 
             if result.returncode == 0 and result.stdout.strip():
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 if len(lines) > 1:
                     diag = self._analyze_history_patterns(file_path, lines)
                     if diag:
@@ -1904,18 +2007,23 @@ class DoctorOrchestrator:
         """Używa defscan do analizy duplikatów w konkretnym katalogu."""
         diagnoses = []
         try:
-            cmd = [sys.executable, "-m", "regres.defscan", "--path", str(path), "--json"]
+            cmd = [
+                sys.executable,
+                "-m",
+                "regres.defscan",
+                "--path",
+                str(path),
+                "--json",
+            ]
             result = subprocess.run(
-                cmd,
-                cwd=str(self.scan_root),
-                capture_output=True,
-                text=True,
-                timeout=60
+                cmd, cwd=str(self.scan_root), capture_output=True, text=True, timeout=60
             )
 
             if result.returncode == 0 and result.stdout.strip():
                 data = json.loads(result.stdout)
-                duplicates = data if isinstance(data, list) else data.get("duplicates", [])
+                duplicates = (
+                    data if isinstance(data, list) else data.get("duplicates", [])
+                )
                 for item in duplicates:
                     if item.get("count", 0) > 1:
                         diag = self._diagnose_duplicate(item)
@@ -1929,50 +2037,57 @@ class DoctorOrchestrator:
         """Używa refactor do analizy kodu w konkretnym katalogu."""
         diagnoses = []
         try:
-            cmd = [sys.executable, "-m", "regres.refactor", "wrappers", "--path", str(path)]
+            cmd = [
+                sys.executable,
+                "-m",
+                "regres.refactor",
+                "wrappers",
+                "--path",
+                str(path),
+            ]
             result = subprocess.run(
-                cmd,
-                cwd=str(self.scan_root),
-                capture_output=True,
-                text=True,
-                timeout=60
+                cmd, cwd=str(self.scan_root), capture_output=True, text=True, timeout=60
             )
 
             if result.returncode == 0 and result.stdout.strip():
-                lines = result.stdout.strip().split('\n')
-                wrapper_count = len([l for l in lines if 'wrapper' in l.lower()])
+                lines = result.stdout.strip().split("\n")
+                wrapper_count = len([l for l in lines if "wrapper" in l.lower()])
 
                 if wrapper_count > 0:
-                    actions = [FileAction(
-                        path=str(path),
-                        action="review",
-                        reason=f"Wykryto {wrapper_count} wrapperów - sprawdź czy są potrzebne"
-                    )]
-                    commands = [ShellCommand(
-                        command=f"regres refactor wrappers --path {path}",
-                        description="Przejrzyj wrappery w katalogu"
-                    )]
-                    diagnoses.append(Diagnosis(
-                        summary=f"Wykryto {wrapper_count} wrapperów w {path}",
-                        problem_type="wrapper_analysis",
-                        severity="low",
-                        nlp_description=f"W katalogu {path} wykryto {wrapper_count} plików-wrapper. Należy przejrzeć czy wszystkie są potrzebne czy można je usunąć.",
-                        file_actions=actions,
-                        shell_commands=commands,
-                        confidence=0.6
-                    ))
+                    actions = [
+                        FileAction(
+                            path=str(path),
+                            action="review",
+                            reason=f"Wykryto {wrapper_count} wrapperów - sprawdź czy są potrzebne",
+                        )
+                    ]
+                    commands = [
+                        ShellCommand(
+                            command=f"regres refactor wrappers --path {path}",
+                            description="Przejrzyj wrappery w katalogu",
+                        )
+                    ]
+                    diagnoses.append(
+                        Diagnosis(
+                            summary=f"Wykryto {wrapper_count} wrapperów w {path}",
+                            problem_type="wrapper_analysis",
+                            severity="low",
+                            nlp_description=f"W katalogu {path} wykryto {wrapper_count} plików-wrapper. Należy przejrzeć czy wszystkie są potrzebne czy można je usunąć.",
+                            file_actions=actions,
+                            shell_commands=commands,
+                            confidence=0.6,
+                        )
+                    )
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
 
         return diagnoses
 
-    def apply_fixes(self, diagnoses: List[Diagnosis], dry_run: bool = True) -> Dict[str, Any]:
+    def apply_fixes(
+        self, diagnoses: List[Diagnosis], dry_run: bool = True
+    ) -> Dict[str, Any]:
         """Wykonuje akcje naprawcze z diagnoz."""
-        results = {
-            "dry_run": dry_run,
-            "actions_performed": [],
-            "errors": []
-        }
+        results = {"dry_run": dry_run, "actions_performed": [], "errors": []}
 
         for diag in diagnoses:
             for action in diag.file_actions:
@@ -1987,10 +2102,21 @@ class DoctorOrchestrator:
         """Generuje szczegółowy raport markdown z kontekstem historycznym i strukturalnym."""
         sections = [
             self._build_header(url, module_path),
-            self._build_section("## Git History Context", self._collect_git_context(module_path)),
-            self._build_section("## Code Structure Analysis", self._collect_structure_context(module_path)),
-            self._build_section("## Duplicate Analysis (defscan)", self._collect_defscan_context(module_path)),
-            self._build_section("## Wrapper Analysis (refactor)", self._collect_refactor_context(module_path)),
+            self._build_section(
+                "## Git History Context", self._collect_git_context(module_path)
+            ),
+            self._build_section(
+                "## Code Structure Analysis",
+                self._collect_structure_context(module_path),
+            ),
+            self._build_section(
+                "## Duplicate Analysis (defscan)",
+                self._collect_defscan_context(module_path),
+            ),
+            self._build_section(
+                "## Wrapper Analysis (refactor)",
+                self._collect_refactor_context(module_path),
+            ),
             self._build_nlp_diagnosis(module_path),
             self._build_proposed_fixes(module_path),
             self._build_shell_commands(module_path),
@@ -2008,8 +2134,11 @@ class DoctorOrchestrator:
         seen_keys: set = set()
         for diag in self.diagnoses:
             primary_path = next(
-                (a.path for a in diag.file_actions
-                 if a.action == "modify" and not (a.target or "").startswith("git:")),
+                (
+                    a.path
+                    for a in diag.file_actions
+                    if a.action == "modify" and not (a.target or "").startswith("git:")
+                ),
                 "",
             )
             key = (diag.summary, diag.problem_type, primary_path)
@@ -2034,7 +2163,7 @@ class DoctorOrchestrator:
                             "path": a.path,
                             "action": a.action,
                             "target": a.target,
-                            "reason": a.reason
+                            "reason": a.reason,
                         }
                         for a in d.file_actions
                     ],
@@ -2042,19 +2171,23 @@ class DoctorOrchestrator:
                         {
                             "command": c.command,
                             "description": c.description,
-                            "cwd": c.cwd
+                            "cwd": c.cwd,
                         }
                         for c in d.shell_commands
                     ],
-                    "confidence": d.confidence
+                    "confidence": d.confidence,
                 }
                 for d in self.diagnoses
-            ]
+            ],
         }
 
     def render_markdown(self, report: Dict[str, Any]) -> str:
         """Renderuje raport w formacie Markdown."""
-        lines = ["# Doctor Report\n", f"**Scan Root:** `{report['scan_root']}`\n", f"**Diagnoses:** {len(report['diagnoses'])}\n"]
+        lines = [
+            "# Doctor Report\n",
+            f"**Scan Root:** `{report['scan_root']}`\n",
+            f"**Diagnoses:** {len(report['diagnoses'])}\n",
+        ]
 
         lines.extend(self._render_decision_workflow(report))
         lines.extend(self._render_affected_files(report))
@@ -2063,37 +2196,46 @@ class DoctorOrchestrator:
         lines.extend(self._render_structure_snapshot(report))
         lines.extend(self._render_preliminary_refactor_proposals(report))
 
-        for i, diag in enumerate(report['diagnoses'], 1):
-            severity_emoji = {"low": "🟢", "medium": "🟡", "high": "🟠", "critical": "🔴"}.get(diag['severity'], "⚪")
+        for i, diag in enumerate(report["diagnoses"], 1):
+            severity_emoji = {
+                "low": "🟢",
+                "medium": "🟡",
+                "high": "🟠",
+                "critical": "🔴",
+            }.get(diag["severity"], "⚪")
             lines.append(f"## {severity_emoji} {i}. {diag['summary']}")
-            lines.append(f"**Type:** {diag['problem_type']} | **Severity:** {diag['severity']} | **Confidence:** {diag['confidence']:.0%}\n")
+            lines.append(
+                f"**Type:** {diag['problem_type']} | **Severity:** {diag['severity']} | **Confidence:** {diag['confidence']:.0%}\n"
+            )
             lines.append(f"**Description:** {diag['nlp_description']}\n")
 
-            if diag['file_actions']:
+            if diag["file_actions"]:
                 lines.append("### File Actions")
                 lines.append("```")
-                for action in diag['file_actions']:
+                for action in diag["file_actions"]:
                     lines.append(f"{action['action']}: {action['path']}")
-                    if action.get('target'):
+                    if action.get("target"):
                         lines.append(f"  -> {action['target']}")
-                    if action.get('reason'):
+                    if action.get("reason"):
                         lines.append(f"  ({action['reason']})")
                 lines.append("```\n")
 
-            if diag['shell_commands']:
+            if diag["shell_commands"]:
                 lines.append("### Shell Commands")
                 lines.append("```bash")
-                for cmd in diag['shell_commands']:
+                for cmd in diag["shell_commands"]:
                     lines.append(f"# {cmd['description']}")
-                    lines.append(cmd['command'])
-                    if cmd['cwd']:
+                    lines.append(cmd["command"])
+                    if cmd["cwd"]:
                         lines.append(f"# cwd: {cmd['cwd']}")
                     lines.append("")
                 lines.append("```")
                 lines.append("")
 
-        normalized_diags = self._normalize_diagnoses(report.get('diagnoses', []))
-        lines.extend(self._render_step_by_step_playbook(normalized_diags, llm_mode=False))
+        normalized_diags = self._normalize_diagnoses(report.get("diagnoses", []))
+        lines.extend(
+            self._render_step_by_step_playbook(normalized_diags, llm_mode=False)
+        )
         return "\n".join(lines)
 
     def reset_analysis_plan(self) -> None:
@@ -2160,16 +2302,17 @@ class DoctorOrchestrator:
                         "diagnoses": [],
                     }
                 target = action.target or ""
-                seen[key]["actions"].append({
-                    "action": action.action,
-                    "target": target,
-                    "reason": action.reason,
-                    "problem_type": diag.problem_type,
-                })
+                seen[key]["actions"].append(
+                    {
+                        "action": action.action,
+                        "target": target,
+                        "reason": action.reason,
+                        "problem_type": diag.problem_type,
+                    }
+                )
                 if diag.summary not in seen[key]["diagnoses"]:
                     seen[key]["diagnoses"].append(diag.summary)
         return list(seen.values())
-
 
     # c2004-maskservice-patch-v4: per-candidate `.sh` patch generator.
     # When a diagnosis lists several restore candidates (e.g. multiple git
@@ -2201,15 +2344,23 @@ class DoctorOrchestrator:
                 for cand_idx, cand_action in enumerate(history_candidates, 1):
                     counter += 1
                     patch_meta = self._generate_history_patch(
-                        diag, diag_idx, cand_idx, cand_action,
-                        history_candidates, primary_target,
-                        out_dir, basename, counter
+                        diag,
+                        diag_idx,
+                        cand_idx,
+                        cand_action,
+                        history_candidates,
+                        primary_target,
+                        out_dir,
+                        basename,
+                        counter,
                     )
                     if patch_meta:
                         generated.append(patch_meta)
                         index_builder.add_history_entry(
-                            patch_meta["path"], diag.problem_type,
-                            patch_meta["candidate"], primary_target or ""
+                            patch_meta["path"],
+                            diag.problem_type,
+                            patch_meta["candidate"],
+                            primary_target or "",
                         )
             elif diag.shell_commands:
                 counter, patch_meta = self._try_generate_generic_patch(
@@ -2223,23 +2374,29 @@ class DoctorOrchestrator:
 
         if generated:
             index_path = index_builder.write(out_dir)
-            generated.insert(0, {
-                "path": str(index_path),
-                "diagnosis": "INDEX",
-                "candidate": "",
-                "kind": "index",
-            })
+            generated.insert(
+                0,
+                {
+                    "path": str(index_path),
+                    "diagnosis": "INDEX",
+                    "candidate": "",
+                    "kind": "index",
+                },
+            )
 
         return generated
 
     def _extract_history_candidates(self, diag: "Diagnosis") -> List["FileAction"]:
         """Extract git history candidates from diagnosis file actions."""
         return [
-            a for a in diag.file_actions
+            a
+            for a in diag.file_actions
             if a.action == "modify" and (a.target or "").startswith("git:")
         ]
 
-    def _find_primary_target(self, diag: "Diagnosis", history_candidates: List["FileAction"]) -> Optional[str]:
+    def _find_primary_target(
+        self, diag: "Diagnosis", history_candidates: List["FileAction"]
+    ) -> Optional[str]:
         """Find primary target path from diagnosis actions."""
         for a in diag.file_actions:
             if a.action == "modify" and not (a.target or "").startswith("git:"):
@@ -2294,7 +2451,8 @@ class DoctorOrchestrator:
     ) -> tuple:
         """Try to generate a generic patch for shell commands."""
         modify_action = next(
-            (a for a in diag.file_actions if a.action == "modify"), None,
+            (a for a in diag.file_actions if a.action == "modify"),
+            None,
         )
         if modify_action is None:
             return counter, None
@@ -2358,7 +2516,7 @@ class DoctorOrchestrator:
             f'TARGET="{target_path}"',
             f'GIT_HASH="{git_hash}"',
             f'SOURCE_PATH="{source_path}"',
-            f'TS="$(date +%Y%m%dT%H%M%S)"',
+            'TS="$(date +%Y%m%dT%H%M%S)"',
             'BACKUP="${TARGET}.before-${TS}"',
             'MODE="${1:-apply}"',
             "",
@@ -2376,19 +2534,19 @@ class DoctorOrchestrator:
             '  echo "[regres-patch] === Diff vs current target (unified, max 200 lines) ==="',
             '  if [ -f "$TARGET" ]; then',
             '    diff -u <(git show "${GIT_HASH}:${SOURCE_PATH}") "$TARGET" | sed -n "1,200p" || true',
-            '  else',
+            "  else",
             '    echo "(target does not exist yet)"',
-            '  fi',
-            '  exit 0',
-            'fi',
+            "  fi",
+            "  exit 0",
+            "fi",
             'if [ "$MODE" = "--diff" ]; then',
             '  if [ -f "$TARGET" ]; then',
             '    diff -u <(git show "${GIT_HASH}:${SOURCE_PATH}") "$TARGET" || true',
-            '  else',
+            "  else",
             '    git show "${GIT_HASH}:${SOURCE_PATH}"',
-            '  fi',
-            '  exit 0',
-            'fi',
+            "  fi",
+            "  exit 0",
+            "fi",
             "",
             "# ---------- Apply mode ----------",
             'if [ -f "$TARGET" ]; then',
@@ -2412,8 +2570,8 @@ class DoctorOrchestrator:
             "# We detect the closest 'src/' (or 'frontend/src/') boundary above the",
             "# target file and remap each import suffix into that mirror tree before",
             "# computing the new relative path.",
-            f'SOURCE_DIR="$(dirname "${{SOURCE_PATH}}")"',
-            f'TARGET_DIR="$(dirname "${{TARGET}}")"',
+            'SOURCE_DIR="$(dirname "${SOURCE_PATH}")"',
+            'TARGET_DIR="$(dirname "${TARGET}")"',
             'if [ "$SOURCE_DIR" != "$TARGET_DIR" ]; then',
             '  echo "[regres-patch] Source dir ($SOURCE_DIR) ≠ target dir ($TARGET_DIR); rewriting relative imports..."',
             '  python3 - "$TARGET" "$SOURCE_DIR" "$TARGET_DIR" <<\'PYEOF\'',
@@ -2436,7 +2594,7 @@ class DoctorOrchestrator:
             "src_source, marker_source = detect_src_root(source_dir)",
             "src_target, marker_target = detect_src_root(target_dir)",
             "",
-            "import_re_dq = re.compile(r'(from\\s+|import\\s+)(\")(\\.{1,2}/[^\"]+)(\")')",
+            'import_re_dq = re.compile(r\'(from\\s+|import\\s+)(")(\\.{1,2}/[^"]+)(")\')',
             "import_re_sq = re.compile(r'(from\\s+|import\\s+)(\\')(\\.{1,2}/[^\\']+)(\\')')",
             "rewritten_count = 0",
             "",
@@ -2471,7 +2629,7 @@ class DoctorOrchestrator:
             "fi",
             "",
             "# ---------- Verify (best-effort) ----------",
-            "echo \"[regres-patch] First 5 imports after restore:\"",
+            'echo "[regres-patch] First 5 imports after restore:"',
             'grep -E "^import |^from " "$TARGET" | head -5 || true',
             "",
             'echo "[regres-patch] Done. To revert:"',
@@ -2503,7 +2661,7 @@ class DoctorOrchestrator:
             "",
             f'SCAN_ROOT="{scan_root}"',
             f'TARGET="{target_path}"',
-            f'TS="$(date +%Y%m%dT%H%M%S)"',
+            'TS="$(date +%Y%m%dT%H%M%S)"',
             'BACKUP="${TARGET}.before-${TS}"',
             "",
             'cd "$SCAN_ROOT"',
@@ -2519,7 +2677,9 @@ class DoctorOrchestrator:
             lines.append(f'echo "[regres-patch] {desc}"')
             lines.append(cmd.command)
             lines.append("")
-        lines.append('echo "[regres-patch] Done. Review changes and revert from \\"$BACKUP\\" if needed."')
+        lines.append(
+            'echo "[regres-patch] Done. Review changes and revert from \\"$BACKUP\\" if needed."'
+        )
         lines.append("")
         return lines
 
@@ -2552,7 +2712,9 @@ class DoctorOrchestrator:
                     f"{len(git_info.get('renames', []))} renames"
                 )
             else:
-                lines.append(f"- git layer: unavailable ({git_info.get('reason', 'unknown')})")
+                lines.append(
+                    f"- git layer: unavailable ({git_info.get('reason', 'unknown')})"
+                )
         lines.append("")
         return lines
 
@@ -2561,7 +2723,7 @@ class DoctorOrchestrator:
     # ------------------------------------------------------------------
 
     def _extract_module_name(self, path: str) -> Optional[str]:
-        normalized_path = path.strip('/')
+        normalized_path = path.strip("/")
         for route_prefix, mapped_module in self._get_url_route_module_hints().items():
             if normalized_path.startswith(route_prefix):
                 return mapped_module
@@ -2570,7 +2732,7 @@ class DoctorOrchestrator:
         for possible_module in module_names:
             if normalized_path.startswith(possible_module):
                 return possible_module
-        parts = path.split('/')
+        parts = path.split("/")
         return parts[0] if parts else None
 
     def _resolve_module_path(self, module_name: str) -> Optional[str]:
@@ -2602,9 +2764,15 @@ class DoctorOrchestrator:
 
         for line in text.splitlines():
             stripped = line.strip()
-            if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+            if (
+                stripped.startswith("//")
+                or stripped.startswith("/*")
+                or stripped.startswith("*")
+            ):
                 continue
-            if module_name in line and ("import " in line or "from " in line or "require(" in line):
+            if module_name in line and (
+                "import " in line or "from " in line or "require(" in line
+            ):
                 return True
         return False
 
@@ -2622,9 +2790,13 @@ class DoctorOrchestrator:
                 return str(cand.relative_to(self.scan_root)).replace("\\", "/")
             for ext in (".ts", ".tsx", ".js", ".json"):
                 if cand.with_suffix(ext).exists():
-                    return str(cand.with_suffix(ext).relative_to(self.scan_root)).replace("\\", "/")
+                    return str(
+                        cand.with_suffix(ext).relative_to(self.scan_root)
+                    ).replace("\\", "/")
             if (cand / "index.ts").exists():
-                return str((cand / "index.ts").relative_to(self.scan_root)).replace("\\", "/")
+                return str((cand / "index.ts").relative_to(self.scan_root)).replace(
+                    "\\", "/"
+                )
         return None
 
     def _parse_ts_errors(self, log_path: Path) -> Dict[str, List[str]]:
@@ -2669,7 +2841,9 @@ class DoctorOrchestrator:
                 modules.append(match.group(1))
         return list(set(modules))
 
-    def _diagnose_import_issue(self, file_path: str, missing_modules: List[str]) -> Diagnosis:
+    def _diagnose_import_issue(
+        self, file_path: str, missing_modules: List[str]
+    ) -> Diagnosis:
         """Diagnozuje problem z importami i generuje plan naprawy."""
         actions = []
         commands = []
@@ -2677,12 +2851,18 @@ class DoctorOrchestrator:
 
         for module in missing_modules:
             if module.startswith("@c2004/"):
-                self._handle_c2004_alias_import(module, file_path, actions, commands, concrete_fixes)
+                self._handle_c2004_alias_import(
+                    module, file_path, actions, commands, concrete_fixes
+                )
             elif module.startswith("./") or module.startswith("../"):
                 self._handle_relative_import(module, file_path, actions, commands)
 
-        nlp_desc = self._build_import_nlp_description(file_path, missing_modules, concrete_fixes)
-        severity = self._determine_import_severity(missing_modules, concrete_fixes, actions)
+        nlp_desc = self._build_import_nlp_description(
+            file_path, missing_modules, concrete_fixes
+        )
+        severity = self._determine_import_severity(
+            missing_modules, concrete_fixes, actions
+        )
 
         return Diagnosis(
             summary=f"Błędy importów w {file_path}",
@@ -2691,7 +2871,7 @@ class DoctorOrchestrator:
             nlp_description=nlp_desc,
             file_actions=actions,
             shell_commands=commands,
-            confidence=0.85 if concrete_fixes else 0.6
+            confidence=0.85 if concrete_fixes else 0.6,
         )
 
     def _handle_c2004_alias_import(
@@ -2705,22 +2885,28 @@ class DoctorOrchestrator:
         """Handle @c2004/ alias imports."""
         resolved = self._resolve_alias_target(module)
         if resolved:
-            actions.append(FileAction(
-                path=file_path,
-                action="modify",
-                reason=f"Zmień import `{module}` na relatywną ścieżkę do `{resolved}` (lub dodaj alias w vite.config.ts)"
-            ))
+            actions.append(
+                FileAction(
+                    path=file_path,
+                    action="modify",
+                    reason=f"Zmień import `{module}` na relatywną ścieżkę do `{resolved}` (lub dodaj alias w vite.config.ts)",
+                )
+            )
             concrete_fixes.append(f"`{module}` → `../{resolved}` (dostosuj głębokość)")
         else:
-            actions.append(FileAction(
-                path=file_path,
-                action="modify",
-                reason=f"Zmień import `{module}` na poprawną ścieżkę (plik nie istnieje pod żadnym znanym aliasem)"
-            ))
-        commands.append(ShellCommand(
-            command=f"grep -n '{module}' {file_path}",
-            description=f"Znajdź import {module} w pliku"
-        ))
+            actions.append(
+                FileAction(
+                    path=file_path,
+                    action="modify",
+                    reason=f"Zmień import `{module}` na poprawną ścieżkę (plik nie istnieje pod żadnym znanym aliasem)",
+                )
+            )
+        commands.append(
+            ShellCommand(
+                command=f"grep -n '{module}' {file_path}",
+                description=f"Znajdź import {module} w pliku",
+            )
+        )
 
     def _handle_relative_import(
         self,
@@ -2733,29 +2919,41 @@ class DoctorOrchestrator:
         source_dir = (self.scan_root / file_path).parent
         target = source_dir / module
         ext_checks = [".ts", ".tsx", ".js", ""]
-        found = any((target.with_suffix(ext) if ext else target).exists() for ext in ext_checks)
+        found = any(
+            (target.with_suffix(ext) if ext else target).exists() for ext in ext_checks
+        )
         if not found:
-            actions.append(FileAction(
-                path=file_path,
-                action="modify",
-                reason=f"Ścieżka `{module}` nie istnieje względem `{file_path}`"
-            ))
-            commands.append(ShellCommand(
-                command=f"ls -la {(source_dir / module).parent} 2>/dev/null || echo 'Brak katalogu'",
-                description=f"Sprawdź czy katalog dla {module} istnieje"
-            ))
+            actions.append(
+                FileAction(
+                    path=file_path,
+                    action="modify",
+                    reason=f"Ścieżka `{module}` nie istnieje względem `{file_path}`",
+                )
+            )
+            commands.append(
+                ShellCommand(
+                    command=f"ls -la {(source_dir / module).parent} 2>/dev/null || echo 'Brak katalogu'",
+                    description=f"Sprawdź czy katalog dla {module} istnieje",
+                )
+            )
         else:
-            actions.append(FileAction(
-                path=file_path,
-                action="modify",
-                reason=f"Plik `{module}` istnieje, ale brakuje w nim eksportu – sprawdź nazwę symbolu"
-            ))
+            actions.append(
+                FileAction(
+                    path=file_path,
+                    action="modify",
+                    reason=f"Plik `{module}` istnieje, ale brakuje w nim eksportu – sprawdź nazwę symbolu",
+                )
+            )
 
     def _build_import_nlp_description(
         self, file_path: str, missing_modules: List[str], concrete_fixes: List[str]
     ) -> str:
         """Build NLP description for import diagnosis."""
-        fixes_part = f"Sugerowane poprawki: {', '.join(concrete_fixes)}. " if concrete_fixes else ""
+        fixes_part = (
+            f"Sugerowane poprawki: {', '.join(concrete_fixes)}. "
+            if concrete_fixes
+            else ""
+        )
         return (
             f"W pliku `{file_path}` wykryto błędy importów dla modułów: {', '.join(missing_modules)}. "
             + fixes_part
@@ -2764,7 +2962,10 @@ class DoctorOrchestrator:
         )
 
     def _determine_import_severity(
-        self, missing_modules: List[str], concrete_fixes: List[str], actions: List[FileAction]
+        self,
+        missing_modules: List[str],
+        concrete_fixes: List[str],
+        actions: List[FileAction],
     ) -> str:
         """Determine severity level for import diagnosis."""
         severity = "high" if len(missing_modules) > 3 else "medium"
@@ -2785,15 +2986,18 @@ class DoctorOrchestrator:
             main_location = self._find_main_location(locations)
             for loc in locations:
                 if loc != main_location:
-                    actions.append(FileAction(
-                        path=loc,
-                        action="delete",
-                        reason=f"Duplikat {name} - zachowaj tylko w {main_location}"
-                    ))
-                    commands.append(ShellCommand(
-                        command=f"rm {loc}",
-                        description=f"Usuń duplikat {name}"
-                    ))
+                    actions.append(
+                        FileAction(
+                            path=loc,
+                            action="delete",
+                            reason=f"Duplikat {name} - zachowaj tylko w {main_location}",
+                        )
+                    )
+                    commands.append(
+                        ShellCommand(
+                            command=f"rm {loc}", description=f"Usuń duplikat {name}"
+                        )
+                    )
 
         nlp_desc = (
             f"Wykryto {count} duplikatów definicji '{name}'. "
@@ -2808,7 +3012,7 @@ class DoctorOrchestrator:
             nlp_description=nlp_desc,
             file_actions=actions,
             shell_commands=commands,
-            confidence=0.9
+            confidence=0.9,
         )
 
     def _find_main_location(self, locations: List[str]) -> str:
@@ -2817,26 +3021,38 @@ class DoctorOrchestrator:
                 return loc
         return locations[0] if locations else ""
 
-    def _analyze_history_patterns(self, file_path: str, history_lines: List[str]) -> Optional[Diagnosis]:
-        move_keywords = ['move', 'rename', 'refactor', 'extract', 'migrate']
-        move_count = sum(1 for line in history_lines if any(kw in line.lower() for kw in move_keywords))
+    def _analyze_history_patterns(
+        self, file_path: str, history_lines: List[str]
+    ) -> Optional[Diagnosis]:
+        move_keywords = ["move", "rename", "refactor", "extract", "migrate"]
+        move_count = sum(
+            1
+            for line in history_lines
+            if any(kw in line.lower() for kw in move_keywords)
+        )
 
         if move_count >= 2:
             actions = []
             commands = []
             if (
-                ('connect-test' in file_path or 'connect-test-protocol' in file_path)
-                and ('protocol' in file_path or 'connect-protocol' in str(history_lines).lower())
+                "connect-test" in file_path or "connect-test-protocol" in file_path
+            ) and (
+                "protocol" in file_path
+                or "connect-protocol" in str(history_lines).lower()
             ):
-                actions.append(FileAction(
-                    path=file_path,
-                    action="review",
-                    reason=f"Plik był przenoszony {move_count} razy - sprawdź czy jest w odpowiednim module"
-                ))
-                commands.append(ShellCommand(
-                    command=f"git log --follow --oneline -- {file_path}",
-                    description="Sprawdź historię pliku"
-                ))
+                actions.append(
+                    FileAction(
+                        path=file_path,
+                        action="review",
+                        reason=f"Plik był przenoszony {move_count} razy - sprawdź czy jest w odpowiednim module",
+                    )
+                )
+                commands.append(
+                    ShellCommand(
+                        command=f"git log --follow --oneline -- {file_path}",
+                        description="Sprawdź historię pliku",
+                    )
+                )
 
             return Diagnosis(
                 summary=f"Plik {file_path} ma bogatą historię zmian ({move_count} przeniesień)",
@@ -2845,14 +3061,20 @@ class DoctorOrchestrator:
                 nlp_description=f"Plik {file_path} był wielokrotnie przenoszony ({move_count} razy). Należy sprawdzić czy jest w odpowiednim module scope czy wymaga konsolidacji.",
                 file_actions=actions,
                 shell_commands=commands,
-                confidence=0.7
+                confidence=0.7,
             )
         return None
 
-    def _apply_file_action(self, action: FileAction, dry_run: bool, results: Dict[str, Any]) -> None:
+    def _apply_file_action(
+        self, action: FileAction, dry_run: bool, results: Dict[str, Any]
+    ) -> None:
         try:
             if action.action == "modify":
-                record = {"action": action.action, "path": action.path, "reason": action.reason}
+                record = {
+                    "action": action.action,
+                    "path": action.path,
+                    "reason": action.reason,
+                }
                 if dry_run:
                     record["dry_run"] = True
                 results["actions_performed"].append(record)
@@ -2861,7 +3083,11 @@ class DoctorOrchestrator:
                     file_path = self.scan_root / action.path
                     if file_path.exists():
                         file_path.unlink()
-                record = {"action": action.action, "path": action.path, "reason": action.reason}
+                record = {
+                    "action": action.action,
+                    "path": action.path,
+                    "reason": action.reason,
+                }
                 if dry_run:
                     record["dry_run"] = True
                 results["actions_performed"].append(record)
@@ -2872,14 +3098,23 @@ class DoctorOrchestrator:
                     if src.exists() and dst:
                         dst.parent.mkdir(parents=True, exist_ok=True)
                         src.rename(dst)
-                record = {"action": action.action, "path": action.path, "target": action.target, "reason": action.reason}
+                record = {
+                    "action": action.action,
+                    "path": action.path,
+                    "target": action.target,
+                    "reason": action.reason,
+                }
                 if dry_run:
                     record["dry_run"] = True
                 results["actions_performed"].append(record)
         except Exception as e:
-            results["errors"].append({"action": action.action, "path": action.path, "error": str(e)})
+            results["errors"].append(
+                {"action": action.action, "path": action.path, "error": str(e)}
+            )
 
-    def _apply_shell_command(self, cmd: ShellCommand, dry_run: bool, results: Dict[str, Any]) -> None:
+    def _apply_shell_command(
+        self, cmd: ShellCommand, dry_run: bool, results: Dict[str, Any]
+    ) -> None:
         try:
             if not dry_run:
                 result = subprocess.run(
@@ -2888,23 +3123,27 @@ class DoctorOrchestrator:
                     cwd=cmd.cwd or str(self.scan_root),
                     capture_output=True,
                     text=True,
-                    timeout=30
+                    timeout=30,
                 )
-                results["actions_performed"].append({
-                    "action": "shell_command",
-                    "command": cmd.command,
-                    "description": cmd.description,
-                    "cwd": cmd.cwd,
-                    "returncode": result.returncode
-                })
+                results["actions_performed"].append(
+                    {
+                        "action": "shell_command",
+                        "command": cmd.command,
+                        "description": cmd.description,
+                        "cwd": cmd.cwd,
+                        "returncode": result.returncode,
+                    }
+                )
             else:
-                results["actions_performed"].append({
-                    "action": "shell_command",
-                    "command": cmd.command,
-                    "description": cmd.description,
-                    "cwd": cmd.cwd,
-                    "dry_run": True
-                })
+                results["actions_performed"].append(
+                    {
+                        "action": "shell_command",
+                        "command": cmd.command,
+                        "description": cmd.description,
+                        "cwd": cmd.cwd,
+                        "dry_run": True,
+                    }
+                )
         except Exception as e:
             results["errors"].append({"command": cmd.command, "error": str(e)})
 
@@ -2924,7 +3163,12 @@ class DoctorOrchestrator:
         return f"{title}\n\n{content}\n"
 
     def _build_nlp_diagnosis(self, module_path: Path) -> str:
-        lines = ["## NLP Diagnosis & Recommendations\n", "### Problem Summary", "Based on the analysis above, the following issues were detected:", ""]
+        lines = [
+            "## NLP Diagnosis & Recommendations\n",
+            "### Problem Summary",
+            "Based on the analysis above, the following issues were detected:",
+            "",
+        ]
         all_diagnoses = self._collect_all_diagnoses(module_path)
         if all_diagnoses:
             for i, diag in enumerate(all_diagnoses, 1):
@@ -2971,19 +3215,39 @@ class DoctorOrchestrator:
 
     def _build_playbook(self, module_path: Path) -> str:
         all_diagnoses = self._collect_all_diagnoses(module_path)
-        normalized = self._normalize_diagnoses([
-            {"summary": d.summary, "nlp_description": d.nlp_description,
-             "file_actions": [{"path": a.path, "action": a.action, "target": a.target, "reason": a.reason} for a in d.file_actions],
-             "shell_commands": [{"command": c.command, "description": c.description, "cwd": c.cwd} for c in d.shell_commands]}
-            for d in all_diagnoses
-        ])
+        normalized = self._normalize_diagnoses(
+            [
+                {
+                    "summary": d.summary,
+                    "nlp_description": d.nlp_description,
+                    "file_actions": [
+                        {
+                            "path": a.path,
+                            "action": a.action,
+                            "target": a.target,
+                            "reason": a.reason,
+                        }
+                        for a in d.file_actions
+                    ],
+                    "shell_commands": [
+                        {
+                            "command": c.command,
+                            "description": c.description,
+                            "cwd": c.cwd,
+                        }
+                        for c in d.shell_commands
+                    ],
+                }
+                for d in all_diagnoses
+            ]
+        )
         return "\n".join(self._render_step_by_step_playbook(normalized, llm_mode=True))
 
     def _build_summary(self, module_path: Path) -> str:
         all_diagnoses = self._collect_all_diagnoses(module_path)
         total = len(all_diagnoses)
-        files = len(list(module_path.rglob('*.ts')))
-        confidence = (sum(d.confidence for d in all_diagnoses) / total if total else 0)
+        files = len(list(module_path.rglob("*.ts")))
+        confidence = sum(d.confidence for d in all_diagnoses) / total if total else 0
         return f"""## Summary
 
 - Total issues detected: {total}
@@ -3000,7 +3264,9 @@ class DoctorOrchestrator:
             diagnoses.extend(self.analyze_git_history(relative_path))
         return diagnoses
 
-    def _normalize_diagnoses(self, diagnoses: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _normalize_diagnoses(
+        self, diagnoses: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         return diagnoses
 
     def _render_decision_workflow(self, report: Dict[str, Any]) -> List[str]:
@@ -3011,25 +3277,34 @@ class DoctorOrchestrator:
             lines.append("")
             return lines
 
-        lines.append("Drzewo decyzyjne — każdy krok pokazuje predykaty wejściowe, decyzję i rezultat:")
+        lines.append(
+            "Drzewo decyzyjne — każdy krok pokazuje predykaty wejściowe, decyzję i rezultat:"
+        )
         lines.append("")
         for idx, step in enumerate(plan, 1):
             status = step.get("status", "planned")
             status_icon = {
-                "done": "✓", "warning": "⚠", "skipped": "⊘",
-                "planned": "…", "error": "✗",
+                "done": "✓",
+                "warning": "⚠",
+                "skipped": "⊘",
+                "planned": "…",
+                "error": "✗",
             }.get(status, "•")
-            lines.append(f"{idx}. {status_icon} **{step.get('name', 'step')}** [{status}] — {step.get('reason', '')}")
+            lines.append(
+                f"{idx}. {status_icon} **{step.get('name', 'step')}** [{status}] — {step.get('reason', '')}"
+            )
             if step.get("decision"):
                 lines.append(f"   - **Decision:** {step['decision']}")
             if step.get("inputs"):
                 inputs_str = ", ".join(
-                    f"`{k}`={self._fmt_plan_value(v)}" for k, v in step["inputs"].items()
+                    f"`{k}`={self._fmt_plan_value(v)}"
+                    for k, v in step["inputs"].items()
                 )
                 lines.append(f"   - **Inputs:** {inputs_str}")
             if step.get("outputs"):
                 outputs_str = ", ".join(
-                    f"`{k}`={self._fmt_plan_value(v)}" for k, v in step["outputs"].items()
+                    f"`{k}`={self._fmt_plan_value(v)}"
+                    for k, v in step["outputs"].items()
                 )
                 lines.append(f"   - **Outputs:** {outputs_str}")
             if step.get("details"):
@@ -3039,7 +3314,9 @@ class DoctorOrchestrator:
         for step in plan:
             cmd = step.get("command")
             if cmd:
-                lines.append(f"# {step.get('name', 'step')} [{step.get('status', 'planned')}]")
+                lines.append(
+                    f"# {step.get('name', 'step')} [{step.get('status', 'planned')}]"
+                )
                 lines.append(cmd)
                 lines.append("")
         lines.append("```")
@@ -3117,7 +3394,10 @@ class DoctorOrchestrator:
         """Render git history candidates for a file."""
         if not git_cands:
             return []
-        lines = [f"**Kandydaci z historii git ({len(git_cands)}, od najnowszego):**", ""]
+        lines = [
+            f"**Kandydaci z historii git ({len(git_cands)}, od najnowszego):**",
+            "",
+        ]
         for a in git_cands:
             lines.extend(self._render_git_candidate(a, target_path, patch_index))
         return lines
@@ -3135,9 +3415,21 @@ class DoctorOrchestrator:
         patch_path = patch_index.get((target_path, h))
 
         # Build the commands based on whether patch_path is available
-        preview_cmd = f"bash {patch_path} --preview" if patch_path else f'git show {h}:{src} | sed -n "1,60p"'
-        diff_cmd = f"bash {patch_path} --diff" if patch_path else f'diff -u <(git show {h}:{src}) {target_path}'
-        apply_cmd = f"bash {patch_path}" if patch_path else f'git show {h}:{src} > {target_path}'
+        preview_cmd = (
+            f"bash {patch_path} --preview"
+            if patch_path
+            else f'git show {h}:{src} | sed -n "1,60p"'
+        )
+        diff_cmd = (
+            f"bash {patch_path} --diff"
+            if patch_path
+            else f"diff -u <(git show {h}:{src}) {target_path}"
+        )
+        apply_cmd = (
+            f"bash {patch_path}"
+            if patch_path
+            else f"git show {h}:{src} > {target_path}"
+        )
 
         return [
             f"#### Kandydat `{h}` ← `{src}`",
@@ -3158,7 +3450,8 @@ class DoctorOrchestrator:
         ]
 
     def _build_candidate_patch_index(
-        self, report: Dict[str, Any],
+        self,
+        report: Dict[str, Any],
     ) -> Dict[tuple, str]:
         """Map (target_path, git_hash) → patch script path for cross-reference."""
         index: Dict[tuple, str] = {}
@@ -3169,8 +3462,11 @@ class DoctorOrchestrator:
         diag_target_map: Dict[str, str] = {}
         for diag in self.diagnoses:
             primary = next(
-                (a.path for a in diag.file_actions
-                 if a.action == "modify" and not (a.target or "").startswith("git:")),
+                (
+                    a.path
+                    for a in diag.file_actions
+                    if a.action == "modify" and not (a.target or "").startswith("git:")
+                ),
                 "",
             )
             diag_target_map[diag.summary] = primary
@@ -3214,7 +3510,9 @@ class DoctorOrchestrator:
             lines.extend(["Brak relatywnych importów (lub plik niedostępny).", ""])
             return lines
         broken, stubs, ok = self._categorize_chain_imports(chain)
-        lines.extend(self._render_chain_summary(len(chain), len(ok), len(broken), len(stubs)))
+        lines.extend(
+            self._render_chain_summary(len(chain), len(ok), len(broken), len(stubs))
+        )
         lines.extend(self._render_broken_imports(broken))
         lines.extend(self._render_stub_imports(stubs))
         lines.extend(self._render_ok_chain_status(ok, broken, stubs))
@@ -3227,7 +3525,9 @@ class DoctorOrchestrator:
         ok = [c for c in chain if c.get("exists") and not c.get("is_page_stub")]
         return broken, stubs, ok
 
-    def _render_chain_summary(self, total: int, ok: int, broken: int, stubs: int) -> List[str]:
+    def _render_chain_summary(
+        self, total: int, ok: int, broken: int, stubs: int
+    ) -> List[str]:
         """Render the summary line for chain imports."""
         return [
             f"_Imports total:_ {total} | _OK:_ {ok} | _Broken:_ {broken} | _Page stubs (transitive):_ {stubs}",
@@ -3241,9 +3541,9 @@ class DoctorOrchestrator:
         lines = ["**Niezresolwowane importy (wymagają dalszej analizy):**", ""]
         for c in broken:
             lines.append(f"- `{c['import']}` z `{c['from_file']}`")
-            tried = c.get('tried', [])[:4]
+            tried = c.get("tried", [])[:4]
             lines.append(f"  - Tried: {', '.join('`' + t + '`' for t in tried)}")
-            lines.extend(self._render_suggested_command(c['import'], 'import'))
+            lines.extend(self._render_suggested_command(c["import"], "import"))
         lines.append("")
         return lines
 
@@ -3254,8 +3554,10 @@ class DoctorOrchestrator:
         lines = ["**Importy wskazujące na placeholder pages (cascade repair):**", ""]
         for c in stubs:
             resolved = c.get("resolved_path", "?")
-            lines.append(f"- `{resolved}` ← imported as `{c['import']}` z `{c['from_file']}`")
-            lines.extend(self._render_suggested_command(resolved, 'stub'))
+            lines.append(
+                f"- `{resolved}` ← imported as `{c['import']}` z `{c['from_file']}`"
+            )
+            lines.extend(self._render_suggested_command(resolved, "stub"))
         lines.append("")
         return lines
 
@@ -3264,24 +3566,30 @@ class DoctorOrchestrator:
         suggested_url = self._suggest_url_for_path(path)
         if not suggested_url:
             return []
-        label = "Następny krok" if kind == 'import' else "Naprawa łańcuchowa"
+        label = "Następny krok" if kind == "import" else "Naprawa łańcuchowa"
         return [
             f"  - **{label}:** `regres doctor --scan-root {self.scan_root} "
             f"--url '{suggested_url}' --all --git-history --out-md "
             f".regres/{Path(path).stem}-doctor.md`"
         ]
 
-    def _render_ok_chain_status(self, ok: List[Dict[str, Any]], broken: List, stubs: List) -> List[str]:
+    def _render_ok_chain_status(
+        self, ok: List[Dict[str, Any]], broken: List, stubs: List
+    ) -> List[str]:
         """Render status when all imports are ok."""
         if ok and not broken and not stubs:
-            return ["Wszystkie importy są poprawne — łańcuch zależności jest spójny.", ""]
+            return [
+                "Wszystkie importy są poprawne — łańcuch zależności jest spójny.",
+                "",
+            ]
         return []
 
     def _render_repair_plan_if_needed(self, chains: List[Dict[str, Any]]) -> List[str]:
         """Render repair plan if there are any broken or stub imports."""
         has_issues = any(
             (not c.get("exists")) or c.get("is_page_stub")
-            for entry in chains for c in (entry.get("chain") or [])
+            for entry in chains
+            for c in (entry.get("chain") or [])
         )
         if not has_issues:
             return []
@@ -3326,9 +3634,13 @@ class DoctorOrchestrator:
         lines.append("")
         return lines
 
-    def _render_preliminary_refactor_proposals(self, report: Dict[str, Any]) -> List[str]:
+    def _render_preliminary_refactor_proposals(
+        self, report: Dict[str, Any]
+    ) -> List[str]:
         lines = ["## Preliminary Refactor Proposals", ""]
-        proposals = report.get("analysis_context", {}).get("preliminary_refactor_proposals", [])
+        proposals = report.get("analysis_context", {}).get(
+            "preliminary_refactor_proposals", []
+        )
         if not proposals:
             lines.append("Brak wstępnych propozycji refaktoryzacji.")
             lines.append("")
@@ -3352,7 +3664,9 @@ class DoctorOrchestrator:
             if root.exists() and root.is_dir():
                 for p in root.rglob("*.ts"):
                     try:
-                        entries.append(str(p.relative_to(self.scan_root)).replace("\\", "/"))
+                        entries.append(
+                            str(p.relative_to(self.scan_root)).replace("\\", "/")
+                        )
                     except ValueError:
                         continue
                     if len(entries) >= max_entries:
@@ -3373,7 +3687,9 @@ class DoctorOrchestrator:
         # dedupe preserving order
         return list(dict.fromkeys(proposals))
 
-    def _render_step_by_step_playbook(self, diagnoses: List[Dict[str, Any]], llm_mode: bool = False) -> List[str]:
+    def _render_step_by_step_playbook(
+        self, diagnoses: List[Dict[str, Any]], llm_mode: bool = False
+    ) -> List[str]:
         """Renderuje playbook krok po kroku."""
         lines = ["## Step-by-Step Repair Playbook", ""]
         if not diagnoses:
@@ -3397,7 +3713,9 @@ class DoctorOrchestrator:
             lines.extend(self._render_validate_step(paths))
         return lines
 
-    def _render_analyze_step(self, shell_commands: List[Dict[str, Any]], paths: List[str]) -> List[str]:
+    def _render_analyze_step(
+        self, shell_commands: List[Dict[str, Any]], paths: List[str]
+    ) -> List[str]:
         lines = ["**1) Analyze**", "```bash"]
         if shell_commands:
             for cmd in shell_commands[:6]:
@@ -3422,7 +3740,9 @@ class DoctorOrchestrator:
         if llm_mode:
             lines.append("```text")
             lines.append("Task: Apply the patch(es) below exactly, one file at a time.")
-            lines.append("Rules: Keep scope minimal, edit only indicated imports/exports, do not refactor unrelated code.")
+            lines.append(
+                "Rules: Keep scope minimal, edit only indicated imports/exports, do not refactor unrelated code."
+            )
             lines.append("After patching: run validation commands from step 3.")
             lines.append("```")
             lines.append("")
@@ -3445,10 +3765,14 @@ class DoctorOrchestrator:
 
     def _render_validate_step(self, paths: List[str]) -> List[str]:
         lines = ["**3) Validate**", "```bash"]
-        lines.append("python -m regres.regres_cli doctor --scan-root . --all --out-md .regres/doctor-after-step.md")
+        lines.append(
+            "python -m regres.regres_cli doctor --scan-root . --all --out-md .regres/doctor-after-step.md"
+        )
         if paths:
             for p in paths[:3]:
-                lines.append(f'grep -n "Cannot find module" .regres/import-error-toon-report.raw.log | grep "{p}" || true')
+                lines.append(
+                    f'grep -n "Cannot find module" .regres/import-error-toon-report.raw.log | grep "{p}" || true'
+                )
         lines.append("```")
         lines.append("")
         return lines
@@ -3462,11 +3786,7 @@ class DoctorOrchestrator:
         try:
             cmd = ["git", "log", "--oneline", "-10", "--", str(module_path)]
             result = subprocess.run(
-                cmd,
-                cwd=str(self.scan_root),
-                capture_output=True,
-                text=True,
-                timeout=30
+                cmd, cwd=str(self.scan_root), capture_output=True, text=True, timeout=30
             )
             if result.returncode == 0:
                 lines.append(result.stdout.strip())
@@ -3491,6 +3811,7 @@ class DoctorOrchestrator:
         try:
             from regres import defscan
             import io
+
             old_stdout = sys.stdout
             sys.stdout = io.StringIO()
             try:
@@ -3501,12 +3822,16 @@ class DoctorOrchestrator:
                 sys.stdout = old_stdout
             if output.strip():
                 data = json.loads(output)
-                duplicates = data if isinstance(data, list) else data.get("duplicates", [])
+                duplicates = (
+                    data if isinstance(data, list) else data.get("duplicates", [])
+                )
                 if duplicates:
                     lines.append(f"Found {len(duplicates)} duplicate definitions")
                     for dup in duplicates[:5]:
                         if isinstance(dup, dict):
-                            lines.append(f"- {dup.get('name', 'unknown')}: {dup.get('count', 0)} occurrences")
+                            lines.append(
+                                f"- {dup.get('name', 'unknown')}: {dup.get('count', 0)} occurrences"
+                            )
                         else:
                             lines.append(f"- {dup}")
                 else:
@@ -3522,6 +3847,7 @@ class DoctorOrchestrator:
         try:
             from regres import refactor
             import io
+
             old_stdout = sys.stdout
             sys.stdout = io.StringIO()
             try:
@@ -3546,7 +3872,9 @@ class _PatchIndexBuilder:
         self.basename = basename
         self.entries: List[str] = []
 
-    def add_history_entry(self, path: str, problem_type: str, candidate: str, target: str) -> None:
+    def add_history_entry(
+        self, path: str, problem_type: str, candidate: str, target: str
+    ) -> None:
         """Add a history restore patch entry."""
         script_name = Path(path).name
         self.entries.append(

@@ -4,12 +4,13 @@ doctor_models.py — dataclasses for doctor module.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 
 @dataclass
 class FileAction:
     """Akcja na pliku."""
+
     path: str
     action: str  # move, copy, delete, modify, create
     target: Optional[str] = None  # ścieżka docelowa dla move/copy
@@ -19,6 +20,7 @@ class FileAction:
 @dataclass
 class ShellCommand:
     """Polecenie shell do wykonania."""
+
     command: str
     description: str
     cwd: Optional[str] = None
@@ -27,6 +29,7 @@ class ShellCommand:
 @dataclass
 class Diagnosis:
     """Diagnoza problemu i plan naprawy."""
+
     summary: str
     problem_type: str  # import_error, duplicate, regression, etc.
     severity: str  # low, medium, high, critical

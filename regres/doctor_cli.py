@@ -10,10 +10,11 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .doctor_config import DoctorConfig, load_config
+from .doctor_config import load_config
 from .doctor_models import Diagnosis
 from .doctor_orchestrator import DoctorOrchestrator
 from .version_check import check_version
+
 try:
     from importlib.metadata import version as _get_version
 except ImportError:
@@ -44,22 +45,28 @@ def _append_url_module_not_found_diagnosis(
         )
         reason = f"Brak mapowania lub ścieżki dla modułu '{missing_name}'"
 
-    doctor.diagnoses.append(Diagnosis(
-        summary=f"Nie znaleziono modułu '{missing_name}' dla URL {args_url}",
-        problem_type="module_not_found",
-        severity="medium",
-        nlp_description=nlp_description,
-        file_actions=[FileAction(
-            path="doctor_orchestrator.py",
-            action="review",
-            reason=reason,
-        )],
-        shell_commands=[ShellCommand(
-            command=f"find {scan_root} -type d -name '{missing_name}'",
-            description=f"Wyszukaj katalog modułu '{missing_name}' w projekcie",
-        )],
-        confidence=0.9,
-    ))
+    doctor.diagnoses.append(
+        Diagnosis(
+            summary=f"Nie znaleziono modułu '{missing_name}' dla URL {args_url}",
+            problem_type="module_not_found",
+            severity="medium",
+            nlp_description=nlp_description,
+            file_actions=[
+                FileAction(
+                    path="doctor_orchestrator.py",
+                    action="review",
+                    reason=reason,
+                )
+            ],
+            shell_commands=[
+                ShellCommand(
+                    command=f"find {scan_root} -type d -name '{missing_name}'",
+                    description=f"Wyszukaj katalog modułu '{missing_name}' w projekcie",
+                )
+            ],
+            confidence=0.9,
+        )
+    )
 
 
 def _run_page_implementation_analysis(
@@ -83,8 +90,14 @@ def _run_page_implementation_analysis(
         inputs={
             "module_path": str(module_path),
             "page_token": page_token,
-            "history_window_days": getattr(doctor.config, "history_window_days", doctor.HISTORY_DEFAULT_DAYS),
-            "history_max_iterations": getattr(doctor.config, "history_max_iterations", doctor.HISTORY_DEFAULT_ITERATIONS),
+            "history_window_days": getattr(
+                doctor.config, "history_window_days", doctor.HISTORY_DEFAULT_DAYS
+            ),
+            "history_max_iterations": getattr(
+                doctor.config,
+                "history_max_iterations",
+                doctor.HISTORY_DEFAULT_ITERATIONS,
+            ),
         },
         decision=(
             f"Z URL `{normalized_path}` wyciągnięto token strony `{page_token}`. "
@@ -93,12 +106,16 @@ def _run_page_implementation_analysis(
         ),
     )
     page_diagnoses = doctor.analyze_page_implementations(
-        normalized_path, module_path, module_name,
+        normalized_path,
+        module_path,
+        module_name,
     )
-    doctor.update_last_plan_step(outputs={
-        "diagnoses_found": len(page_diagnoses),
-        "problem_types": [d.problem_type for d in page_diagnoses],
-    })
+    doctor.update_last_plan_step(
+        outputs={
+            "diagnoses_found": len(page_diagnoses),
+            "problem_types": [d.problem_type for d in page_diagnoses],
+        }
+    )
     doctor.diagnoses.extend(page_diagnoses)
     return page_token, page_diagnoses
 
@@ -125,14 +142,17 @@ def _run_module_loader_compliance_check(
         },
     )
     loader_diag = doctor.analyze_module_loader_compliance(
-        module_path, module_name,
+        module_path,
+        module_name,
     )
     if loader_diag is not None:
         doctor.diagnoses.append(loader_diag)
-        doctor.update_last_plan_step(outputs={
-            "compliant": False,
-            "problem_type": loader_diag.problem_type,
-        })
+        doctor.update_last_plan_step(
+            outputs={
+                "compliant": False,
+                "problem_type": loader_diag.problem_type,
+            }
+        )
     else:
         doctor.update_last_plan_step(outputs={"compliant": True})
 
@@ -144,10 +164,11 @@ def _create_import_chain_diagnoses(
     module_name: str,
 ) -> None:
     """Create diagnoses from import chain analysis results."""
-    from .doctor_models import Diagnosis as _Diag
 
     for entry in chains_data:
-        diagnosis = _create_single_chain_diagnosis(entry, doctor, scan_root, module_name)
+        diagnosis = _create_single_chain_diagnosis(
+            entry, doctor, scan_root, module_name
+        )
         if diagnosis:
             doctor.diagnoses.append(diagnosis)
 
@@ -159,7 +180,7 @@ def _create_single_chain_diagnosis(
     module_name: str,
 ) -> Optional["Diagnosis"]:
     """Create a diagnosis for a single import chain entry."""
-    from .doctor_models import Diagnosis as _Diag, FileAction as _FA, ShellCommand as _SC
+    from .doctor_models import Diagnosis as _Diag
 
     target_rel = entry["target"]
     chain = entry["chain"] or []
@@ -187,7 +208,9 @@ def _create_single_chain_diagnosis(
     )
 
 
-def _build_chain_nlp_description(target_rel: str, broken: List, stubs: List) -> List[str]:
+def _build_chain_nlp_description(
+    target_rel: str, broken: List, stubs: List
+) -> List[str]:
     """Build NLP description lines for chain diagnosis."""
     return [
         f"Plik `{target_rel}` zawiera relatywne importy, które nie są zresolwowane "
@@ -205,27 +228,33 @@ def _build_file_actions_for_chain(
     """Build file actions including history candidates for a chain."""
     from .doctor_models import FileAction as _FA
 
-    fa = [_FA(
-        path=target_rel,
-        action="modify",
-        reason="Imports require rewriting or chained restore.",
-    )]
+    fa = [
+        _FA(
+            path=target_rel,
+            action="modify",
+            reason="Imports require rewriting or chained restore.",
+        )
+    ]
 
     target_path_obj = scan_root / target_rel
     page_token = target_path_obj.stem.replace(".page", "")
 
     try:
-        history = doctor._collect_page_history_candidates(page_token, module_name or "", target_path_obj)
+        history = doctor._collect_page_history_candidates(
+            page_token, module_name or "", target_path_obj
+        )
     except Exception:
         history = []
 
     for hc in history[:8]:
-        fa.append(_FA(
-            path=target_rel,
-            action="modify",
-            target=f"git:{hc['hash']}:{hc['source_path']}",
-            reason=_format_history_reason(hc),
-        ))
+        fa.append(
+            _FA(
+                path=target_rel,
+                action="modify",
+                target=f"git:{hc['hash']}:{hc['source_path']}",
+                reason=_format_history_reason(hc),
+            )
+        )
 
     return fa
 
@@ -234,8 +263,8 @@ def _format_history_reason(hc: Dict) -> str:
     """Format history candidate reason string."""
     fingerprint = f" • {hc['fingerprint']}" if hc.get("fingerprint") else ""
     return (
-        f"[{hc.get('date','?')}] {hc['hash']} • "
-        f"{hc.get('line_count','?')} linii • {hc['source_path']}{fingerprint}"
+        f"[{hc.get('date', '?')}] {hc['hash']} • "
+        f"{hc.get('line_count', '?')} linii • {hc['source_path']}{fingerprint}"
     )
 
 
@@ -260,16 +289,20 @@ def _build_commands_for_broken(
 
     sc = []
     for c in broken:
-        sc.append(_SC(
-            command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
-            description=f"Import `{c['import']}` nie znaleziony",
-        ))
+        sc.append(
+            _SC(
+                command=f"# Tried: {', '.join(c.get('tried', [])[:3])}",
+                description=f"Import `{c['import']}` nie znaleziony",
+            )
+        )
         url_hint = doctor._suggest_url_for_path(c["import"])
         if url_hint:
-            sc.append(_SC(
-                command=_build_regres_command(scan_root, url_hint, c["import"]),
-                description=f"Następny krok: regres na {url_hint}",
-            ))
+            sc.append(
+                _SC(
+                    command=_build_regres_command(scan_root, url_hint, c["import"]),
+                    description=f"Następny krok: regres na {url_hint}",
+                )
+            )
     return sc
 
 
@@ -284,10 +317,12 @@ def _build_commands_for_stubs(
         resolved = c.get("resolved_path", "?")
         url_hint = doctor._suggest_url_for_path(resolved)
         if url_hint:
-            sc.append(_SC(
-                command=_build_regres_command(scan_root, url_hint, resolved),
-                description=f"Naprawa łańcuchowa: {url_hint}",
-            ))
+            sc.append(
+                _SC(
+                    command=_build_regres_command(scan_root, url_hint, resolved),
+                    description=f"Naprawa łańcuchowa: {url_hint}",
+                )
+            )
     return sc
 
 
@@ -306,6 +341,7 @@ def _derive_vite_base(args) -> Optional[str]:
     if not vite_base and args.url:
         try:
             from urllib.parse import urlparse as _up
+
             _parsed = _up(args.url)
             if _parsed.scheme and _parsed.netloc:
                 vite_base = f"{_parsed.scheme}://{_parsed.netloc}"
@@ -362,10 +398,12 @@ def _run_vite_runtime_probe(
                 queue.append(mfrom_path)
     doctor.set_analysis_context("vite_runtime_results", vite_results)
     broken_via_vite = sum(1 for r in vite_results if not r["ok"])
-    doctor.update_last_plan_step(outputs={
-        "probes": len(vite_results),
-        "broken_via_vite": broken_via_vite,
-    })
+    doctor.update_last_plan_step(
+        outputs={
+            "probes": len(vite_results),
+            "broken_via_vite": broken_via_vite,
+        }
+    )
     return vite_results
 
 
@@ -376,7 +414,12 @@ def _create_vite_runtime_diagnoses(
     vite_base: str,
 ) -> None:
     """Create diagnoses from Vite runtime probe results."""
-    from .doctor_models import Diagnosis as _Diag2, FileAction as _FA2, ShellCommand as _SC2
+    from .doctor_models import (
+        Diagnosis as _Diag2,
+        FileAction as _FA2,
+        ShellCommand as _SC2,
+    )
+
     for r in vite_results:
         if r["ok"]:
             continue
@@ -391,48 +434,57 @@ def _create_vite_runtime_diagnoses(
         if r.get("missing_import"):
             nlp_lines.append(
                 f"Brakujący import: `{r['missing_import']}` z "
-                f"`{r.get('missing_import_from','?')}`"
+                f"`{r.get('missing_import_from', '?')}`"
             )
-        sc2: List[_SC2] = [_SC2(
-            command=f"curl -s '{r['url']}' | head -40",
-            description="Podgląd surowej odpowiedzi Vite",
-        )]
+        sc2: List[_SC2] = [
+            _SC2(
+                command=f"curl -s '{r['url']}' | head -40",
+                description="Podgląd surowej odpowiedzi Vite",
+            )
+        ]
         if r.get("missing_import_from"):
             url_hint = doctor._suggest_url_for_path(r["missing_import_from"])
             if url_hint:
-                sc2.append(_SC2(
-                    command=(
-                        f".venv/bin/python -m regres.regres_cli doctor "
-                        f"--scan-root {scan_root} --url '{url_hint}' --all "
-                        f"--git-history --vite-base {vite_base}"
-                    ),
-                    description=(
-                        f"Naprawa łańcuchowa: regres na pliku, "
-                        f"który zgłosił błąd ({r['missing_import_from']})"
-                    ),
-                ))
-        doctor.diagnoses.append(_Diag2(
-            summary=(
-                f"Vite runtime: `{target_rel}` zwraca {r['status']}"
-                + (
-                    f" — brakujący import `{r['missing_import']}`"
-                    if r.get("missing_import") else ""
+                sc2.append(
+                    _SC2(
+                        command=(
+                            f".venv/bin/python -m regres.regres_cli doctor "
+                            f"--scan-root {scan_root} --url '{url_hint}' --all "
+                            f"--git-history --vite-base {vite_base}"
+                        ),
+                        description=(
+                            f"Naprawa łańcuchowa: regres na pliku, "
+                            f"który zgłosił błąd ({r['missing_import_from']})"
+                        ),
+                    )
                 )
-            ),
-            problem_type="vite_runtime_failure",
-            severity="critical",
-            nlp_description="\n".join(nlp_lines),
-            file_actions=[_FA2(
-                path=r.get("missing_import_from") or target_rel,
-                action="modify",
-                reason=(
-                    f"Vite nie potrafił zresolwować importu "
-                    f"`{r.get('missing_import','?')}` z tego pliku."
+        doctor.diagnoses.append(
+            _Diag2(
+                summary=(
+                    f"Vite runtime: `{target_rel}` zwraca {r['status']}"
+                    + (
+                        f" — brakujący import `{r['missing_import']}`"
+                        if r.get("missing_import")
+                        else ""
+                    )
                 ),
-            )],
-            shell_commands=sc2,
-            confidence=0.95,
-        ))
+                problem_type="vite_runtime_failure",
+                severity="critical",
+                nlp_description="\n".join(nlp_lines),
+                file_actions=[
+                    _FA2(
+                        path=r.get("missing_import_from") or target_rel,
+                        action="modify",
+                        reason=(
+                            f"Vite nie potrafił zresolwować importu "
+                            f"`{r.get('missing_import', '?')}` z tego pliku."
+                        ),
+                    )
+                ],
+                shell_commands=sc2,
+                confidence=0.95,
+            )
+        )
 
 
 def _collect_dependency_chain_targets(
@@ -500,11 +552,13 @@ def _run_dependency_chain_analysis(
         broken_total += sum(1 for c in chain if not c.get("exists"))
         stub_total += sum(1 for c in chain if c.get("is_page_stub"))
     doctor.set_analysis_context("dependency_chains", chains_data)
-    doctor.update_last_plan_step(outputs={
-        "files_analyzed": len(chain_targets),
-        "broken_imports": broken_total,
-        "stub_imports": stub_total,
-    })
+    doctor.update_last_plan_step(
+        outputs={
+            "files_analyzed": len(chain_targets),
+            "broken_imports": broken_total,
+            "stub_imports": stub_total,
+        }
+    )
     return chains_data
 
 
@@ -525,14 +579,17 @@ def _run_page_registry_compliance_check(
         inputs={"entry_file": f"{module_path}/pages-index.ts"},
     )
     registry_diag = doctor.analyze_page_registry_compliance(
-        module_path, module_name,
+        module_path,
+        module_name,
     )
     if registry_diag is not None:
         doctor.diagnoses.append(registry_diag)
-        doctor.update_last_plan_step(outputs={
-            "compliant": False,
-            "problem_type": registry_diag.problem_type,
-        })
+        doctor.update_last_plan_step(
+            outputs={
+                "compliant": False,
+                "problem_type": registry_diag.problem_type,
+            }
+        )
     else:
         doctor.update_last_plan_step(outputs={"compliant": True})
 
@@ -627,13 +684,9 @@ def _run_url_module_analysis(
             vite_results = _run_vite_runtime_probe(
                 args, doctor, scan_root, chain_targets, vite_base
             )
-            _create_vite_runtime_diagnoses(
-                doctor, scan_root, vite_results, vite_base
-            )
+            _create_vite_runtime_diagnoses(doctor, scan_root, vite_results, vite_base)
 
-        _create_import_chain_diagnoses(
-            doctor, scan_root, chains_data, module_name
-        )
+        _create_import_chain_diagnoses(doctor, scan_root, chains_data, module_name)
 
     _run_llm_or_targeted_analysis(args, doctor, scan_root, module_path)
 
@@ -657,7 +710,9 @@ def _resolve_runtime_log_path(args, scan_root: Path) -> Optional[Path]:
     return None
 
 
-def _handle_runtime_log_diagnostics(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
+def _handle_runtime_log_diagnostics(
+    args, doctor: DoctorOrchestrator, scan_root: Path
+) -> None:
     runtime_log = _resolve_runtime_log_path(args, scan_root)
     if runtime_log is None:
         return
@@ -676,10 +731,12 @@ def _handle_runtime_log_diagnostics(args, doctor: DoctorOrchestrator, scan_root:
 
     runtime_diagnoses = doctor.analyze_runtime_console(runtime_log)
     doctor.diagnoses.extend(runtime_diagnoses)
-    doctor.update_last_plan_step(outputs={
-        "diagnoses_found": len(runtime_diagnoses),
-        "problem_types": [d.problem_type for d in runtime_diagnoses],
-    })
+    doctor.update_last_plan_step(
+        outputs={
+            "diagnoses_found": len(runtime_diagnoses),
+            "problem_types": [d.problem_type for d in runtime_diagnoses],
+        }
+    )
 
 
 def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
@@ -689,20 +746,18 @@ def _handle_url_mode(args, doctor: DoctorOrchestrator, scan_root: Path) -> None:
     doctor.reset_analysis_plan()
 
     parsed = urlparse(args.url)
-    normalized_path = parsed.path.strip('/')
+    normalized_path = parsed.path.strip("/")
 
-    module_name, route_hint = _resolve_module_from_url(
-        doctor, normalized_path
+    module_name, route_hint = _resolve_module_from_url(doctor, normalized_path)
+    _record_url_discovery_step(
+        doctor, scan_root, args.url, normalized_path, module_name, route_hint
     )
-    _record_url_discovery_step(doctor, scan_root, args.url, normalized_path, module_name, route_hint)
     _setup_url_analysis_context(args, doctor, normalized_path, module_name, route_hint)
     _handle_module_resolution(args, doctor, scan_root, normalized_path, module_name)
     _apply_fixes_if_requested(args, doctor)
 
 
-def _resolve_module_from_url(
-    doctor: DoctorOrchestrator, normalized_path: str
-) -> tuple:
+def _resolve_module_from_url(doctor: DoctorOrchestrator, normalized_path: str) -> tuple:
     """Resolve module name from URL path using route hints and module map."""
     module_name = None
     route_hint = None
@@ -720,7 +775,7 @@ def _resolve_module_from_url(
                 break
 
     if not module_name:
-        parts = normalized_path.split('/')
+        parts = normalized_path.split("/")
         if parts:
             module_name = parts[0]
 
@@ -742,7 +797,8 @@ def _record_url_discovery_step(
         command=f"python -m regres.regres_cli doctor --scan-root {scan_root} --url {url}",
         status="done",
         details=(
-            f"route hint matched: {route_hint}" if route_hint
+            f"route hint matched: {route_hint}"
+            if route_hint
             else f"module inferred: {module_name or 'unknown'}"
         ),
         inputs={
@@ -756,8 +812,8 @@ def _record_url_discovery_step(
         },
         decision=(
             f"URL prefix dopasowany do hint-a `{route_hint}` → moduł `{module_name}`"
-            if route_hint else
-            f"Brak hint-a; pierwszy segment URL → moduł `{module_name}`"
+            if route_hint
+            else f"Brak hint-a; pierwszy segment URL → moduł `{module_name}`"
         ),
     )
 
@@ -770,12 +826,15 @@ def _setup_url_analysis_context(
     route_hint: Optional[str],
 ) -> None:
     """Setup analysis context for URL-based analysis."""
-    doctor.set_analysis_context("url_target", {
-        "url": args.url,
-        "path": normalized_path,
-        "module_name": module_name,
-        "route_hint": route_hint,
-    })
+    doctor.set_analysis_context(
+        "url_target",
+        {
+            "url": args.url,
+            "path": normalized_path,
+            "module_name": module_name,
+            "route_hint": route_hint,
+        },
+    )
 
     structure_snapshot = doctor.collect_structure_snapshot(max_entries=120)
     if structure_snapshot:
@@ -783,7 +842,9 @@ def _setup_url_analysis_context(
 
     doctor.set_analysis_context(
         "project_relation_map",
-        doctor.build_project_relation_map(include_git=bool(getattr(args, "git_history", False))),
+        doctor.build_project_relation_map(
+            include_git=bool(getattr(args, "git_history", False))
+        ),
     )
     _handle_runtime_log_diagnostics(args, doctor, doctor.scan_root)
 
@@ -813,7 +874,9 @@ def _handle_module_resolution(
             doctor, scan_root, module_name, args.url, resolved_module_path=module_path
         )
     else:
-        _run_url_module_analysis(args, doctor, scan_root, normalized_path, module_name, module_path)
+        _run_url_module_analysis(
+            args, doctor, scan_root, normalized_path, module_name, module_path
+        )
 
 
 def _record_module_not_found_step(doctor: DoctorOrchestrator) -> None:
@@ -846,16 +909,24 @@ def _apply_fixes_if_requested(args, doctor: DoctorOrchestrator) -> None:
         return
     dry_run = not args.dry_run if args.dry_run else True
     fix_results = doctor.apply_fixes(doctor.diagnoses, dry_run=dry_run)
-    print(f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors")
-    if fix_results['errors']:
+    print(
+        f"Fixes applied: {len(fix_results['actions_performed'])} actions, {len(fix_results['errors'])} errors"
+    )
+    if fix_results["errors"]:
         print("Errors:")
-        for err in fix_results['errors']:
+        for err in fix_results["errors"]:
             print(f"  - {err}")
 
 
-def _handle_import_errors(args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn) -> None:
+def _handle_import_errors(
+    args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn
+) -> None:
     """Handle import error analysis."""
-    import_log = Path(args.import_log) if args.import_log else scan_root / ".regres" / "import-error-toon-report.raw.log"
+    import_log = (
+        Path(args.import_log)
+        if args.import_log
+        else scan_root / ".regres" / "import-error-toon-report.raw.log"
+    )
 
     if args.all and not args.import_log:
         refresh_fn(scan_root, import_log)
@@ -887,7 +958,9 @@ def _handle_defscan_refactor(args, doctor: DoctorOrchestrator) -> None:
         doctor.diagnoses.extend(diagnoses)
 
 
-def _handle_auto_decision_flow(args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn) -> None:
+def _handle_auto_decision_flow(
+    args, doctor: DoctorOrchestrator, scan_root: Path, refresh_fn
+) -> None:
     """Run parameter-driven analysis sequence and record plan/context."""
     doctor.reset_analysis_plan()
 
@@ -915,7 +988,9 @@ def _setup_analysis_context(args, doctor: DoctorOrchestrator, scan_root: Path) -
         doctor.set_analysis_context("structure_snapshot", structure_snapshot)
     doctor.set_analysis_context(
         "project_relation_map",
-        doctor.build_project_relation_map(include_git=bool(getattr(args, "git_history", False))),
+        doctor.build_project_relation_map(
+            include_git=bool(getattr(args, "git_history", False))
+        ),
     )
     _handle_runtime_log_diagnostics(args, doctor, scan_root)
 
@@ -983,7 +1058,9 @@ def _refresh_import_log(
     )
 
 
-def _run_regress_history_phase(doctor: DoctorOrchestrator, import_diagnoses: List["Diagnosis"]) -> None:
+def _run_regress_history_phase(
+    doctor: DoctorOrchestrator, import_diagnoses: List["Diagnosis"]
+) -> None:
     """Run regres history phase on files flagged by import diagnostics."""
     affected_files = _collect_affected_files(import_diagnoses)
 
@@ -1047,7 +1124,9 @@ def _save_report(doctor: DoctorOrchestrator, args) -> None:
 
     basename, out_dir = _derive_output_basename(args)
     patches_dir = _resolve_patches_dir(args, out_dir)
-    generated_patches = _generate_and_attach_patches(doctor, patches_dir, basename, args, report)
+    generated_patches = _generate_and_attach_patches(
+        doctor, patches_dir, basename, args, report
+    )
 
     if args.out_json:
         _save_json_report(report, args.out_json)
@@ -1106,7 +1185,9 @@ def _generate_and_attach_patches(
 def _save_json_report(report: Dict, out_json_path: str) -> None:
     """Save report to JSON file."""
     out_json = Path(out_json_path)
-    out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    out_json.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print(f"Report saved to {out_json}")
 
 
@@ -1125,7 +1206,9 @@ def _save_markdown_report(
     print(f"Markdown report saved to {out_md}")
 
 
-def _print_patches_info(patches: List[Dict[str, str]], patches_dir: Optional[Path]) -> None:
+def _print_patches_info(
+    patches: List[Dict[str, str]], patches_dir: Optional[Path]
+) -> None:
     """Print information about generated patches."""
     if not patches:
         return
@@ -1152,7 +1235,9 @@ def _render_patches_section(patches: List[Dict[str, str]]) -> str:
     non_index = [p for p in patches if p["kind"] != "index"]
     index_entry = next((p for p in patches if p["kind"] == "index"), None)
     if not non_index:
-        lines.append("Brak wygenerowanych patchy (żadna diagnoza nie sugerowała modyfikacji).")
+        lines.append(
+            "Brak wygenerowanych patchy (żadna diagnoza nie sugerowała modyfikacji)."
+        )
         lines.append("")
         return "\n".join(lines)
 
@@ -1163,14 +1248,14 @@ def _render_patches_section(patches: List[Dict[str, str]]) -> str:
     )
     lines.append("")
     if index_entry:
-        lines.append(f"**Index:** `bash {index_entry['path']}` — wypisuje wszystkie dostępne patche.")
+        lines.append(
+            f"**Index:** `bash {index_entry['path']}` — wypisuje wszystkie dostępne patche."
+        )
         lines.append("")
     lines.append("| # | Diagnoza | Kandydat | Plik patcha |")
     lines.append("|---|---|---|---|")
     for i, p in enumerate(non_index, 1):
-        lines.append(
-            f"| {i} | {p['diagnosis']} | `{p['candidate']}` | `{p['path']}` |"
-        )
+        lines.append(f"| {i} | {p['diagnosis']} | `{p['candidate']}` | `{p['path']}` |")
     lines.append("")
     lines.append("```bash")
     lines.append("# Aplikuj wybrany patch:")
@@ -1219,7 +1304,9 @@ def _refresh_import_error_log(project_root: Path, log_path: Path) -> bool:
         )
         if result.returncode != 0:
             if result.stderr:
-                print(f"[doctor] warning: could not refresh import log: {result.stderr.strip()}")
+                print(
+                    f"[doctor] warning: could not refresh import log: {result.stderr.strip()}"
+                )
             return False
         return True
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -1239,49 +1326,66 @@ def _build_parser() -> argparse.ArgumentParser:
             "  python doctor.py --all --scan-root ."
         ),
     )
-    parser.add_argument('--scan-root', default='.', help='Katalog główny projektu')
-    parser.add_argument('--import-log', help='Ścieżka do logu błędów importów TS')
-    parser.add_argument('--defscan-report', help='Ścieżka do raportu defscan (JSON)')
-    parser.add_argument('--regres-report', help='Ścieżka do raportu regres (JSON)')
-    parser.add_argument('--all', action='store_true', help='Uruchom wszystkie analizy')
-    parser.add_argument('--url', help='Analizuj moduł na podstawie URL (np. http://localhost:8100/connect-scenario)')
-    parser.add_argument('--apply', action='store_true', help='Wykonaj akcje naprawcze')
-    parser.add_argument('--dry-run', action='store_true', help='Dry-run dla akcji naprawczych (domyślne)')
-    parser.add_argument('--llm', action='store_true', help='Generuj szczegółowy raport LLM markdown z kontekstem')
-    parser.add_argument('--git-history', action='store_true', help='Analizuj historię git plików z błędami')
-    parser.add_argument('--defscan-scan', help='Uruchom defscan na konkretnym katalogu')
-    parser.add_argument('--refactor-scan', help='Uruchom refactor wrappers na konkretnym katalogu')
-    parser.add_argument('--out-md', help='Ścieżka do raportu Markdown')
-    parser.add_argument('--out-json', help='Ścieżka do raportu JSON')
+    parser.add_argument("--scan-root", default=".", help="Katalog główny projektu")
+    parser.add_argument("--import-log", help="Ścieżka do logu błędów importów TS")
+    parser.add_argument("--defscan-report", help="Ścieżka do raportu defscan (JSON)")
+    parser.add_argument("--regres-report", help="Ścieżka do raportu regres (JSON)")
+    parser.add_argument("--all", action="store_true", help="Uruchom wszystkie analizy")
     parser.add_argument(
-        '--runtime-log',
+        "--url",
+        help="Analizuj moduł na podstawie URL (np. http://localhost:8100/connect-scenario)",
+    )
+    parser.add_argument("--apply", action="store_true", help="Wykonaj akcje naprawcze")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Dry-run dla akcji naprawczych (domyślne)",
+    )
+    parser.add_argument(
+        "--llm",
+        action="store_true",
+        help="Generuj szczegółowy raport LLM markdown z kontekstem",
+    )
+    parser.add_argument(
+        "--git-history",
+        action="store_true",
+        help="Analizuj historię git plików z błędami",
+    )
+    parser.add_argument("--defscan-scan", help="Uruchom defscan na konkretnym katalogu")
+    parser.add_argument(
+        "--refactor-scan", help="Uruchom refactor wrappers na konkretnym katalogu"
+    )
+    parser.add_argument("--out-md", help="Ścieżka do raportu Markdown")
+    parser.add_argument("--out-json", help="Ścieżka do raportu JSON")
+    parser.add_argument(
+        "--runtime-log",
         help=(
-            'Ścieżka do logu runtime console (np. browser/devtools). '
-            'Jeśli podany, doctor wykrywa m.in. ostrzeżenia `SVG icon not found` '
-            'i dodaje diagnozę pre-deploy.'
+            "Ścieżka do logu runtime console (np. browser/devtools). "
+            "Jeśli podany, doctor wykrywa m.in. ostrzeżenia `SVG icon not found` "
+            "i dodaje diagnozę pre-deploy."
         ),
     )
     parser.add_argument(
-        '--out-patches-dir',
+        "--out-patches-dir",
         help=(
-            'Katalog, do którego zostaną zapisane skrypty `.sh` patchy (po jednym na każdą '
-            'opcję restore-z-historii oraz na każdą diagnozę z file_actions=modify). '
-            'Domyślnie używany jest katalog --out-md/--out-json.'
+            "Katalog, do którego zostaną zapisane skrypty `.sh` patchy (po jednym na każdą "
+            "opcję restore-z-historii oraz na każdą diagnozę z file_actions=modify). "
+            "Domyślnie używany jest katalog --out-md/--out-json."
         ),
     )
     parser.add_argument(
-        '--no-patches',
-        action='store_true',
-        help='Nie generuj skryptów `.sh` (tylko raport JSON/MD).',
+        "--no-patches",
+        action="store_true",
+        help="Nie generuj skryptów `.sh` (tylko raport JSON/MD).",
     )
     parser.add_argument(
-        '--vite-base',
+        "--vite-base",
         default=None,
         help=(
-            'URL bazowy serwera Vite (np. http://localhost:8100). Gdy podany, '
-            'regres dla każdego pliku celu pobiera odpowiadający /src/<...> URL '
-            'i parsuje błąd 500 (Failed to resolve import) — to autorytatywny '
-            'sygnał runtime, niezależny od testu istnienia plików na dysku.'
+            "URL bazowy serwera Vite (np. http://localhost:8100). Gdy podany, "
+            "regres dla każdego pliku celu pobiera odpowiadający /src/<...> URL "
+            "i parsuje błąd 500 (Failed to resolve import) — to autorytatywny "
+            "sygnał runtime, niezależny od testu istnienia plików na dysku."
         ),
     )
     # ----------------------------------------------------------------------
@@ -1289,40 +1393,40 @@ def _build_parser() -> argparse.ArgumentParser:
     # ``<scan_root>/.regres/.env`` and any ``REGRES_*`` shell variable.
     # ----------------------------------------------------------------------
     parser.add_argument(
-        '--history-window-days',
+        "--history-window-days",
         type=int,
         default=None,
-        dest='history_window_days',
+        dest="history_window_days",
         help=(
-            'Ile dni wstecz regres przegląda historię git szukając wcześniejszych '
-            'wersji strony (default: 30, env: REGRES_HISTORY_WINDOW_DAYS).'
+            "Ile dni wstecz regres przegląda historię git szukając wcześniejszych "
+            "wersji strony (default: 30, env: REGRES_HISTORY_WINDOW_DAYS)."
         ),
     )
     parser.add_argument(
-        '--history-max-iterations',
+        "--history-max-iterations",
         type=int,
         default=None,
-        dest='history_max_iterations',
+        dest="history_max_iterations",
         help=(
-            'Maksymalna liczba commitów branych pod uwagę per strona '
-            '(default: 30, env: REGRES_HISTORY_MAX_ITERATIONS).'
+            "Maksymalna liczba commitów branych pod uwagę per strona "
+            "(default: 30, env: REGRES_HISTORY_MAX_ITERATIONS)."
         ),
     )
     parser.add_argument(
-        '--history-shrinkage-factor',
+        "--history-shrinkage-factor",
         type=float,
         default=None,
-        dest='history_shrinkage_factor',
+        dest="history_shrinkage_factor",
         help=(
-            'Współczynnik uznawania regresji: aktualny plik < factor * '
-            'recent_max_lines (default: 0.5, env: REGRES_HISTORY_SHRINKAGE_FACTOR).'
+            "Współczynnik uznawania regresji: aktualny plik < factor * "
+            "recent_max_lines (default: 0.5, env: REGRES_HISTORY_SHRINKAGE_FACTOR)."
         ),
     )
     parser.add_argument(
-        '--no-banner',
-        action='store_true',
-        dest='no_banner',
-        help='Wyłącz baner startowy (env: REGRES_PRINT_BANNER=0).',
+        "--no-banner",
+        action="store_true",
+        dest="no_banner",
+        help="Wyłącz baner startowy (env: REGRES_PRINT_BANNER=0).",
     )
     return parser
 
@@ -1337,17 +1441,17 @@ def main() -> None:
 
     # Build the runtime config (cli > env > .regres/.env > defaults).
     cli_overrides = {
-        'history_window_days': getattr(args, 'history_window_days', None),
-        'history_max_iterations': getattr(args, 'history_max_iterations', None),
-        'history_shrinkage_factor': getattr(args, 'history_shrinkage_factor', None),
-        'vite_base': getattr(args, 'vite_base', None),
-        'print_banner': False if getattr(args, 'no_banner', False) else None,
+        "history_window_days": getattr(args, "history_window_days", None),
+        "history_max_iterations": getattr(args, "history_max_iterations", None),
+        "history_shrinkage_factor": getattr(args, "history_shrinkage_factor", None),
+        "vite_base": getattr(args, "vite_base", None),
+        "print_banner": False if getattr(args, "no_banner", False) else None,
     }
     config = load_config(scan_root, cli_overrides=cli_overrides)
     config.print_banner_to()
 
     # Inherit --vite-base from config if the user didn't pass it explicitly.
-    if not getattr(args, 'vite_base', None) and config.vite_base:
+    if not getattr(args, "vite_base", None) and config.vite_base:
         args.vite_base = config.vite_base
 
     doctor = DoctorOrchestrator(scan_root, config=config)
@@ -1361,5 +1465,5 @@ def main() -> None:
     _save_report(doctor, args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

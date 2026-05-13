@@ -35,7 +35,9 @@ class GitCommit:
 
 def run_git(args: List[str], cwd: Path) -> str:
     cmd = ["git", *args]
-    out = subprocess.check_output(cmd, cwd=str(cwd), text=True, stderr=subprocess.DEVNULL)
+    out = subprocess.check_output(
+        cmd, cwd=str(cwd), text=True, stderr=subprocess.DEVNULL
+    )
     return out
 
 
@@ -102,13 +104,13 @@ def _resolve_single_or_error(candidates: list[Path], error_msg: str) -> Path:
     if len(candidates) == 1:
         return candidates[0]
     if len(candidates) > 1:
-        raise FileNotFoundError(
-            error_msg + ", ".join(str(p) for p in candidates[:12])
-        )
+        raise FileNotFoundError(error_msg + ", ".join(str(p) for p in candidates[:12]))
     raise FileNotFoundError(error_msg)
 
 
-def resolve_target_file(file_arg: str, cwd: Path, repo_root: Path, scan_root: Path) -> Path:
+def resolve_target_file(
+    file_arg: str, cwd: Path, repo_root: Path, scan_root: Path
+) -> Path:
     raw = Path(file_arg)
 
     abs_result = _check_absolute_path(raw)
@@ -127,12 +129,14 @@ def resolve_target_file(file_arg: str, cwd: Path, repo_root: Path, scan_root: Pa
     suffix = file_arg.replace("\\", "/").lstrip("./")
     name = raw.name if raw.name else suffix
     candidates = _search_by_name_suffix(name, suffix, (scan_root, repo_root))
-    
+
     if len(candidates) == 1:
         return candidates[0]
 
     if len(candidates) > 1:
-        preferred = [p for p in candidates if str(p).startswith(str(scan_root.resolve()))]
+        preferred = [
+            p for p in candidates if str(p).startswith(str(scan_root.resolve()))
+        ]
         preferred = _dedupe_paths(preferred)
         if len(preferred) == 1:
             return preferred[0]
@@ -183,7 +187,9 @@ def content_metrics(text: str, path: Path) -> Dict[str, Any]:
     }
 
 
-def resolve_local_import(raw_import: str, file_path: Path, repo_root: Path) -> Optional[str]:
+def resolve_local_import(
+    raw_import: str, file_path: Path, repo_root: Path
+) -> Optional[str]:
     if not raw_import:
         return None
     if raw_import.startswith("@"):
@@ -254,7 +260,11 @@ def check_imports_at_commit(
 ) -> Dict[str, Any]:
     if commit_sha == "HEAD":
         current_file = (repo_root / rel_path).resolve()
-        text = safe_read_text(current_file) if current_file.exists() and current_file.is_file() else file_content_at_commit(repo_root, rel_path, commit_sha)
+        text = (
+            safe_read_text(current_file)
+            if current_file.exists() and current_file.is_file()
+            else file_content_at_commit(repo_root, rel_path, commit_sha)
+        )
     else:
         text = file_content_at_commit(repo_root, rel_path, commit_sha)
     if text is None:
@@ -304,7 +314,11 @@ def find_last_working_commit(
                 "imports": check["imports"],
                 "ok_count": check["ok_count"],
             }
-        if check["exists"] and check["broken_count"] == 0 and check["import_count"] == 0:
+        if (
+            check["exists"]
+            and check["broken_count"] == 0
+            and check["import_count"] == 0
+        ):
             # Plik bez lokalnych importów - też uznajemy za działający, jeśli szukamy cokolwiek
             return {
                 "sha": c.sha,
@@ -384,7 +398,9 @@ def analyze_regression(
                         }
                     break
 
-    missing_history = search_missing_in_history(repo_root, broken, rel_path) if broken else []
+    missing_history = (
+        search_missing_in_history(repo_root, broken, rel_path) if broken else []
+    )
 
     # Generuj rekomendację
     recommendations: List[str] = []
@@ -451,8 +467,15 @@ def extract_symbols(text: str) -> List[str]:
 def track_filename_history(repo_root: Path, basename: str) -> List[Dict[str, str]]:
     try:
         raw = run_git(
-            ["log", "--all", "--full-history", "--name-status",
-             "--pretty=format:%H%x09%cI%x09%s", "--", f"**/{basename}"],
+            [
+                "log",
+                "--all",
+                "--full-history",
+                "--name-status",
+                "--pretty=format:%H%x09%cI%x09%s",
+                "--",
+                f"**/{basename}",
+            ],
             repo_root,
         )
     except subprocess.CalledProcessError:
@@ -461,7 +484,11 @@ def track_filename_history(repo_root: Path, basename: str) -> List[Dict[str, str
     entries: List[Dict[str, str]] = []
     cur_commit: Optional[Dict[str, str]] = None
     for line in raw.splitlines():
-        if "\t" in line and not line[0].isalpha() and not line.startswith(("A", "M", "D", "R", "C")):
+        if (
+            "\t" in line
+            and not line[0].isalpha()
+            and not line.startswith(("A", "M", "D", "R", "C"))
+        ):
             continue
         parts = line.split("\t")
         if len(parts) >= 3 and len(parts[0]) == 40:
@@ -495,7 +522,7 @@ def _classify_import_problem(repo_root: Path, mh: dict) -> dict:
     if candidates:
         problem_type = "FILE_RENAMED"
         recommendation = (
-            f"Zaktualizuj ścieżkę importu — plik istnieje pod: "
+            "Zaktualizuj ścieżkę importu — plik istnieje pod: "
             + ", ".join(f"`{c}`" for c in candidates[:3])
         )
     elif mh["history_found"]:
@@ -519,7 +546,9 @@ def _classify_import_problem(repo_root: Path, mh: dict) -> dict:
     }
 
 
-def _analyze_import_problems(import_problems: list, broken: list, target_dir: str) -> tuple[str, float, list]:
+def _analyze_import_problems(
+    import_problems: list, broken: list, target_dir: str
+) -> tuple[str, float, list]:
     """Analyze import problems and return primary type, confidence, evidence."""
     evidence: List[str] = []
     type_counts: Dict[str, int] = {}
@@ -577,8 +606,13 @@ def _analyze_evolution(current_lines: int, evolution: list) -> tuple[str, float,
     return primary_type, confidence, evidence
 
 
-def _determine_primary_type(import_problems: list, broken: list, target_dir: str,
-                            current_lines: int, evolution: list) -> tuple[str, float, list]:
+def _determine_primary_type(
+    import_problems: list,
+    broken: list,
+    target_dir: str,
+    current_lines: int,
+    evolution: list,
+) -> tuple[str, float, list]:
     """Determine the primary problem type and confidence."""
     all_ok = len(broken) == 0
 
@@ -612,7 +646,9 @@ def classify_problem(
 
     name_history = track_filename_history(repo_root, basename)[:30]
     paths_in_history = sorted({h["path"] for h in name_history if h.get("path")})
-    is_basename_unique = len([p for p in paths_in_history if Path(p).name == basename]) <= 1
+    is_basename_unique = (
+        len([p for p in paths_in_history if Path(p).name == basename]) <= 1
+    )
 
     return {
         "primary_type": primary_type,
@@ -631,7 +667,9 @@ def classify_problem(
     }
 
 
-def dependency_tree(file_path: Path, repo_root: Path, max_depth: int = 3) -> Dict[str, Any]:
+def dependency_tree(
+    file_path: Path, repo_root: Path, max_depth: int = 3
+) -> Dict[str, Any]:
     seen: set[str] = set()
 
     def walk(node_path: Path, depth: int) -> Dict[str, Any]:
@@ -660,7 +698,9 @@ def dependency_tree(file_path: Path, repo_root: Path, max_depth: int = 3) -> Dic
     return walk(file_path, 0)
 
 
-def reverse_references(file_path: Path, repo_root: Path, scan_root: Path, max_hits: int = 500) -> List[str]:
+def reverse_references(
+    file_path: Path, repo_root: Path, scan_root: Path, max_hits: int = 500
+) -> List[str]:
     rel_target = to_rel(file_path, repo_root)
     refs: List[str] = []
     exts = {".ts", ".tsx", ".js", ".py"}
@@ -711,7 +751,9 @@ def exact_and_near_duplicates(
         cand_lines = len(cand_text.splitlines())
         score = SequenceMatcher(None, target_text, cand_text).ratio()
         max_lines = max(target_lines, cand_lines)
-        line_ratio = (min(target_lines, cand_lines) / max_lines) if max_lines > 0 else 1.0
+        line_ratio = (
+            (min(target_lines, cand_lines) / max_lines) if max_lines > 0 else 1.0
+        )
         adjusted = score * line_ratio
         if adjusted >= near_threshold:
             near.append(
@@ -766,7 +808,9 @@ def trace_name_and_hash_candidates(
             cand_lines = len(cand_text.splitlines())
             raw_sim = SequenceMatcher(None, target_text, cand_text).ratio()
             max_lines = max(target_lines, cand_lines)
-            line_ratio = (min(target_lines, cand_lines) / max_lines) if max_lines > 0 else 1.0
+            line_ratio = (
+                (min(target_lines, cand_lines) / max_lines) if max_lines > 0 else 1.0
+            )
             similarity = raw_sim * line_ratio
 
             last_commit = None
@@ -838,7 +882,9 @@ def parse_numstat_block(lines: List[str]) -> Tuple[int, int]:
     return ins, dels
 
 
-def file_lineage(repo_root: Path, rel_file: str, max_commits: int = 60) -> List[GitCommit]:
+def file_lineage(
+    repo_root: Path, rel_file: str, max_commits: int = 60
+) -> List[GitCommit]:
     fmt = "%H%x1f%h%x1f%ad%x1f%an%x1f%s"
     raw = run_git(
         [
@@ -892,13 +938,17 @@ def file_lineage(repo_root: Path, rel_file: str, max_commits: int = 60) -> List[
     return commits
 
 
-def changed_files_for_commit(repo_root: Path, commit_sha: str, limit: int = 120) -> List[str]:
+def changed_files_for_commit(
+    repo_root: Path, commit_sha: str, limit: int = 120
+) -> List[str]:
     raw = run_git(["show", "--name-only", "--pretty=format:", commit_sha], repo_root)
     files = [ln.strip() for ln in raw.splitlines() if ln.strip()]
     return files[:limit]
 
 
-def references_in_recent_commits(repo_root: Path, commits: List[GitCommit], max_commits: int = 10) -> List[Dict[str, Any]]:
+def references_in_recent_commits(
+    repo_root: Path, commits: List[GitCommit], max_commits: int = 10
+) -> List[Dict[str, Any]]:
     out: List[Dict[str, Any]] = []
     for c in commits[:max_commits]:
         out.append(
@@ -912,14 +962,18 @@ def references_in_recent_commits(repo_root: Path, commits: List[GitCommit], max_
     return out
 
 
-def file_content_at_commit(repo_root: Path, rel_path: str, commit_sha: str) -> Optional[str]:
+def file_content_at_commit(
+    repo_root: Path, rel_path: str, commit_sha: str
+) -> Optional[str]:
     try:
         return run_git(["show", f"{commit_sha}:{rel_path}"], repo_root)
     except subprocess.CalledProcessError:
         return None
 
 
-def resolve_import_historical(raw_import: str, file_rel: str, repo_root: Path, commit_sha: str) -> Optional[str]:
+def resolve_import_historical(
+    raw_import: str, file_rel: str, repo_root: Path, commit_sha: str
+) -> Optional[str]:
     if not raw_import:
         return None
     if raw_import.startswith("@"):
@@ -971,7 +1025,9 @@ def historical_dependency_tree(
         if depth < max_depth:
             for m in IMPORT_RE.finditer(node_text):
                 imp = m.group(1) or m.group(2) or ""
-                resolved = resolve_import_historical(imp, node_rel, repo_root, commit_sha)
+                resolved = resolve_import_historical(
+                    imp, node_rel, repo_root, commit_sha
+                )
                 if resolved:
                     children.append(walk(resolved, depth + 1))
 
@@ -997,7 +1053,9 @@ def analyze_evolution(
         current_lines = len(current_text.splitlines())
         sim = SequenceMatcher(None, current_text, hist_text).ratio()
 
-        tree = historical_dependency_tree(repo_root, rel_path, c.sha, max_depth=max_depth)
+        tree = historical_dependency_tree(
+            repo_root, rel_path, c.sha, max_depth=max_depth
+        )
         tree_paths_before: set[str] = set()
         tree_paths_after: set[str] = set()
         if prev_tree:
@@ -1006,8 +1064,12 @@ def analyze_evolution(
             tree_paths_after = _collect_tree_paths(tree)
 
         tree_changed = tree_paths_before != tree_paths_after if prev_tree else False
-        tree_diff_add = sorted(tree_paths_after - tree_paths_before) if prev_tree else []
-        tree_diff_remove = sorted(tree_paths_before - tree_paths_after) if prev_tree else []
+        tree_diff_add = (
+            sorted(tree_paths_after - tree_paths_before) if prev_tree else []
+        )
+        tree_diff_remove = (
+            sorted(tree_paths_before - tree_paths_after) if prev_tree else []
+        )
 
         entry = {
             "sha": c.sha,
@@ -1058,7 +1120,9 @@ def llm_context_packet(report: Dict[str, Any]) -> Dict[str, Any]:
     lineage = report.get("lineage", [])
     top_recent = lineage[:8]
     near_dups = report.get("duplicates", {}).get("near_duplicates", [])[:8]
-    name_hash_candidates = report.get("name_hash_candidates", {}).get("candidates", [])[:8]
+    name_hash_candidates = report.get("name_hash_candidates", {}).get("candidates", [])[
+        :8
+    ]
     reverse_refs = report.get("references", {}).get("reverse_imports", [])[:50]
     evolution = report.get("evolution", [])
     last_good = report.get("last_good_version", [])
@@ -1079,15 +1143,25 @@ def llm_context_packet(report: Dict[str, Any]) -> Dict[str, Any]:
             "last_working_commit": regression.get("last_working_commit"),
             "first_broken_commit": regression.get("first_broken_commit"),
             "recommendations": regression.get("recommendations", [])[:5],
-        } if regression else {},
+        }
+        if regression
+        else {},
         "classification": {
             "primary_type": (report.get("classification") or {}).get("primary_type"),
-            "primary_type_description": (report.get("classification") or {}).get("primary_type_description"),
+            "primary_type_description": (report.get("classification") or {}).get(
+                "primary_type_description"
+            ),
             "confidence": (report.get("classification") or {}).get("confidence"),
             "evidence": (report.get("classification") or {}).get("evidence", []),
-            "import_problems": (report.get("classification") or {}).get("import_problems", [])[:10],
-            "current_symbols": (report.get("classification") or {}).get("current_symbols", [])[:20],
-            "filename_history": (report.get("classification") or {}).get("filename_history", {}),
+            "import_problems": (report.get("classification") or {}).get(
+                "import_problems", []
+            )[:10],
+            "current_symbols": (report.get("classification") or {}).get(
+                "current_symbols", []
+            )[:20],
+            "filename_history": (report.get("classification") or {}).get(
+                "filename_history", {}
+            ),
         },
     }
 
@@ -1149,8 +1223,10 @@ def _render_current_symbols(classification: dict, lines: list) -> None:
     if not symbols:
         return
     lines.append("")
-    lines.append(f"**Eksportowane symbole ({len(symbols)}):** "
-                 + ", ".join(f"`{s}`" for s in symbols[:20]))
+    lines.append(
+        f"**Eksportowane symbole ({len(symbols)}):** "
+        + ", ".join(f"`{s}`" for s in symbols[:20])
+    )
 
 
 def _render_filename_history(classification: dict, lines: list) -> None:
@@ -1163,19 +1239,23 @@ def _render_filename_history(classification: dict, lines: list) -> None:
     for p in fh["paths_seen"][:10]:
         lines.append(f"- `{p}`")
     if not fh.get("is_basename_unique"):
-        lines.append(f"\n> Nazwa pliku występowała w wielu lokalizacjach — "
-                     f"możliwe rename'y lub duplikaty.")
+        lines.append(
+            "\n> Nazwa pliku występowała w wielu lokalizacjach — "
+            "możliwe rename'y lub duplikaty."
+        )
 
 
 def _render_name_hash_section(nh: dict, lines: list):
     """Render the name/hash candidates section."""
     nh_candidates = nh.get("candidates", [])
-    lines.extend([
-        "## Name/Hash Candidates",
-        f"- target_name: `{nh.get('target_name', '')}`",
-        f"- candidates: {len(nh_candidates)}",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Name/Hash Candidates",
+            f"- target_name: `{nh.get('target_name', '')}`",
+            f"- candidates: {len(nh_candidates)}",
+            "",
+        ]
+    )
     if nh_candidates:
         for item in nh_candidates:
             commit = item.get("last_commit") or {}
@@ -1191,26 +1271,30 @@ def _render_name_hash_section(nh: dict, lines: list):
 
 def _render_metrics_section(m: dict, lines: list):
     """Render the metrics section."""
-    lines.extend([
-        "## Metryki",
-        f"- lines: {m['lines']}",
-        f"- non_empty_lines: {m['non_empty_lines']}",
-        f"- imports_count: {m['imports_count']}",
-        f"- exports_count: {m['exports_count']}",
-        f"- class_count: {m['class_count']}",
-        f"- function_like_count: {m['function_like_count']}",
-        f"- sha256: `{m['sha256']}`",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Metryki",
+            f"- lines: {m['lines']}",
+            f"- non_empty_lines: {m['non_empty_lines']}",
+            f"- imports_count: {m['imports_count']}",
+            f"- exports_count: {m['exports_count']}",
+            f"- class_count: {m['class_count']}",
+            f"- function_like_count: {m['function_like_count']}",
+            f"- sha256: `{m['sha256']}`",
+            "",
+        ]
+    )
 
 
 def _render_references_section(refs: dict, lines: list):
     """Render the references section."""
-    lines.extend([
-        "## Referencje",
-        f"- reverse_imports_count: {len(refs['reverse_imports'])}",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Referencje",
+            f"- reverse_imports_count: {len(refs['reverse_imports'])}",
+            "",
+        ]
+    )
 
     if refs["reverse_imports"]:
         lines.append("### Reverse imports")
@@ -1221,12 +1305,14 @@ def _render_references_section(refs: dict, lines: list):
 
 def _render_duplicates_section(d: dict, lines: list):
     """Render the duplicates section."""
-    lines.extend([
-        "## Duplikaty",
-        f"- exact_duplicates: {len(d['exact_duplicates'])}",
-        f"- near_duplicates: {len(d['near_duplicates'])}",
-        "",
-    ])
+    lines.extend(
+        [
+            "## Duplikaty",
+            f"- exact_duplicates: {len(d['exact_duplicates'])}",
+            f"- near_duplicates: {len(d['near_duplicates'])}",
+            "",
+        ]
+    )
 
     if d["exact_duplicates"]:
         lines.append("### Exact")
@@ -1263,13 +1349,19 @@ def _render_evolution_section(evolution: list, lines: list):
     """Render the evolution section."""
     if not evolution:
         return
-    
+
     lines.append("## Ewolucja pliku (historia drzewa zależności)")
     lines.append("")
-    lines.append("| commit | data | linie | delta | similarity | tree | zmiany w drzewie |")
+    lines.append(
+        "| commit | data | linie | delta | similarity | tree | zmiany w drzewie |"
+    )
     lines.append("|---|---|---|---|---|---|---|")
     for e in evolution[:20]:
-        tree_info = f"+{len(e['tree_added'])}/-{len(e['tree_removed'])}" if e["tree_changed"] else "="
+        tree_info = (
+            f"+{len(e['tree_added'])}/-{len(e['tree_removed'])}"
+            if e["tree_changed"]
+            else "="
+        )
         tree_detail = ""
         if e["tree_added"]:
             tree_detail += f" +{', '.join(e['tree_added'][:2])}"
@@ -1287,7 +1379,7 @@ def _render_last_good_section(last_good: list, lines: list):
     """Render the last good versions section."""
     if not last_good:
         return
-    
+
     lines.append("## Ostatnie wersje spełniające kryteria (>= aktualnych linii)")
     for e in last_good:
         lines.append(
@@ -1341,9 +1433,7 @@ def _render_first_broken_commit(regression: dict, lines: list) -> None:
     if not fb:
         return
     lines.append("### Pierwszy popsuty commit")
-    lines.append(
-        f"- `{fb['short_sha']}` {fb['date'][:10]} — '{fb['subject']}'"
-    )
+    lines.append(f"- `{fb['short_sha']}` {fb['date'][:10]} — '{fb['subject']}'")
     lines.append("")
 
 
@@ -1499,12 +1589,27 @@ def _resolve_output_path(path_str: str, cwd: Path) -> Path:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="REGRES: analiza regresji i rodowodu plików")
-    parser.add_argument("--file", required=True, help="Plik docelowy (relative lub absolute)")
-    parser.add_argument("--scan-root", default=".", help="Katalog do skanowania referencji i duplikatów")
-    parser.add_argument("--max-commits", type=int, default=80, help="Maks. liczba commitów historii")
-    parser.add_argument("--tree-depth", type=int, default=3, help="Głębokość drzewa zależności")
-    parser.add_argument("--near-threshold", type=float, default=0.92, help="Próg podobieństwa duplikatów")
+    parser = argparse.ArgumentParser(
+        description="REGRES: analiza regresji i rodowodu plików"
+    )
+    parser.add_argument(
+        "--file", required=True, help="Plik docelowy (relative lub absolute)"
+    )
+    parser.add_argument(
+        "--scan-root", default=".", help="Katalog do skanowania referencji i duplikatów"
+    )
+    parser.add_argument(
+        "--max-commits", type=int, default=80, help="Maks. liczba commitów historii"
+    )
+    parser.add_argument(
+        "--tree-depth", type=int, default=3, help="Głębokość drzewa zależności"
+    )
+    parser.add_argument(
+        "--near-threshold",
+        type=float,
+        default=0.92,
+        help="Próg podobieństwa duplikatów",
+    )
     parser.add_argument("--out-json", default="", help="Ścieżka output JSON")
     parser.add_argument("--out-md", default="", help="Ścieżka output Markdown")
     args = parser.parse_args()
@@ -1516,7 +1621,9 @@ def main() -> None:
     if not scan_root.is_absolute():
         scan_root = (cwd / scan_root).resolve()
 
-    file_path = resolve_target_file(args.file, cwd=cwd, repo_root=repo_root, scan_root=scan_root)
+    file_path = resolve_target_file(
+        args.file, cwd=cwd, repo_root=repo_root, scan_root=scan_root
+    )
 
     report = analyze_file(
         target_file=file_path,

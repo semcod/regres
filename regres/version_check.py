@@ -153,7 +153,7 @@ def check_version(local_version: str) -> None:
             file=sys.stderr,
         )
         print(
-            f"   Zaktualizuj: pip install -U regres",
+            "   Zaktualizuj: pip install -U regres",
             file=sys.stderr,
         )
 

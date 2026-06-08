@@ -2,14 +2,20 @@
 
 app {
   name: regres;
-  version: 0.1.56;
+  version: 0.1.57;
+  description: "Regression/import diagnostics helpers with TOON reports";
+  license: Apache-2.0;
+  authors: "Tom Sapletta <tom@sapletta.com>";
 }
 
 interface[type="cli"] {
   framework: argparse;
 }
 interface[type="cli"] page[name="regres"] {
-
+  entry: regres.regres_cli:main;
+}
+interface[type="cli"] page[name="import-error-toon-report"] {
+  entry: regres.import_error_toon_report:main;
 }
 
 workflow[name="install"] {
@@ -102,12 +108,23 @@ workflow[name="version"] {
   step-3: run cmd=.venv/bin/python -c "from importlib.metadata import version; print(f'Installed version: {version(\"sumd\")}')";
 }
 
+tests {
+  import: testql-scenarios/**/*.testql.toon.yaml;
+}
+
+env_vars {
+  keys: OPENROUTER_API_KEY, LLM_MODEL, PFIX_AUTO_APPLY, PFIX_AUTO_INSTALL_DEPS, PFIX_AUTO_RESTART, PFIX_MAX_RETRIES, PFIX_DRY_RUN, PFIX_ENABLED, PFIX_GIT_COMMIT, PFIX_GIT_PREFIX, PFIX_CREATE_BACKUPS, REGRES_HISTORY_WINDOW_DAYS, REGRES_HISTORY_MAX_ITERATIONS, REGRES_HISTORY_SHRINKAGE_FACTOR, REGRES_VITE_BASE, REGRES_DEPENDENCY_CHAIN_DEPTH, REGRES_STRUCTURE_SNAPSHOT_MAX_ENTRIES, REGRES_PRINT_BANNER, REGRES_SKIP_VERSION_CHECK;
+}
+
 deploy {
   target: makefile;
 }
 
 environment[name="local"] {
-  runtime: docker-compose;
+  runtime: python;
   env_file: .env;
   python_version: >=3.11;
+  vars: LLM_MODEL, OPENROUTER_API_KEY, PFIX_AUTO_APPLY, PFIX_AUTO_INSTALL_DEPS, PFIX_AUTO_RESTART, PFIX_CREATE_BACKUPS, PFIX_DRY_RUN, PFIX_ENABLED, PFIX_GIT_COMMIT, PFIX_GIT_PREFIX, PFIX_MAX_RETRIES, REGRES_DEPENDENCY_CHAIN_DEPTH, REGRES_HISTORY_MAX_ITERATIONS, REGRES_HISTORY_SHRINKAGE_FACTOR, REGRES_HISTORY_WINDOW_DAYS, REGRES_PRINT_BANNER, REGRES_SKIP_VERSION_CHECK, REGRES_STRUCTURE_SNAPSHOT_MAX_ENTRIES, REGRES_VITE_BASE;
+  runtime_llm: OPENROUTER_API_KEY;
+  runtime_pfix: PFIX_AUTO_APPLY, PFIX_AUTO_INSTALL_DEPS, PFIX_AUTO_RESTART, PFIX_CREATE_BACKUPS, PFIX_DRY_RUN, PFIX_ENABLED, PFIX_GIT_COMMIT, PFIX_GIT_PREFIX, PFIX_MAX_RETRIES;
 }

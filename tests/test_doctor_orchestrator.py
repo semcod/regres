@@ -532,15 +532,15 @@ def test_render_markdown_with_decision_workflow():
 # generate_llm_diagnosis tests
 # ---------------------------------------------------------------------------
 
-def test_generate_llm_diagnosis():
-    d = DoctorOrchestrator(Path("/tmp"))
-    out = d.generate_llm_diagnosis("http://localhost/test", Path("/tmp"))
+def test_generate_llm_diagnosis(tmp_path):
+    d = DoctorOrchestrator(tmp_path)
+    out = d.generate_llm_diagnosis("http://localhost/test", tmp_path)
     assert "# LLM-Based Diagnosis Report" in out
     assert "localhost/test" in out
 
-def test_generate_llm_diagnosis_sections():
-    d = DoctorOrchestrator(Path("/tmp"))
-    out = d.generate_llm_diagnosis("http://localhost/test", Path("/tmp"))
+def test_generate_llm_diagnosis_sections(tmp_path):
+    d = DoctorOrchestrator(tmp_path)
+    out = d.generate_llm_diagnosis("http://localhost/test", tmp_path)
     expected_sections = [
         "## Git History Context",
         "## Code Structure Analysis",

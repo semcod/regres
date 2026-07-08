@@ -223,3 +223,7 @@ __marimo__/
 # swop
 .swop/
 swop-drift.log
+.code2llm_cache/
+.github/
+.regres/
+.windsurf/

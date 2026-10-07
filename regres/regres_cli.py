@@ -34,6 +34,15 @@ from importlib.metadata import version as _get_version
 
 
 def main() -> int:
+    try:
+        from .autoupdate import check_for_updates
+        check_for_updates("regres")
+    except Exception:
+        try:
+            from regres.autoupdate import check_for_updates
+            check_for_updates("regres")
+        except Exception:
+            pass
     check_version(_get_version("regres"))
     parser = argparse.ArgumentParser(
         prog="regres",
